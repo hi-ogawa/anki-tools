@@ -11,76 +11,79 @@ Use [Refine](https://refine.dev/) as UI framework with custom data provider for 
 
 ## Phase 1: Minimal Viable
 
-### 1.1 Scaffold Project
+- [x] Scaffold project (Vite + React + TypeScript)
+- [x] Add Refine with TanStack Table + shadcn/ui
+- [x] Create AnkiConnect data provider (simple fetch)
+- [x] Notes list page with table
+- [ ] Test with live Anki
 
-- [ ] `pnpm create vite@latest . -- --template react-ts`
-- [ ] `pnpm add @refinedev/core @refinedev/react-table @tanstack/react-table`
-- [ ] `pnpm add yanki-connect`
+## Phase 2: Dynamic Schema
 
-### 1.2 AnkiConnect Data Provider
+### Architecture
 
-- [ ] Create `src/providers/anki-connect.ts`
+Since this is a pure SPA, we can discover the schema at runtime:
 
-| Refine Method | AnkiConnect Action | Notes |
-|---------------|-------------------|-------|
-| `getList` | `findNotes` + `notesInfo` | Map fields to flat structure |
-| `getOne` | `notesInfo` | Single note by ID |
-| `getApiUrl` | Return `http://localhost:8765` | |
+```
+┌─────────────────────────────────────────────────────────┐
+│                     Landing Page                         │
+│  1. Fetch deckNames, modelNames from AnkiConnect        │
+│  2. User selects deck/model (or auto-detect)            │
+│  3. Fetch modelFieldNames for selected model            │
+│  4. Build dynamic schema → mount Refine                 │
+└─────────────────────────────────────────────────────────┘
+                          │
+                          ▼
+┌─────────────────────────────────────────────────────────┐
+│                    Notes Browser                         │
+│  - Table columns generated from schema                  │
+│  - Data provider uses dynamic field mapping             │
+│  - Preview panel shows all fields                       │
+└─────────────────────────────────────────────────────────┘
+```
 
-Skip for MVP: `create`, `update`, `deleteOne` (read-only first)
+### AnkiConnect Actions
 
-### 1.3 Notes Resource
+| Action | Purpose |
+|--------|---------|
+| `deckNames` | List available decks |
+| `modelNames` | List note types (models) |
+| `modelFieldNames` | Get fields for a model |
+| `findNotes` | Search notes by query |
+| `notesInfo` | Get note details |
 
-- [ ] Configure Refine with notes resource in `src/App.tsx`
+### Implementation
 
-### 1.4 List View
+- [ ] Create setup/landing page component
+- [ ] Fetch and display deck/model selectors
+- [ ] Store selected config in React state (or URL params)
+- [ ] Refactor data provider to accept dynamic schema
+- [ ] Generate table columns from field list
+- [ ] Allow user to pick which fields show as columns
 
-- [ ] Create `src/pages/notes/list.tsx`
-- [ ] Table with columns: korean, english, tags
-- [ ] Search input (passes query to `findNotes`)
+### State Shape
 
-## Phase 2: Usability
+```typescript
+interface AppConfig {
+  deck: string | null;      // e.g., "Korean::TOPIK1"
+  model: string;            // e.g., "Korean Vocabulary"
+  fields: string[];         // e.g., ["korean", "english", ...]
+  tableColumns: string[];   // subset of fields to show in table
+}
+```
 
-### 2.1 Deck Selector
+## Phase 3: Usability
 
-- [ ] Fetch decks via `deckNames`
-- [ ] Filter notes by selected deck
+- [ ] Card preview panel (show all fields on row click)
+- [ ] Render HTML content safely
+- [ ] Fuzzy search (client-side with Fuse.js)
+- [ ] Persist config to localStorage
 
-### 2.2 Card Preview
-
-- [ ] Show full note fields on row click
-- [ ] Render HTML content (example sentences)
-
-### 2.3 Fuzzy Search
-
-- [ ] Client-side fuzzy matching with Fuse.js
-
-## Phase 3: Edit Support
-
-### 3.1 Update Notes
+## Phase 4: Edit Support
 
 - [ ] Implement `update` → `updateNoteFields`
-
-### 3.2 Tag Management
-
-- [ ] Add/remove tags via `addTags`/`removeTags`
+- [ ] Tag management via `addTags`/`removeTags`
 
 ## Data Mapping
-
-Target model: **Korean Vocabulary**
-
-| Field | Table Column | Preview |
-|-------|:------------:|:-------:|
-| `number` | | ✓ |
-| `korean` | ✓ | ✓ |
-| `english` | ✓ | ✓ |
-| `example_ko` | | ✓ |
-| `example_en` | | ✓ |
-| `etymology` | | ✓ |
-| `notes` | | ✓ |
-| `korean_audio` | | ✓ |
-| `example_ko_audio` | | ✓ |
-| `tags` | ✓ | ✓ |
 
 AnkiConnect `notesInfo` returns:
 
@@ -90,23 +93,23 @@ AnkiConnect `notesInfo` returns:
   "modelName": "Korean Vocabulary",
   "fields": {
     "korean": { "value": "사과", "order": 0 },
-    "english": { "value": "apple", "order": 1 },
-    "example_ko": { "value": "사과를 먹었어요", "order": 2 }
+    "english": { "value": "apple", "order": 1 }
   },
   "tags": ["fruit", "topik1"]
 }
 ```
 
-Normalize to:
+Normalize dynamically based on discovered schema:
 
 ```typescript
-{
-  id: 1234567890,
-  korean: "사과",
-  english: "apple",
-  example_ko: "사과를 먹었어요",
-  // ... other fields flattened
-  tags: ["fruit", "topik1"]
+function normalizeNote(note: AnkiNoteInfo, fields: string[]) {
+  return {
+    id: note.noteId,
+    ...Object.fromEntries(
+      fields.map(f => [f, note.fields[f]?.value ?? ""])
+    ),
+    tags: note.tags,
+  };
 }
 ```
 
@@ -115,21 +118,21 @@ Normalize to:
 ```
 src/
 ├── providers/
-│   └── anki-connect.ts    # Data provider
+│   └── anki-connect.ts    # Data provider + API helpers
 ├── pages/
+│   ├── setup.tsx          # Landing/config page
 │   └── notes/
-│       └── list.tsx       # Notes table
+│       └── list.tsx       # Notes table (dynamic columns)
 ├── components/
 │   └── NotePreview.tsx    # Card preview panel
+├── hooks/
+│   └── useAnkiSchema.ts   # Fetch deck/model/fields
 └── App.tsx
 ```
 
 ## Open Questions
 
-1. ~~**Field mapping**: Hardcode for "Korean Vocabulary" model or make configurable?~~ → Hardcode for MVP
-2. **Pagination**: AnkiConnect returns all matching IDs. Paginate client-side?
-3. **Search**: Use Anki's search syntax or custom fuzzy?
-
-## Next Action
-
-Start with 1.1: scaffold project.
+1. ~~**Field mapping**: Hardcode or configurable?~~ → Dynamic schema discovery
+2. **Pagination**: AnkiConnect returns all IDs. Paginate client-side. ✓
+3. **Search**: Start with Anki's search syntax, add fuzzy later
+4. **URL state**: Store deck/model in URL for shareable links?
