@@ -1,4 +1,10 @@
-# Implementation Plan: Refine + AnkiConnect
+# Implementation Plan
+
+## Related Docs
+
+- [research.md](research.md) - Technical reference, API analysis
+- [plan-addon.md](plan-addon.md) - Future: Anki add-on (bypasses AnkiConnect)
+- [inbox.md](inbox.md) - Quick notes, feedback, todos
 
 ## Approach
 
@@ -37,16 +43,12 @@ Use TanStack Table + shadcn/ui with custom AnkiConnect data provider.
 
 - [x] Fix page index to start from 1 (URL uses 1-based)
 - [ ] Refactor localStorage to [TanStack DB](https://tanstack.com/db/latest/docs/collections/local-storage-collection)
-- [x] Add extra fields from AnkiConnect:
-  - [x] Deck name (via `cardsInfo` → `deckName`)
-  - [x] Flags (via `cardsInfo` → `flags`)
-  - [x] Suspension status (via `cardsInfo` → `queue === -1`)
+- [x] Add deck name (via `getDecks` - fast alternative to `cardsInfo`)
+- [~] Flags/suspension removed - per-card concepts, not per-note (see research.md)
 - [x] Search enhancements (Anki Query mode):
   - [x] Server-side search via AnkiConnect `findNotes`
   - [x] Supports full Anki search syntax: `deck:`, `tag:`, `field:`, wildcards
-  - [ ] **TODO**: Add "Smart Search" mode with toggle button
-    - Client-side filtering with modern UX
-    - Pattern matching without Anki syntax knowledge
+  - [ ] Add "Smart Search" mode with toggle button
 
 ## Phase 4: Edit Support
 

@@ -11,7 +11,7 @@ Anki's built-in browser has limitations: single window, no fuzzy search, dated U
 ```
 ┌─────────────────┐     HTTP/JSON     ┌─────────────────┐
 │  Web Frontend   │ ◄───────────────► │   AnkiConnect   │
-│  (Refine/React) │    localhost:8765 │   (Add-on)      │
+│  (React)        │    localhost:8765 │   (Add-on)      │
 └─────────────────┘                   └─────────────────┘
 ```
 
@@ -48,3 +48,5 @@ pnpm dev
 
 - [Implementation Plan](docs/plan.md)
 - [Research & Prior Art](docs/research.md)
+- [Add-on Plan](docs/plan-addon.md) (future)
+- [Agent Guide](AGENTS.md) - for AI coding agents
