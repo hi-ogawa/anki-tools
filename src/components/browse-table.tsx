@@ -8,6 +8,7 @@ import {
   type PaginationState,
   type VisibilityState,
 } from "@tanstack/react-table";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   ChevronLeft,
   ChevronRight,
@@ -17,7 +18,7 @@ import {
   Flag,
   Pause,
 } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import type { Note, Card } from "@/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -62,6 +63,7 @@ const FLAG_COLORS: Record<number, string> = {
 interface BrowseTableProps {
   data: BrowseItem[];
   viewMode: ViewMode;
+  scrollMode: boolean;
   model: string;
   fields: string[];
   page: number;
@@ -75,6 +77,7 @@ interface BrowseTableProps {
 export function BrowseTable({
   data,
   viewMode,
+  scrollMode,
   model,
   fields,
   page,
@@ -214,9 +217,12 @@ export function BrowseTable({
   );
 
   // Table setup
-  const pagination: PaginationState = { pageIndex: page, pageSize };
+  const pagination: PaginationState = scrollMode
+    ? { pageIndex: 0, pageSize: data.length || 1 }
+    : { pageIndex: page, pageSize };
 
   const onPaginationChange: OnChangeFn<PaginationState> = (updater) => {
+    if (scrollMode) return;
     const newState =
       typeof updater === "function" ? updater(pagination) : updater;
     onStateChange({
@@ -239,6 +245,16 @@ export function BrowseTable({
   const fieldColumnIds = fields;
   const noteColumnIds = ["deck", "tags"];
   const cardColumnIds = ["flag", "status", "interval"];
+
+  // Virtualization for scroll mode
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const rows = table.getRowModel().rows;
+  const rowVirtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => tableContainerRef.current,
+    estimateSize: () => 41, // approximate row height
+    overscan: 10,
+  });
 
   return (
     <div className="space-y-4">
@@ -308,120 +324,184 @@ export function BrowseTable({
       </div>
 
       {/* Table */}
-      <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <TableHead key={header.id}>
-                  {flexRender(
-                    header.column.columnDef.header,
-                    header.getContext(),
-                  )}
-                </TableHead>
-              ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows.length ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                onClick={() => onSelect(row.original)}
-                className="cursor-pointer"
-                data-state={
-                  row.original.id === selectedId ? "selected" : undefined
-                }
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
-                No results.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-
-      {/* Pagination */}
-      <div className="flex items-center justify-between">
-        <div className="text-sm text-muted-foreground">
-          Showing{" "}
-          {data.length > 0 ? pagination.pageIndex * pagination.pageSize + 1 : 0}
-          -
-          {Math.min(
-            (pagination.pageIndex + 1) * pagination.pageSize,
-            data.length,
-          )}{" "}
-          of {data.length}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Select
-            value={String(pageSize)}
-            onValueChange={(value) =>
-              onStateChange({ pageSize: Number(value), page: 1 })
+      <div
+        ref={scrollMode ? tableContainerRef : undefined}
+        className={
+          scrollMode ? "max-h-[calc(100vh-12rem)] overflow-auto" : undefined
+        }
+      >
+        <Table className={scrollMode ? "table-fixed" : undefined}>
+          <TableHeader
+            className={
+              scrollMode ? "sticky top-0 z-10 bg-background" : undefined
             }
           >
-            <SelectTrigger size="sm" className="w-[100px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {[10, 20, 50, 100].map((size) => (
-                <SelectItem key={size} value={String(size)}>
-                  {size} / page
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id}>
+                {headerGroup.headers.map((header) => (
+                  <TableHead key={header.id}>
+                    {flexRender(
+                      header.column.columnDef.header,
+                      header.getContext(),
+                    )}
+                  </TableHead>
+                ))}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody>
+            {rows.length === 0 ? (
+              <TableRow>
+                <TableCell
+                  colSpan={columns.length}
+                  className="h-24 text-center"
+                >
+                  No results.
+                </TableCell>
+              </TableRow>
+            ) : scrollMode ? (
+              <>
+                {rowVirtualizer.getVirtualItems().length > 0 && (
+                  <tr
+                    style={{
+                      height: rowVirtualizer.getVirtualItems()[0].start,
+                    }}
+                  />
+                )}
+                {rowVirtualizer.getVirtualItems().map((virtualRow) => {
+                  const row = rows[virtualRow.index];
+                  return (
+                    <TableRow
+                      key={row.id}
+                      onClick={() => onSelect(row.original)}
+                      className="cursor-pointer"
+                      data-state={
+                        row.original.id === selectedId ? "selected" : undefined
+                      }
+                    >
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id}>
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext(),
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
+                  );
+                })}
+                {rowVirtualizer.getVirtualItems().length > 0 && (
+                  <tr
+                    style={{
+                      height:
+                        rowVirtualizer.getTotalSize() -
+                        (rowVirtualizer.getVirtualItems().at(-1)?.end ?? 0),
+                    }}
+                  />
+                )}
+              </>
+            ) : (
+              rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  onClick={() => onSelect(row.original)}
+                  className="cursor-pointer"
+                  data-state={
+                    row.original.id === selectedId ? "selected" : undefined
+                  }
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </div>
 
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => onStateChange({ page: 1 })}
-              disabled={!table.getCanPreviousPage()}
+      {/* Pagination / Count */}
+      {scrollMode ? (
+        <div className="text-sm text-muted-foreground">{data.length} items</div>
+      ) : (
+        <div className="flex items-center justify-between">
+          <div className="text-sm text-muted-foreground">
+            Showing{" "}
+            {data.length > 0
+              ? pagination.pageIndex * pagination.pageSize + 1
+              : 0}
+            -
+            {Math.min(
+              (pagination.pageIndex + 1) * pagination.pageSize,
+              data.length,
+            )}{" "}
+            of {data.length}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Select
+              value={String(pageSize)}
+              onValueChange={(value) =>
+                onStateChange({ pageSize: Number(value), page: 1 })
+              }
             >
-              <ChevronsLeft className="size-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => onStateChange({ page })}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <ChevronLeft className="size-4" />
-            </Button>
-            <span className="px-2 text-sm">
-              {page + 1} / {table.getPageCount()}
-            </span>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => onStateChange({ page: page + 2 })}
-              disabled={!table.getCanNextPage()}
-            >
-              <ChevronRight className="size-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => onStateChange({ page: table.getPageCount() })}
-              disabled={!table.getCanNextPage()}
-            >
-              <ChevronsRight className="size-4" />
-            </Button>
+              <SelectTrigger size="sm" className="w-[100px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {[10, 20, 50, 100].map((size) => (
+                  <SelectItem key={size} value={String(size)}>
+                    {size} / page
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => onStateChange({ page: 1 })}
+                disabled={!table.getCanPreviousPage()}
+              >
+                <ChevronsLeft className="size-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => onStateChange({ page })}
+                disabled={!table.getCanPreviousPage()}
+              >
+                <ChevronLeft className="size-4" />
+              </Button>
+              <span className="px-2 text-sm">
+                {page + 1} / {table.getPageCount()}
+              </span>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => onStateChange({ page: page + 2 })}
+                disabled={!table.getCanNextPage()}
+              >
+                <ChevronRight className="size-4" />
+              </Button>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => onStateChange({ page: table.getPageCount() })}
+                disabled={!table.getCanNextPage()}
+              >
+                <ChevronsRight className="size-4" />
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
