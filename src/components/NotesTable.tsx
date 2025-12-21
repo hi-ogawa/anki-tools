@@ -2,7 +2,6 @@ import {
   useReactTable,
   getCoreRowModel,
   getPaginationRowModel,
-  getFilteredRowModel,
   flexRender,
   type ColumnDef,
   type OnChangeFn,
@@ -38,6 +37,11 @@ import {
 import { Input } from "@/components/ui/input";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Columns3 } from "lucide-react";
 import type { Note } from "@/providers/anki-connect";
+
+// TODO: Add "Smart Search" mode with toggle button
+// - Client-side filtering with modern UX
+// - Pattern matching: field:value, deck:name, tag:name, *wildcards*
+// - For now, only "Anki Query" mode is supported (passes search directly to AnkiConnect)
 
 interface NotesTableProps {
   notes: Note[];
@@ -229,17 +233,12 @@ export function NotesTable({
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
     state: {
       pagination,
-      globalFilter: search,
       columnVisibility,
     },
     onPaginationChange,
     onColumnVisibilityChange: setColumnVisibility,
-    onGlobalFilterChange: (value) => onStateChange({ search: value, page: 1 }),
-    manualPagination: false, // Client-side pagination
-    manualFiltering: false, // Client-side filtering
   });
 
   return (
@@ -247,12 +246,12 @@ export function NotesTable({
       {/* Toolbar */}
       <div className="flex items-center justify-between">
         <Input
-          placeholder="Search all fields..."
+          placeholder="Anki search: deck:name, tag:name, field:value, *wild*"
           value={localSearch}
           onChange={(e) => setLocalSearch(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && submitSearch()}
           onBlur={submitSearch}
-          className="max-w-sm"
+          className="max-w-md"
         />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -316,16 +315,16 @@ export function NotesTable({
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>
             Showing{" "}
-            {table.getRowModel().rows.length > 0
+            {notes.length > 0
               ? table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1
               : 0}
             -
             {Math.min(
               (table.getState().pagination.pageIndex + 1) *
                 table.getState().pagination.pageSize,
-              table.getFilteredRowModel().rows.length
+              notes.length
             )}
-            {" "}of {table.getFilteredRowModel().rows.length}
+            {" "}of {notes.length}
           </span>
         </div>
 

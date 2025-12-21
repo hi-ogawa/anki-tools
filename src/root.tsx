@@ -135,8 +135,8 @@ interface NotesViewProps {
 
 function NotesView({ model, fields, page, pageSize, search, onStateChange }: NotesViewProps) {
   const { data: notes = [], isLoading, error } = useQuery({
-    queryKey: ["notes", model],
-    queryFn: () => fetchNotes(model),
+    queryKey: ["notes", model, search],
+    queryFn: () => fetchNotes(model, search || undefined),
   });
 
   if (isLoading) return <p className="text-muted-foreground">Loading notes...</p>;

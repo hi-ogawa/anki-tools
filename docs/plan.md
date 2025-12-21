@@ -35,15 +35,18 @@ Use TanStack Table + shadcn/ui with custom AnkiConnect data provider.
 
 ## Phase 3.5: Feedback Items
 
-- [ ] Fix page index to start from 1 (currently 0-based)
+- [x] Fix page index to start from 1 (URL uses 1-based)
 - [ ] Refactor localStorage to [TanStack DB](https://tanstack.com/db/latest/docs/collections/local-storage-collection)
-- [ ] Add extra fields from AnkiConnect:
-  - [ ] Deck name (via `cardsInfo` → `deckName`)
-  - [ ] Flags (via `cardsInfo` → `flags`)
-  - [ ] Suspension status (via `cardsInfo` → `queue === -1`)
-- [ ] Search enhancements:
-  - [ ] Search by specific field
-  - [ ] Prefix/suffix pattern matching
+- [x] Add extra fields from AnkiConnect:
+  - [x] Deck name (via `cardsInfo` → `deckName`)
+  - [x] Flags (via `cardsInfo` → `flags`)
+  - [x] Suspension status (via `cardsInfo` → `queue === -1`)
+- [x] Search enhancements (Anki Query mode):
+  - [x] Server-side search via AnkiConnect `findNotes`
+  - [x] Supports full Anki search syntax: `deck:`, `tag:`, `field:`, wildcards
+  - [ ] **TODO**: Add "Smart Search" mode with toggle button
+    - Client-side filtering with modern UX
+    - Pattern matching without Anki syntax knowledge
 
 ## Phase 4: Edit Support
 
@@ -101,5 +104,5 @@ src/
 
 1. ~~**Field mapping**~~: Dynamic schema via TanStack Query
 2. ~~**Pagination**~~: Client-side, AnkiConnect returns all IDs
-3. **Search**: Currently global filter; add field-specific search
+3. ~~**Search**~~: Server-side via AnkiConnect (Anki Query mode); Smart Search mode TODO
 4. ~~**Cache invalidation**~~: Add manual refresh button

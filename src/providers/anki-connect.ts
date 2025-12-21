@@ -70,8 +70,13 @@ function normalizeNote(note: AnkiNoteInfo, cardInfo?: CardInfoByNote): Note {
 }
 
 // Fetch notes for a model with card info
-export async function fetchNotes(modelName: string): Promise<Note[]> {
-  const noteIds = await invoke<number[]>("findNotes", { query: `note:"${modelName}"` });
+// search: optional Anki search syntax (e.g., "field:value", "deck:name", "tag:name")
+export async function fetchNotes(modelName: string, search?: string): Promise<Note[]> {
+  // Build query: always filter by model, optionally add user search
+  const query = search
+    ? `note:"${modelName}" ${search}`
+    : `note:"${modelName}"`;
+  const noteIds = await invoke<number[]>("findNotes", { query });
   if (noteIds.length === 0) return [];
 
   // Fetch notes and cards in parallel
