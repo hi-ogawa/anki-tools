@@ -5,8 +5,12 @@
 ### Table Features
 - [x] **Pagination** - Page controls for navigating large datasets (10/25/50/100 per page)
 - [ ] **Column resizing** - Drag column borders to adjust widths
-- [ ] **Search** - Text input to filter notes across visible fields
+- [x] **Search** - Text input to filter notes across visible fields
 - [x] **Column visibility** - Dropdown/menu to toggle which columns are shown
+
+### Bugs
+- [ ] **Search IME bug** - Korean/CJK input breaks due to controlled input firing onChange during composition
+- [x] **Column visibility bug** - Toggle doesn't work; state always reset to default on render
 
 ### Visual/UX
 - [ ] **Sticky header** - Header stays fixed when scrolling table body
@@ -22,7 +26,24 @@
 
 ## Execution Plan
 
-### 1. Pagination
+### 0. Bug Fixes (Priority)
+
+#### 0a. Search IME Fix
+**Fix Korean/CJK input composition**
+
+- Track composition state with `useRef` (`isComposing`)
+- Add `onCompositionStart`/`onCompositionEnd` handlers to Input
+- Only trigger filter update when not composing
+- Alternative: debounce the search update
+
+#### 0b. Column Visibility Fix ✅
+**Make toggle actually persist**
+
+- Add `columnVisibility` to React state (initialized from `defaultColumnVisibility`)
+- Pass `onColumnVisibilityChange` handler to table
+- State updates will now persist across renders
+
+### 1. Pagination ✅
 **Page size + navigation controls** (fixes current lag from rendering all rows)
 
 - Add TanStack Table pagination state
@@ -30,7 +51,7 @@
 - Use shadcn `Select` for page size, `Button` for navigation
 - Persist pagination state (page index, page size) in URL search params
 
-### 2. Column Infrastructure
+### 2. Column Infrastructure ✅
 **Make all fields available + visibility toggle**
 
 - Change `NotesTable` to receive all fields, not slice to first 3
@@ -39,7 +60,7 @@
 - Default: show first 3 fields + tags, rest hidden
 - Persist column visibility per-model to localStorage
 
-### 3. Search
+### 3. Search ✅
 **Client-side text filtering**
 
 - Add search input above table

@@ -7,8 +7,9 @@ import {
   type ColumnDef,
   type OnChangeFn,
   type PaginationState,
+  type VisibilityState,
 } from "@tanstack/react-table";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -101,14 +102,16 @@ export function NotesTable({
   }, [fields]);
 
   // Default: show first 3 fields + tags
-  const defaultColumnVisibility = useMemo(() => {
-    const visibility: Record<string, boolean> = {};
+  const getDefaultVisibility = (): VisibilityState => {
+    const visibility: VisibilityState = {};
     fields.forEach((field, index) => {
       visibility[field] = index < 3;
     });
     visibility["tags"] = true;
     return visibility;
-  }, [fields]);
+  };
+
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(getDefaultVisibility);
 
   const pagination: PaginationState = {
     pageIndex: page,
@@ -132,9 +135,10 @@ export function NotesTable({
     state: {
       pagination,
       globalFilter: search,
-      columnVisibility: defaultColumnVisibility,
+      columnVisibility,
     },
     onPaginationChange,
+    onColumnVisibilityChange: setColumnVisibility,
     onGlobalFilterChange: (value) => onStateChange({ search: value, page: 0 }),
     manualPagination: false, // Client-side pagination
     manualFiltering: false, // Client-side filtering
