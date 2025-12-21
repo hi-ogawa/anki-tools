@@ -18,13 +18,17 @@ async function bench() {
 
   // === NOTE MODE (current) ===
   console.log("=== NOTE MODE ===");
-  const { result: noteIds, elapsed: n1 } = await invoke("findNotes", { query: `note:"${model}"` });
+  const { result: noteIds, elapsed: n1 } = await invoke("findNotes", {
+    query: `note:"${model}"`,
+  });
   console.log(`findNotes: ${n1}ms (${noteIds.length} notes)`);
 
   const { elapsed: n2 } = await invoke("notesInfo", { notes: noteIds });
   console.log(`notesInfo: ${n2}ms`);
 
-  const { result: cardIdsForNotes, elapsed: n3 } = await invoke("findCards", { query: `note:"${model}"` });
+  const { result: cardIdsForNotes, elapsed: n3 } = await invoke("findCards", {
+    query: `note:"${model}"`,
+  });
   console.log(`findCards: ${n3}ms (${cardIdsForNotes.length} cards)`);
 
   const { elapsed: n4 } = await invoke("getDecks", { cards: cardIdsForNotes });
@@ -35,16 +39,22 @@ async function bench() {
 
   // === CARD MODE ===
   console.log("=== CARD MODE ===");
-  const { result: cardIds, elapsed: c1 } = await invoke("findCards", { query: `note:"${model}"` });
+  const { result: cardIds, elapsed: c1 } = await invoke("findCards", {
+    query: `note:"${model}"`,
+  });
   console.log(`findCards: ${c1}ms (${cardIds.length} cards)`);
 
   const { elapsed: c2 } = await invoke("getDecks", { cards: cardIds });
   console.log(`getDecks: ${c2}ms`);
 
   // Need note info for fields
-  const { result: cardsInfoSample } = await invoke("cardsInfo", { cards: cardIds.slice(0, 10) });
-  const sampleNoteIds = [...new Set(cardsInfoSample.map(c => c.note))];
-  console.log(`(cards reference ${sampleNoteIds.length} unique notes in sample of 10)`);
+  const { result: cardsInfoSample } = await invoke("cardsInfo", {
+    cards: cardIds.slice(0, 10),
+  });
+  const sampleNoteIds = [...new Set(cardsInfoSample.map((c) => c.note))];
+  console.log(
+    `(cards reference ${sampleNoteIds.length} unique notes in sample of 10)`,
+  );
 
   // For card mode, we'd need notesInfo for all referenced notes
   const { elapsed: c3 } = await invoke("notesInfo", { notes: noteIds });

@@ -3,6 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "scripts": {
+    "dev": "vite dev",
+    "build": "vite build",
+    "build-addon": "vite build && cd addon && zip -r ../anki-browse-web.ankiaddon . -x '__pycache__/*'",
+    "setup-dev": "node scripts/setup-dev.js",
+    "lint": "oxfmt",
+    "lint-check": "oxfmt --check",
+    "tsc": "tsc -b"
+  },
   "dependencies": {
     "@radix-ui/react-dropdown-menu": "^2.1.12",
     "@radix-ui/react-select": "^2.2.2",
@@ -24,17 +33,10 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^5.1.2",
+    "oxfmt": "^0.19.0",
     "tailwindcss": "^4.1.4",
     "typescript": "^5.8.3",
     "vite": "^7.3.0"
-  },
-  "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
-    "build-addon": "vite build && cd addon && zip -r ../anki-browse-web.ankiaddon . -x '__pycache__/*'",
-    "setup-dev": "node scripts/setup-dev.js",
-    "lint": "false",
-    "tsc": "tsc -b"
   },
   "packageManager": "pnpm@10.26.1+sha512.664074abc367d2c9324fdc18037097ce0a8f126034160f709928e9e9f95d98714347044e5c3164d65bd5da6c59c6be362b107546292a8eecb7999196e5ce58fa"
 }

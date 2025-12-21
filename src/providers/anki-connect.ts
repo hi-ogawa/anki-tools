@@ -2,7 +2,10 @@
 const API_URL = "/api";
 
 // AnkiConnect JSON-RPC helper
-export async function invoke<T>(action: string, params?: Record<string, unknown>): Promise<T> {
+export async function invoke<T>(
+  action: string,
+  params?: Record<string, unknown>,
+): Promise<T> {
   const response = await fetch(API_URL, {
     method: "POST",
     body: JSON.stringify({ action, version: 6, params }),
@@ -13,7 +16,9 @@ export async function invoke<T>(action: string, params?: Record<string, unknown>
 }
 
 // Schema discovery
-export async function fetchAllModelsWithFields(): Promise<Record<string, string[]>> {
+export async function fetchAllModelsWithFields(): Promise<
+  Record<string, string[]>
+> {
   return invoke<Record<string, string[]>>("getModels");
 }
 
@@ -27,7 +32,10 @@ export interface Note {
 
 // Fetch notes for a model
 // search: optional Anki search syntax (e.g., "field:value", "deck:name", "tag:name")
-export async function fetchNotes(modelName: string, search?: string): Promise<Note[]> {
+export async function fetchNotes(
+  modelName: string,
+  search?: string,
+): Promise<Note[]> {
   const query = search
     ? `note:"${modelName}" ${search}`
     : `note:"${modelName}"`;

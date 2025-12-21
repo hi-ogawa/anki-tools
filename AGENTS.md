@@ -4,12 +4,12 @@ Instructions for AI coding agents working on this project.
 
 ## Documentation Structure
 
-| File | Purpose |
-|------|---------|
-| `docs/inbox.md` | Quick notes, feedback, todos during development |
-| `docs/plan.md` | Main roadmap and task tracking (source of truth) |
-| `docs/plan-addon.md` | Future: Anki add-on implementation plan |
-| `docs/research.md` | Technical reference, API analysis, design decisions |
+| File                 | Purpose                                             |
+| -------------------- | --------------------------------------------------- |
+| `docs/inbox.md`      | Quick notes, feedback, todos during development     |
+| `docs/plan.md`       | Main roadmap and task tracking (source of truth)    |
+| `docs/plan-addon.md` | Future: Anki add-on implementation plan             |
+| `docs/research.md`   | Technical reference, API analysis, design decisions |
 
 ## Workflow
 
@@ -21,6 +21,7 @@ Instructions for AI coding agents working on this project.
 ## docs/inbox.md
 
 User jots down quick notes while agent works independently:
+
 - Feedback on current implementation
 - New feature ideas
 - Bugs noticed
@@ -31,6 +32,7 @@ Agent should periodically process these into plan.md.
 ## docs/plan.md
 
 Source of truth for project roadmap:
+
 - Phased implementation plan
 - Task status tracking
 - Links to related docs
@@ -38,6 +40,7 @@ Source of truth for project roadmap:
 ## docs/research.md
 
 Technical reference for implementation decisions:
+
 - API performance analysis
 - AnkiConnect limitations
 - Architecture decisions with rationale

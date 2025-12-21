@@ -11,6 +11,7 @@
 Use TanStack Table + shadcn/ui with custom AnkiConnect data provider.
 
 **Stack**:
+
 - React 19 + TypeScript + Vite
 - TanStack Query (data fetching/caching)
 - TanStack Table (table features)

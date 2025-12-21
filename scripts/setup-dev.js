@@ -2,10 +2,10 @@
 // Setup development symlink for Anki addon
 
 import { existsSync, lstatSync, rmSync, symlinkSync } from "fs";
-import { join } from "path";
 import { homedir, platform } from "os";
-import { fileURLToPath } from "url";
+import { join } from "path";
 import { dirname } from "path";
+import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ADDON_NAME = "anki-browse-web-dev";
