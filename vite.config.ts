@@ -12,7 +12,7 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      "/api": "http://localhost:5679",
+      "/api": `http://localhost:${process.env.ANKI_PORT ?? "5679"}`,
     },
   },
   build: {

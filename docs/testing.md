@@ -24,6 +24,7 @@ Standalone script to run BrowseServer with a fixture collection:
 
 ```python
 # tests/server.py
+import os
 import sys
 import signal
 from pathlib import Path
@@ -32,14 +33,15 @@ from anki.collection import Collection
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from addon.server import BrowseServer
 
+PORT = int(os.environ.get("ANKI_PORT", "5680"))
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "test.anki2"
 
 def main():
     col = Collection(str(FIXTURE_PATH))
     server = BrowseServer(get_col=lambda: col)
-    server.start(5679)
+    server.start(PORT)
 
-    print(f"Server running on http://localhost:5679")
+    print(f"Server running on http://localhost:{PORT}")
     print(f"Collection: {FIXTURE_PATH}")
 
     # Wait for SIGINT/SIGTERM
@@ -76,25 +78,31 @@ Use `webServer` to start both servers before tests:
 // playwright.config.ts
 import { defineConfig } from '@playwright/test';
 
+const E2E_PORT = 5680;  // Dedicated port (dev uses 5679)
+
 export default defineConfig({
   testDir: './tests/e2e',
   webServer: [
     {
-      command: 'python tests/server.py',
-      url: 'http://localhost:5679/api',
+      command: `ANKI_PORT=${E2E_PORT} python tests/server.py`,
+      url: `http://localhost:${E2E_PORT}/api`,
       reuseExistingServer: !process.env.CI,
     },
     {
-      command: 'pnpm dev',
-      url: 'http://localhost:5173',
+      command: `ANKI_PORT=${E2E_PORT} pnpm dev --port 5174`,
+      url: 'http://localhost:5174',
       reuseExistingServer: !process.env.CI,
     },
   ],
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://localhost:5174',
   },
 });
 ```
+
+**Port allocation:**
+- Dev: Vite `:5173` → Python `:5679` (Anki addon)
+- E2E: Vite `:5174` → Python `:5680` (test server)
 
 ## File Structure
 
@@ -122,9 +130,9 @@ pnpm exec playwright install
 pnpm test:e2e
 
 # Or manually for debugging
-python tests/server.py &     # Terminal 1
-pnpm dev &                   # Terminal 2
-pnpm exec playwright test    # Terminal 3
+ANKI_PORT=5680 python tests/server.py &       # Terminal 1
+ANKI_PORT=5680 pnpm dev --port 5174 &         # Terminal 2
+pnpm exec playwright test                      # Terminal 3
 ```
 
 ## CI Pipeline
