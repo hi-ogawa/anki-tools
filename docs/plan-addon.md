@@ -186,10 +186,10 @@ Recommend option 1 for simplicity.
 
 ## Future Enhancements
 
-- [ ] Add configuration UI (port selection)
-- [ ] Support more AnkiConnect actions as needed
+- [ ] Add configuration UI (port selection, like AnkiConnect's config)
+- [ ] Efficient fetching (cardsInfoLight, see docs/research.md)
 - [ ] Auto-open browser on Anki start (optional setting)
-- [ ] Hot-reload for development
+- [ ] Rework README.md
 
 ## Open Questions
 
