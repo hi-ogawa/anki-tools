@@ -17,7 +17,7 @@ import {
   Flag,
   Pause,
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import type { Note, Card } from "@/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -44,6 +44,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useLocalStorage } from "@/lib/use-local-storage";
 
 type ViewMode = "notes" | "cards";
 type BrowseItem = Note | Card;
@@ -69,10 +70,6 @@ interface BrowseTableProps {
   selectedId: number | null;
   onSelect: (item: BrowseItem) => void;
   toolbarLeft?: React.ReactNode;
-}
-
-function getStorageKey(model: string) {
-  return `anki-browse-columns:${model}`;
 }
 
 export function BrowseTable({
@@ -206,42 +203,15 @@ export function BrowseTable({
   }, [fields, viewMode]);
 
   // Column visibility
-  const getDefaultVisibility = (): VisibilityState => {
-    const visibility: VisibilityState = {};
-    fields.forEach((field, index) => {
-      visibility[field] = index < 3;
-    });
-    visibility["deck"] = true;
-    return visibility;
-  };
-
-  const getInitialVisibility = (): VisibilityState => {
-    const defaults = getDefaultVisibility();
-    try {
-      const stored = localStorage.getItem(getStorageKey(model));
-      if (stored) {
-        return { ...defaults, ...JSON.parse(stored) };
-      }
-    } catch {}
-    return defaults;
-  };
-
-  const [columnVisibility, setColumnVisibility] =
-    useState<VisibilityState>(getInitialVisibility);
-
-  // Reset visibility when model or viewMode changes
-  useEffect(() => {
-    setColumnVisibility(getInitialVisibility());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [model, viewMode]);
-
-  // Persist visibility
-  useEffect(() => {
-    localStorage.setItem(
-      getStorageKey(model),
-      JSON.stringify(columnVisibility),
-    );
-  }, [model, columnVisibility]);
+  const [columnVisibility, setColumnVisibility] = useLocalStorage(
+    `anki-browse-columns:${model}`,
+    (): VisibilityState => {
+      const v: VisibilityState = {};
+      fields.forEach((field, i) => (v[field] = i < 3));
+      v["deck"] = true;
+      return v;
+    },
+  );
 
   // Table setup
   const pagination: PaginationState = { pageIndex: page, pageSize };
