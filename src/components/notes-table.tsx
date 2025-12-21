@@ -16,6 +16,7 @@ import {
   Columns3,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import type { Note } from "@/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,7 +42,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import type { Note } from "@/providers/anki-connect";
 
 // TODO: Add "Smart Search" mode with toggle button
 // - Client-side filtering with modern UX

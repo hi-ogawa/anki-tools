@@ -6,9 +6,9 @@ import {
 } from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router";
-import { NotesTable } from "./components/NotesTable";
+import { fetchAllModelsWithFields, fetchNotes } from "./api";
+import { NotesTable } from "./components/notes-table";
 import { Input } from "./components/ui/input";
-import { fetchAllModelsWithFields, fetchNotes } from "./providers/anki-connect";
 
 const queryClient = new QueryClient();
 
