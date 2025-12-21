@@ -64,44 +64,27 @@ class RequestHandler(SimpleHTTPRequestHandler):
 def handle_action(action: str, params: dict):
     col = mw.col
 
-    if action == "modelNames":
-        return col.models.all_names()
+    if action == "getModels":
+        models = {}
+        for model in col.models.all():
+            models[model["name"]] = [f["name"] for f in model["flds"]]
+        return models
 
-    elif action == "modelFieldNames":
-        model = col.models.by_name(params["modelName"])
-        return [f["name"] for f in model["flds"]]
-
-    elif action == "findNotes":
-        return list(col.find_notes(params["query"]))
-
-    elif action == "findCards":
-        return list(col.find_cards(params["query"]))
-
-    elif action == "getDecks":
-        card_ids = params["cards"]
-        result = {}
-        for cid in card_ids:
-            card = col.get_card(cid)
-            deck = col.decks.get(card.did)
-            deck_name = deck["name"]
-            if deck_name not in result:
-                result[deck_name] = []
-            result[deck_name].append(cid)
-        return result
-
-    elif action == "notesInfo":
+    elif action == "browseNotes":
+        query = params["query"]
+        note_ids = col.find_notes(query)
         notes = []
-        for nid in params["notes"]:
+        for nid in note_ids:
             note = col.get_note(nid)
             model = note.note_type()
+            cards = note.cards()
+            deck_name = col.decks.name(cards[0].did) if cards else ""
             notes.append({
-                "noteId": nid,
+                "id": nid,
                 "modelName": model["name"],
-                "fields": {
-                    f["name"]: {"value": note.fields[i], "order": i}
-                    for i, f in enumerate(model["flds"])
-                },
+                "fields": {f["name"]: note.fields[i] for i, f in enumerate(model["flds"])},
                 "tags": list(note.tags),
+                "deckName": deck_name,
             })
         return notes
 

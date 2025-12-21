@@ -75,14 +75,12 @@ Create `addon/` directory in repo root with:
 - Handle `POST /api` for Anki API calls
 - Run in daemon thread to not block Anki
 
-API actions to implement (mirror AnkiConnect interface):
+API actions (tailored for our needs, not mirroring AnkiConnect):
 
 | Action | Params | Returns |
 |--------|--------|---------|
-| `modelNames` | - | `string[]` |
-| `modelFieldNames` | `modelName` | `string[]` |
-| `findNotes` | `query` | `number[]` |
-| `notesInfo` | `notes` | `NoteInfo[]` |
+| `getModels` | - | `{ modelName: string[] }` (model → fields) |
+| `browseNotes` | `query` | `Note[]` (id, modelName, fields, tags, deckName) |
 
 ### 3. Update frontend API endpoint
 

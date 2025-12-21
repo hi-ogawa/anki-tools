@@ -14,6 +14,8 @@ Quick notes, feedback, and todos. Process into plan.md periodically.
 
 _(empty - all processed into plan.md)_
 
+- [ ] allow installing two versions. dev mode and packaged mode.
+
 ## Ideas
 
 _(jot down ideas here)_
