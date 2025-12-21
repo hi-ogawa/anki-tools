@@ -8,7 +8,7 @@ import { fileURLToPath } from "url";
 import { dirname } from "path";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const ADDON_NAME = "anki-browse-web";
+const ADDON_NAME = "anki-browse-web-dev";
 const REPO_ROOT = dirname(__dirname);
 const ADDON_SRC = join(REPO_ROOT, "addon");
 
