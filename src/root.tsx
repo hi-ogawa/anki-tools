@@ -5,7 +5,7 @@ import {
   keepPreviousData,
 } from "@tanstack/react-query";
 import { Flag } from "lucide-react";
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router";
 import {
   fetchAllModelsWithFields,
@@ -25,6 +25,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./components/ui/select";
+import { useLocalStorage } from "./lib/use-local-storage";
 
 const FLAG_OPTIONS = [
   { value: "none", label: "All", color: undefined },
@@ -77,7 +78,28 @@ function App() {
   const validModel = urlModel && models?.[urlModel];
   const fields = validModel ? models[urlModel] : [];
 
+  // Persist last selected model
+  const [lastModel, setLastModel] = useLocalStorage<string | null>(
+    "anki-browse-last-model",
+    null,
+  );
+  const hasAutoSelected = useRef(false);
+
+  // Auto-select last model when models load and no URL model
+  useEffect(() => {
+    if (hasAutoSelected.current) return;
+    if (!models || urlModel) return;
+    if (lastModel && models[lastModel]) {
+      hasAutoSelected.current = true;
+      setSearchParams((prev) => {
+        prev.set("model", lastModel);
+        return prev;
+      });
+    }
+  }, [models, urlModel, lastModel, setSearchParams]);
+
   const setUrlModel = (model: string) => {
+    setLastModel(model);
     setSearchParams((prev) => {
       prev.set("model", model);
       // Reset pagination/search when model changes
@@ -221,6 +243,32 @@ function NotesView({
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
 
+  // Resizable panel
+  const [panelWidth, setPanelWidth] = useLocalStorage(
+    "anki-browse-panel-width",
+    320,
+  );
+  const isResizing = useRef(false);
+
+  useEffect(() => {
+    const onMouseMove = (e: MouseEvent) => {
+      if (!isResizing.current) return;
+      const newWidth = window.innerWidth - e.clientX - 16; // 16 = padding
+      setPanelWidth(Math.max(200, Math.min(600, newWidth)));
+    };
+    const onMouseUp = () => {
+      isResizing.current = false;
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+    return () => {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+    };
+  }, [setPanelWidth]);
+
   // Build full query with flag filter
   const fullSearch = useMemo(() => {
     const parts: string[] = [];
@@ -355,25 +403,35 @@ function NotesView({
         />
       </div>
       {selected && (
-        <div className="w-80 shrink-0">
-          <NoteDetail
-            item={selected}
-            fields={fields}
-            onClose={clearSelected}
-            onFlagChange={async (cardId, flag) => {
-              try {
-                await setCardFlag(cardId, flag);
-                // Update local state to reflect the change
-                setSelectedCard((prev) =>
-                  prev?.id === cardId ? { ...prev, flag } : prev,
-                );
-              } catch (e) {
-                alert(
-                  `Failed to set flag: ${e instanceof Error ? e.message : e}`,
-                );
-              }
+        <div className="relative flex shrink-0" style={{ width: panelWidth }}>
+          <div
+            className="absolute left-0 top-0 h-full w-1 cursor-col-resize hover:bg-primary/20"
+            onMouseDown={() => {
+              isResizing.current = true;
+              document.body.style.cursor = "col-resize";
+              document.body.style.userSelect = "none";
             }}
           />
+          <div className="flex-1 pl-2">
+            <NoteDetail
+              item={selected}
+              fields={fields}
+              onClose={clearSelected}
+              onFlagChange={async (cardId, flag) => {
+                try {
+                  await setCardFlag(cardId, flag);
+                  // Update local state to reflect the change
+                  setSelectedCard((prev) =>
+                    prev?.id === cardId ? { ...prev, flag } : prev,
+                  );
+                } catch (e) {
+                  alert(
+                    `Failed to set flag: ${e instanceof Error ? e.message : e}`,
+                  );
+                }
+              }}
+            />
+          </div>
         </div>
       )}
     </div>
