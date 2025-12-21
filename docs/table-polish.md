@@ -22,7 +22,7 @@
 
 ### State Persistence
 - [ ] **URL State** - Search and pagination state persisted in URL for shareable links and browser reload robustness.
-- [ ] **Local Storage State** - Column visibility and column widths persisted in local storage on a per-model basis.
+- [x] **Local Storage State** - Column visibility and column widths persisted in local storage on a per-model basis.
 
 ## Execution Plan
 

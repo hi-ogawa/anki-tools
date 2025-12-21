@@ -142,6 +142,7 @@ function NotesView({ model, fields, page, pageSize, search, onStateChange }: Not
   return (
     <NotesTable
       notes={notes}
+      model={model}
       fields={fields}
       page={page}
       pageSize={pageSize}

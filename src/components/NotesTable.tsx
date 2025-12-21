@@ -9,7 +9,7 @@ import {
   type PaginationState,
   type VisibilityState,
 } from "@tanstack/react-table";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Table,
   TableBody,
@@ -41,6 +41,7 @@ import type { Note } from "@/providers/anki-connect";
 
 interface NotesTableProps {
   notes: Note[];
+  model: string;
   fields: string[];
   page: number;
   pageSize: number;
@@ -48,8 +49,13 @@ interface NotesTableProps {
   onStateChange: (newState: Record<string, string | number>) => void;
 }
 
+function getStorageKey(model: string) {
+  return `anki-browse-columns:${model}`;
+}
+
 export function NotesTable({
   notes,
+  model,
   fields,
   page,
   pageSize,
@@ -111,7 +117,25 @@ export function NotesTable({
     return visibility;
   };
 
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(getDefaultVisibility);
+  const getInitialVisibility = (): VisibilityState => {
+    try {
+      const stored = localStorage.getItem(getStorageKey(model));
+      if (stored) return JSON.parse(stored);
+    } catch {}
+    return getDefaultVisibility();
+  };
+
+  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(getInitialVisibility);
+
+  // Reset visibility when model changes
+  useEffect(() => {
+    setColumnVisibility(getInitialVisibility());
+  }, [model]);
+
+  // Persist visibility to localStorage
+  useEffect(() => {
+    localStorage.setItem(getStorageKey(model), JSON.stringify(columnVisibility));
+  }, [model, columnVisibility]);
 
   const pagination: PaginationState = {
     pageIndex: page,
@@ -169,6 +193,7 @@ export function NotesTable({
                 key={column.id}
                 checked={column.getIsVisible()}
                 onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                onSelect={(e) => e.preventDefault()}
               >
                 {column.id}
               </DropdownMenuCheckboxItem>
