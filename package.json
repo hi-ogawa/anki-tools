@@ -65,7 +65,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "build-addon": "vite build && cd addon && zip -r ../anki-browse-web.ankiaddon .",
+    "build-addon": "vite build && cd addon && zip -r ../anki-browse-web.ankiaddon . -x '__pycache__/*'",
     "setup-dev": "node scripts/setup-dev.js",
     "lint": "false",
     "tsc": "tsc -b"
