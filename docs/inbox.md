@@ -8,13 +8,10 @@ Quick notes, feedback, and todos. Process into plan.md periodically.
 - [ ] update components.json
 - [ ] file name conventions
 - [ ] setup formatter
-- [ ] deploy
 
 ## Feedback
 
 _(empty - all processed into plan.md)_
-
-- [x] allow installing two versions. dev mode and packaged mode.
 
 ## Ideas
 
