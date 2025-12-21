@@ -16,6 +16,10 @@
 - [x] **Configurable columns** - All model fields available (not just first 3)
 - [ ] **HTML rendering** - Render field HTML content (sanitized with DOMPurify)
 
+### State Persistence
+- [ ] **URL State** - Search and pagination state persisted in URL for shareable links and browser reload robustness.
+- [ ] **Local Storage State** - Column visibility and column widths persisted in local storage on a per-model basis.
+
 ## Execution Plan
 
 ### 1. Pagination
@@ -24,6 +28,7 @@
 - Add TanStack Table pagination state
 - Create pagination UI: page size selector + prev/next/page numbers
 - Use shadcn `Select` for page size, `Button` for navigation
+- Persist pagination state (page index, page size) in URL search params
 
 ### 2. Column Infrastructure
 **Make all fields available + visibility toggle**
@@ -32,6 +37,7 @@
 - Add TanStack Table column visibility state
 - Create dropdown menu (shadcn `DropdownMenu`) in table header to toggle columns
 - Default: show first 3 fields + tags, rest hidden
+- Persist column visibility per-model to localStorage
 
 ### 3. Search
 **Client-side text filtering**
@@ -39,6 +45,7 @@
 - Add search input above table
 - Use TanStack Table global filter
 - Filter across all visible field values (strip HTML before matching)
+- Persist search query in URL search params
 
 ### 4. Column Resizing
 **Draggable column borders**

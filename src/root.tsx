@@ -1,5 +1,6 @@
-import { useSyncExternalStore } from "react";
+import { useMemo } from "react";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { Routes, Route, useSearchParams } from "react-router-dom";
 import { fetchAllModelsWithFields, fetchNotes } from "./providers/anki-connect";
 import { NotesTable } from "./components/NotesTable";
 
@@ -8,13 +9,19 @@ const queryClient = new QueryClient();
 export function Root() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AppContent />
+      <Routes>
+        <Route path="/" element={<AppContent />} />
+      </Routes>
     </QueryClientProvider>
   );
 }
 
 function AppContent() {
-  const [urlModel, setUrlModel] = useUrlParam("model");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlModel = searchParams.get("model");
+  const page = parseInt(searchParams.get("page") ?? "0", 10);
+  const pageSize = parseInt(searchParams.get("pageSize") ?? "25", 10);
+  const search = searchParams.get("search") ?? "";
 
   // Fetch schema
   const {
@@ -29,9 +36,29 @@ function AppContent() {
     retry: false,
   });
 
-  const modelNames = Object.keys(models ?? {});
+  const modelNames = useMemo(() => Object.keys(models ?? {}), [models]);
   const validModel = urlModel && models?.[urlModel];
   const fields = validModel ? models[urlModel] : [];
+
+  const setUrlModel = (model: string) => {
+    setSearchParams((prev) => {
+      prev.set("model", model);
+      // Reset pagination/search when model changes
+      prev.delete("page");
+      prev.delete("pageSize");
+      prev.delete("search");
+      return prev;
+    });
+  };
+
+  const setUrlState = (newState: Record<string, string | number>) => {
+    setSearchParams((prev) => {
+      for (const [key, value] of Object.entries(newState)) {
+        prev.set(key, String(value));
+      }
+      return prev;
+    });
+  };
 
   // Derive main content
   let mainContent: React.ReactNode;
@@ -57,7 +84,16 @@ function AppContent() {
   } else if (!validModel) {
     mainContent = <p className="text-destructive">Model "{urlModel}" not found</p>;
   } else {
-    mainContent = <NotesView model={urlModel} fields={fields} />;
+    mainContent = (
+      <NotesView
+        model={urlModel}
+        fields={fields}
+        page={page}
+        pageSize={pageSize}
+        search={search}
+        onStateChange={setUrlState}
+      />
+    );
   }
 
   return (
@@ -88,7 +124,16 @@ function AppContent() {
   );
 }
 
-function NotesView({ model, fields }: { model: string; fields: string[] }) {
+interface NotesViewProps {
+  model: string;
+  fields: string[];
+  page: number;
+  pageSize: number;
+  search: string;
+  onStateChange: (newState: Record<string, string | number>) => void;
+}
+
+function NotesView({ model, fields, page, pageSize, search, onStateChange }: NotesViewProps) {
   const { data: notes = [], isLoading, error } = useQuery({
     queryKey: ["notes", model],
     queryFn: () => fetchNotes(model),
@@ -96,26 +141,14 @@ function NotesView({ model, fields }: { model: string; fields: string[] }) {
 
   if (isLoading) return <p className="text-muted-foreground">Loading notes...</p>;
   if (error) return <p className="text-destructive">Error loading notes: {error.message}</p>;
-  return <NotesTable notes={notes} fields={fields} />;
-}
-
-// Subscribe to URL changes
-function useUrlParam(key: string): [string | null, (value: string) => void] {
-  const value = useSyncExternalStore(
-    (callback) => {
-      window.addEventListener("popstate", callback);
-      return () => window.removeEventListener("popstate", callback);
-    },
-    () => new URLSearchParams(window.location.search).get(key)
+  return (
+    <NotesTable
+      notes={notes}
+      fields={fields}
+      page={page}
+      pageSize={pageSize}
+      search={search}
+      onStateChange={onStateChange}
+    />
   );
-
-  const setValue = (newValue: string) => {
-    const url = new URL(window.location.href);
-    url.searchParams.set(key, newValue);
-    window.history.pushState({}, "", url);
-    // Trigger re-render by dispatching popstate
-    window.dispatchEvent(new PopStateEvent("popstate"));
-  };
-
-  return [value, setValue];
 }

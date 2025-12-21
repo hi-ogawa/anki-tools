@@ -2,8 +2,11 @@ import {
   useReactTable,
   getCoreRowModel,
   getPaginationRowModel,
+  getFilteredRowModel,
   flexRender,
   type ColumnDef,
+  type OnChangeFn,
+  type PaginationState,
 } from "@tanstack/react-table";
 import { useMemo } from "react";
 import {
@@ -31,15 +34,27 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Columns3 } from "lucide-react";
 import type { Note } from "@/providers/anki-connect";
 
 interface NotesTableProps {
   notes: Note[];
   fields: string[];
+  page: number;
+  pageSize: number;
+  search: string;
+  onStateChange: (newState: Record<string, string | number>) => void;
 }
 
-export function NotesTable({ notes, fields }: NotesTableProps) {
+export function NotesTable({
+  notes,
+  fields,
+  page,
+  pageSize,
+  search,
+  onStateChange,
+}: NotesTableProps) {
   const columns = useMemo<ColumnDef<Note>[]>(() => {
     const cols: ColumnDef<Note>[] = [];
 
@@ -95,23 +110,46 @@ export function NotesTable({ notes, fields }: NotesTableProps) {
     return visibility;
   }, [fields]);
 
+  const pagination: PaginationState = {
+    pageIndex: page,
+    pageSize,
+  };
+
+  const onPaginationChange: OnChangeFn<PaginationState> = (updater) => {
+    const newState = typeof updater === "function" ? updater(pagination) : updater;
+    onStateChange({
+      page: newState.pageIndex,
+      pageSize: newState.pageSize,
+    });
+  };
+
   const table = useReactTable({
     data: notes,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    initialState: {
-      pagination: {
-        pageSize: 25,
-      },
+    getFilteredRowModel: getFilteredRowModel(),
+    state: {
+      pagination,
+      globalFilter: search,
       columnVisibility: defaultColumnVisibility,
     },
+    onPaginationChange,
+    onGlobalFilterChange: (value) => onStateChange({ search: value, page: 0 }),
+    manualPagination: false, // Client-side pagination
+    manualFiltering: false, // Client-side filtering
   });
 
   return (
     <div className="space-y-4">
       {/* Toolbar */}
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between">
+        <Input
+          placeholder="Search all fields..."
+          value={search}
+          onChange={(e) => onStateChange({ search: e.target.value, page: 0 })}
+          className="max-w-sm"
+        />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm">
@@ -136,56 +174,62 @@ export function NotesTable({ notes, fields }: NotesTableProps) {
       </div>
 
       <Table>
-      <TableHeader>
-        {table.getHeaderGroups().map((headerGroup) => (
-          <TableRow key={headerGroup.id}>
-            {headerGroup.headers.map((header) => (
-              <TableHead key={header.id}>
-                {flexRender(header.column.columnDef.header, header.getContext())}
-              </TableHead>
-            ))}
-          </TableRow>
-        ))}
-      </TableHeader>
-      <TableBody>
-        {table.getRowModel().rows.length ? (
-          table.getRowModel().rows.map((row) => (
-            <TableRow key={row.id}>
-              {row.getVisibleCells().map((cell) => (
-                <TableCell key={cell.id}>
-                  {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                </TableCell>
+        <TableHeader>
+          {table.getHeaderGroups().map((headerGroup) => (
+            <TableRow key={headerGroup.id}>
+              {headerGroup.headers.map((header) => (
+                <TableHead key={header.id}>
+                  {flexRender(header.column.columnDef.header, header.getContext())}
+                </TableHead>
               ))}
             </TableRow>
-          ))
-        ) : (
-          <TableRow>
-            <TableCell colSpan={columns.length} className="h-24 text-center">
-              No notes found.
-            </TableCell>
-          </TableRow>
-        )}
-      </TableBody>
-    </Table>
+          ))}
+        </TableHeader>
+        <TableBody>
+          {table.getRowModel().rows.length ? (
+            table.getRowModel().rows.map((row) => (
+              <TableRow key={row.id}>
+                {row.getVisibleCells().map((cell) => (
+                  <TableCell key={cell.id}>
+                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                  </TableCell>
+                ))}
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={columns.length} className="h-24 text-center">
+                No notes found.
+              </TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
 
       {/* Pagination Controls */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>
-            {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
+            Showing{" "}
+            {table.getRowModel().rows.length > 0
+              ? table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1
+              : 0}
             -
             {Math.min(
-              (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
-              notes.length
+              (table.getState().pagination.pageIndex + 1) *
+                table.getState().pagination.pageSize,
+              table.getFilteredRowModel().rows.length
             )}
-            {" "}of {notes.length}
+            {" "}of {table.getFilteredRowModel().rows.length}
           </span>
         </div>
 
         <div className="flex items-center gap-2">
           <Select
-            value={String(table.getState().pagination.pageSize)}
-            onValueChange={(value) => table.setPageSize(Number(value))}
+            value={String(pageSize)}
+            onValueChange={(value) =>
+              onStateChange({ pageSize: Number(value), page: 0 })
+            }
           >
             <SelectTrigger size="sm" className="w-[100px]">
               <SelectValue />
@@ -203,7 +247,7 @@ export function NotesTable({ notes, fields }: NotesTableProps) {
             <Button
               variant="outline"
               size="icon"
-              onClick={() => table.setPageIndex(0)}
+              onClick={() => onStateChange({ page: 0 })}
               disabled={!table.getCanPreviousPage()}
             >
               <ChevronsLeft className="size-4" />
@@ -211,18 +255,18 @@ export function NotesTable({ notes, fields }: NotesTableProps) {
             <Button
               variant="outline"
               size="icon"
-              onClick={() => table.previousPage()}
+              onClick={() => onStateChange({ page: page - 1 })}
               disabled={!table.getCanPreviousPage()}
             >
               <ChevronLeft className="size-4" />
             </Button>
             <span className="px-2 text-sm">
-              {table.getState().pagination.pageIndex + 1} / {table.getPageCount()}
+              {page + 1} / {table.getPageCount()}
             </span>
             <Button
               variant="outline"
               size="icon"
-              onClick={() => table.nextPage()}
+              onClick={() => onStateChange({ page: page + 1 })}
               disabled={!table.getCanNextPage()}
             >
               <ChevronRight className="size-4" />
@@ -230,7 +274,7 @@ export function NotesTable({ notes, fields }: NotesTableProps) {
             <Button
               variant="outline"
               size="icon"
-              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+              onClick={() => onStateChange({ page: table.getPageCount() - 1 })}
               disabled={!table.getCanNextPage()}
             >
               <ChevronsRight className="size-4" />
