@@ -296,7 +296,7 @@ export function NotesTable({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {[10, 25, 50, 100].map((size) => (
+              {[10, 20, 50, 100].map((size) => (
                 <SelectItem key={size} value={String(size)}>
                   {size} / page
                 </SelectItem>
