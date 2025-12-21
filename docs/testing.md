@@ -33,7 +33,7 @@ from anki.collection import Collection
 sys.path.insert(0, str(Path(__file__).parent.parent))
 from addon.server import BrowseServer
 
-PORT = int(os.environ.get("ANKI_PORT", "5680"))
+PORT = int(os.environ.get("ANKI_PORT", "6679"))
 FIXTURE_PATH = Path(__file__).parent / "fixtures" / "test.anki2"
 
 def main():
@@ -78,7 +78,7 @@ Use `webServer` to start both servers before tests:
 // playwright.config.ts
 import { defineConfig } from '@playwright/test';
 
-const E2E_PORT = 5680;  // Dedicated port (dev uses 5679)
+const E2E_PORT = 6679;  // Dev + 1000
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -89,20 +89,20 @@ export default defineConfig({
       reuseExistingServer: !process.env.CI,
     },
     {
-      command: `ANKI_PORT=${E2E_PORT} pnpm dev --port 5174`,
-      url: 'http://localhost:5174',
+      command: `ANKI_PORT=${E2E_PORT} pnpm dev --port 6173`,
+      url: 'http://localhost:6173',
       reuseExistingServer: !process.env.CI,
     },
   ],
   use: {
-    baseURL: 'http://localhost:5174',
+    baseURL: 'http://localhost:6173',
   },
 });
 ```
 
-**Port allocation:**
-- Dev: Vite `:5173` → Python `:5679` (Anki addon)
-- E2E: Vite `:5174` → Python `:5680` (test server)
+**Port allocation (+1000 for e2e):**
+- Dev: Vite `:5173` → Python `:5679`
+- E2E: Vite `:6173` → Python `:6679`
 
 ## File Structure
 
@@ -130,8 +130,8 @@ pnpm exec playwright install
 pnpm test:e2e
 
 # Or manually for debugging
-ANKI_PORT=5680 python tests/server.py &       # Terminal 1
-ANKI_PORT=5680 pnpm dev --port 5174 &         # Terminal 2
+ANKI_PORT=6679 python tests/server.py &       # Terminal 1
+ANKI_PORT=6679 pnpm dev --port 6173 &         # Terminal 2
 pnpm exec playwright test                      # Terminal 3
 ```
 
