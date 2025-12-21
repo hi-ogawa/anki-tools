@@ -1,9 +1,10 @@
-import { useAnkiSchema } from "./hooks/useAnkiSchema";
+import { useQuery } from "@tanstack/react-query";
+import { ankiSchemaQuery } from "./hooks/useAnkiSchema";
 import { AnkiBrowser } from "./components/AnkiBrowser";
 import "./App.css";
 
 function App() {
-  const { models, loading, error, refresh } = useAnkiSchema();
+  const { data: models = {}, isLoading, error, refetch } = useQuery(ankiSchemaQuery);
   const modelNames = Object.keys(models);
 
   // Get model from URL, fallback to first
@@ -19,7 +20,7 @@ function App() {
     window.location.reload();
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center">
         <p className="text-muted-foreground">Connecting to Anki...</p>
@@ -31,9 +32,9 @@ function App() {
     return (
       <div className="flex h-screen flex-col items-center justify-center gap-4">
         <p className="text-destructive">Failed to connect to AnkiConnect</p>
-        <p className="text-sm text-muted-foreground">{error}</p>
+        <p className="text-sm text-muted-foreground">{error.message}</p>
         <button
-          onClick={refresh}
+          onClick={() => refetch()}
           className="rounded bg-primary px-4 py-2 text-primary-foreground"
         >
           Retry
