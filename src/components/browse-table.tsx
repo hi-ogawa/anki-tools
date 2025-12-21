@@ -149,12 +149,11 @@ export function BrowseTable({
       },
     });
 
-    // Card-specific columns
-    if (viewMode === "cards") {
-      cols.push({
-        id: "flag",
-        accessorFn: (row) => (row as Card).flag,
-        header: "Flag",
+    // Card-specific columns (always added, visibility controlled separately)
+    cols.push({
+      id: "flag",
+      accessorFn: (row) => (row as Card).flag,
+      header: "Flag",
         cell: ({ getValue }) => {
           const flag = getValue() as number;
           if (!flag) return <span className="text-muted-foreground">-</span>;
@@ -204,10 +203,9 @@ export function BrowseTable({
           return `${ivl}d`;
         },
       });
-    }
 
     return cols;
-  }, [fields, viewMode]);
+  }, [fields]);
 
   // Column visibility
   const getDefaultVisibility = (): VisibilityState => {
@@ -217,11 +215,10 @@ export function BrowseTable({
     });
     visibility["deck"] = true;
     visibility["tags"] = true;
-    if (viewMode === "cards") {
-      visibility["flag"] = true;
-      visibility["status"] = true;
-      visibility["interval"] = true;
-    }
+    // Card columns: visible in cards mode, hidden in notes mode
+    visibility["flag"] = viewMode === "cards";
+    visibility["status"] = viewMode === "cards";
+    visibility["interval"] = viewMode === "cards";
     return visibility;
   };
 
@@ -319,27 +316,21 @@ export function BrowseTable({
                   {column.id}
                 </DropdownMenuCheckboxItem>
               ))}
-            {viewMode === "cards" && (
-              <>
-                <DropdownMenuSeparator />
-                <DropdownMenuLabel>Card</DropdownMenuLabel>
-                {table
-                  .getAllColumns()
-                  .filter((col) => cardColumnIds.includes(col.id))
-                  .map((column) => (
-                    <DropdownMenuCheckboxItem
-                      key={column.id}
-                      checked={column.getIsVisible()}
-                      onCheckedChange={(value) =>
-                        column.toggleVisibility(!!value)
-                      }
-                      onSelect={(e) => e.preventDefault()}
-                    >
-                      {column.id}
-                    </DropdownMenuCheckboxItem>
-                  ))}
-              </>
-            )}
+            <DropdownMenuSeparator />
+            <DropdownMenuLabel>Card</DropdownMenuLabel>
+            {table
+              .getAllColumns()
+              .filter((col) => cardColumnIds.includes(col.id))
+              .map((column) => (
+                <DropdownMenuCheckboxItem
+                  key={column.id}
+                  checked={column.getIsVisible()}
+                  onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                  onSelect={(e) => e.preventDefault()}
+                >
+                  {column.id}
+                </DropdownMenuCheckboxItem>
+              ))}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
