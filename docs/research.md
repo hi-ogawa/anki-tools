@@ -148,6 +148,28 @@ No endpoint provides lightweight card metadata (noteId + deckId + flags) without
 2. Use raw SQL queries if AnkiConnect adds query support
 3. Accept limitation: use `getDecks` for deck, skip per-note mapping
 
+**Future solution**: Custom Anki add-on (see `docs/plan-addon.md`)
+
+With direct Anki Python API access, we can implement efficient endpoints:
+
+```python
+# Lightweight card info - no HTML rendering
+elif action == "cardsInfoLight":
+    cards = []
+    for cid in params["cards"]:
+        card = col.get_card(cid)
+        cards.append({
+            "cardId": cid,
+            "noteId": card.nid,
+            "deckName": col.decks.name(card.did),
+            "flags": card.flags,
+            "queue": card.queue,  # -1 = suspended
+        })
+    return cards
+```
+
+This bypasses AnkiConnect entirely and enables card mode with full metadata.
+
 ### Note Mode vs Card Mode
 
 Anki's browser has two modes. Data belongs to different levels:
