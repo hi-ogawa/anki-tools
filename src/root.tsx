@@ -40,6 +40,8 @@ export function Root() {
   );
 }
 
+type ViewMode = "notes" | "cards";
+
 function App() {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlModel = searchParams.get("model");
@@ -49,6 +51,7 @@ function App() {
   const pageSize = parseInt(searchParams.get("pageSize") ?? "20", 10);
   const search = searchParams.get("search") ?? "";
   const flag = searchParams.get("flag") ?? "";
+  const viewMode = (searchParams.get("view") ?? "notes") as ViewMode;
 
   // Fetch schema
   const {
@@ -127,6 +130,7 @@ function App() {
         pageSize={pageSize}
         search={search}
         flag={flag}
+        viewMode={viewMode}
         onStateChange={setUrlState}
       />
     );
@@ -140,18 +144,34 @@ function App() {
             <Link to="/">Anki Browser</Link>
           </h1>
           {modelNames.length > 0 && (
-            <select
-              value={validModel ? urlModel : ""}
-              onChange={(e) => setUrlModel(e.target.value)}
-              className="rounded border bg-background px-2 py-1 text-sm"
-            >
-              {!validModel && <option value="">Select model...</option>}
-              {modelNames.map((name) => (
-                <option key={name} value={name}>
-                  {name}
-                </option>
-              ))}
-            </select>
+            <>
+              <select
+                value={validModel ? urlModel : ""}
+                onChange={(e) => setUrlModel(e.target.value)}
+                className="rounded border bg-background px-2 py-1 text-sm"
+              >
+                {!validModel && <option value="">Select model...</option>}
+                {modelNames.map((name) => (
+                  <option key={name} value={name}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+              <div className="flex rounded border text-sm">
+                <button
+                  onClick={() => setSearchParams((p) => { p.set("view", "notes"); return p; })}
+                  className={`px-3 py-1 ${viewMode === "notes" ? "bg-primary text-primary-foreground" : "bg-background"}`}
+                >
+                  Notes
+                </button>
+                <button
+                  onClick={() => setSearchParams((p) => { p.set("view", "cards"); return p; })}
+                  className={`px-3 py-1 ${viewMode === "cards" ? "bg-primary text-primary-foreground" : "bg-background"}`}
+                >
+                  Cards
+                </button>
+              </div>
+            </>
           )}
         </div>
       </header>
@@ -167,6 +187,7 @@ interface NotesViewProps {
   pageSize: number;
   search: string;
   flag: string;
+  viewMode: ViewMode;
   onStateChange: (newState: Record<string, string | number>) => void;
 }
 
@@ -177,6 +198,7 @@ function NotesView({
   pageSize,
   search,
   flag,
+  viewMode,
   onStateChange,
 }: NotesViewProps) {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
@@ -267,7 +289,16 @@ function NotesView({
   );
 
   if (isLoading) {
-    return <p className="text-muted-foreground">Loading notes...</p>;
+    return <p className="text-muted-foreground">Loading {viewMode}...</p>;
+  }
+
+  if (viewMode === "cards") {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">{toolbarLeft}</div>
+        <p className="text-muted-foreground">Card mode coming soon...</p>
+      </div>
+    );
   }
 
   return (
