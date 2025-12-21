@@ -4,14 +4,16 @@ Quick notes, feedback, and todos. Process into plan.md periodically.
 
 ## Chores
 
-- [ ] remove unused dependencies and files
-- [ ] update components.json
+- [x] remove unused dependencies and files
+- [x] update components.json
 - [ ] file name conventions
 - [ ] setup formatter
 
 ## Feedback
 
 _(empty - all processed into plan.md)_
+
+- [ ] favicon
 
 ## Ideas
 
