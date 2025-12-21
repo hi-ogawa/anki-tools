@@ -61,6 +61,7 @@ function App() {
   const search = searchParams.get("search") ?? "";
   const flag = searchParams.get("flag") ?? "";
   const viewMode = (searchParams.get("view") ?? "notes") as ViewMode;
+  const scrollMode = searchParams.get("scroll") === "1";
 
   // Fetch schema
   const {
@@ -161,6 +162,7 @@ function App() {
         search={search}
         flag={flag}
         viewMode={viewMode}
+        scrollMode={scrollMode}
         onStateChange={setUrlState}
       />
     );
@@ -211,6 +213,30 @@ function App() {
                   Cards
                 </button>
               </div>
+              <div className="flex rounded border text-sm">
+                <button
+                  onClick={() =>
+                    setSearchParams((p) => {
+                      p.delete("scroll");
+                      return p;
+                    })
+                  }
+                  className={`px-3 py-1 ${!scrollMode ? "bg-primary text-primary-foreground" : "bg-background"}`}
+                >
+                  Pages
+                </button>
+                <button
+                  onClick={() =>
+                    setSearchParams((p) => {
+                      p.set("scroll", "1");
+                      return p;
+                    })
+                  }
+                  className={`px-3 py-1 ${scrollMode ? "bg-primary text-primary-foreground" : "bg-background"}`}
+                >
+                  Scroll
+                </button>
+              </div>
             </>
           )}
         </div>
@@ -228,6 +254,7 @@ interface NotesViewProps {
   search: string;
   flag: string;
   viewMode: ViewMode;
+  scrollMode: boolean;
   onStateChange: (newState: Record<string, string | number>) => void;
 }
 
@@ -239,6 +266,7 @@ function NotesView({
   search,
   flag,
   viewMode,
+  scrollMode,
   onStateChange,
 }: NotesViewProps) {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
@@ -393,6 +421,7 @@ function NotesView({
         <BrowseTable
           data={data}
           viewMode={viewMode}
+          scrollMode={scrollMode}
           model={model}
           fields={fields}
           page={page}
