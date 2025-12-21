@@ -99,7 +99,7 @@ export function BrowseTable({
     for (const field of fields) {
       cols.push({
         id: field,
-        accessorFn: (row) => row.fields[field] ?? "",
+        accessorFn: (row) => row.fields?.[field] ?? "",
         header: field,
         cell: ({ getValue }) => {
           const value = getValue() as string;
@@ -114,7 +114,7 @@ export function BrowseTable({
     // Deck column
     cols.push({
       id: "deck",
-      accessorKey: "deckName",
+      accessorFn: (row) => row.deckName ?? "",
       header: "Deck",
       cell: ({ getValue }) => {
         const deck = getValue() as string;
@@ -126,7 +126,7 @@ export function BrowseTable({
     // Tags column
     cols.push({
       id: "tags",
-      accessorKey: "tags",
+      accessorFn: (row) => row.tags ?? [],
       header: "Tags",
       cell: ({ getValue }) => {
         const tags = getValue() as string[];
