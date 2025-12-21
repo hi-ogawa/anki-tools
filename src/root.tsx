@@ -324,7 +324,6 @@ function NotesView({
     );
 
   const flagValue = flag || "none";
-  const selectedFlag = FLAG_OPTIONS.find((f) => f.value === flagValue);
 
   const toolbarLeft = (
     <>
@@ -343,23 +342,17 @@ function NotesView({
         }
       >
         <SelectTrigger className="w-[140px]">
-          <Flag
-            className="size-4"
-            style={{ color: selectedFlag?.color }}
-            fill={selectedFlag?.color ?? "none"}
-          />
           <SelectValue placeholder="Flag" />
         </SelectTrigger>
         <SelectContent>
           {FLAG_OPTIONS.map((opt) => (
             <SelectItem key={opt.value} value={opt.value}>
               <span className="flex items-center gap-2">
-                {opt.color && (
-                  <span
-                    className="size-3 rounded-full"
-                    style={{ backgroundColor: opt.color }}
-                  />
-                )}
+                <Flag
+                  className="size-4"
+                  style={{ color: opt.color }}
+                  fill={opt.color ?? "none"}
+                />
                 {opt.label}
               </span>
             </SelectItem>
