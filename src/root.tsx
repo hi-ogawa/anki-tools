@@ -7,7 +7,14 @@ import {
 import { Flag } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router";
-import { fetchAllModelsWithFields, fetchNotes, type Note } from "./api";
+import {
+  fetchAllModelsWithFields,
+  fetchNotes,
+  fetchCards,
+  type Note,
+  type Card,
+} from "./api";
+import { CardsTable } from "./components/cards-table";
 import { NoteDetail } from "./components/note-detail";
 import { NotesTable } from "./components/notes-table";
 import { Input } from "./components/ui/input";
@@ -202,6 +209,7 @@ function NotesView({
   onStateChange,
 }: NotesViewProps) {
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
 
   // Build full query with flag filter
   const fullSearch = useMemo(() => {
@@ -213,14 +221,31 @@ function NotesView({
 
   const {
     data: notes = [],
-    isLoading,
-    isFetching,
-    error,
+    isLoading: notesLoading,
+    isFetching: notesFetching,
+    error: notesError,
   } = useQuery({
     queryKey: ["notes", model, fullSearch],
     queryFn: () => fetchNotes(model, fullSearch),
     placeholderData: keepPreviousData,
+    enabled: viewMode === "notes",
   });
+
+  const {
+    data: cards = [],
+    isLoading: cardsLoading,
+    isFetching: cardsFetching,
+    error: cardsError,
+  } = useQuery({
+    queryKey: ["cards", model, fullSearch],
+    queryFn: () => fetchCards(model, fullSearch),
+    placeholderData: keepPreviousData,
+    enabled: viewMode === "cards",
+  });
+
+  const isLoading = viewMode === "notes" ? notesLoading : cardsLoading;
+  const isFetching = viewMode === "notes" ? notesFetching : cardsFetching;
+  const error = viewMode === "notes" ? notesError : cardsError;
 
   // Local search state - synced with URL
   const [localSearch, setLocalSearch] = useState(search);
@@ -294,10 +319,15 @@ function NotesView({
 
   if (viewMode === "cards") {
     return (
-      <div className="space-y-4">
-        <div className="flex items-center gap-2">{toolbarLeft}</div>
-        <p className="text-muted-foreground">Card mode coming soon...</p>
-      </div>
+      <CardsTable
+        cards={cards}
+        page={page}
+        pageSize={pageSize}
+        onStateChange={onStateChange}
+        selectedCardId={selectedCard?.id ?? null}
+        onCardSelect={setSelectedCard}
+        toolbarLeft={toolbarLeft}
+      />
     );
   }
 
