@@ -1,9 +1,14 @@
+import {
+  QueryClient,
+  QueryClientProvider,
+  useQuery,
+  keepPreviousData,
+} from "@tanstack/react-query";
 import { useMemo, useState, useEffect } from "react";
-import { QueryClient, QueryClientProvider, useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router";
-import { fetchAllModelsWithFields, fetchNotes } from "./providers/anki-connect";
 import { NotesTable } from "./components/NotesTable";
 import { Input } from "./components/ui/input";
+import { fetchAllModelsWithFields, fetchNotes } from "./providers/anki-connect";
 
 const queryClient = new QueryClient();
 
@@ -64,7 +69,9 @@ function App() {
   // Derive main content
   let mainContent: React.ReactNode;
   if (schemaLoading) {
-    mainContent = <p className="text-muted-foreground">Connecting to Anki...</p>;
+    mainContent = (
+      <p className="text-muted-foreground">Connecting to Anki...</p>
+    );
   } else if (schemaError) {
     mainContent = (
       <div className="flex flex-col items-center gap-4">
@@ -79,11 +86,17 @@ function App() {
       </div>
     );
   } else if (modelNames.length === 0) {
-    mainContent = <p className="text-muted-foreground">No note types found in Anki</p>;
+    mainContent = (
+      <p className="text-muted-foreground">No note types found in Anki</p>
+    );
   } else if (!urlModel) {
-    mainContent = <p className="text-muted-foreground">Select a note type to browse</p>;
+    mainContent = (
+      <p className="text-muted-foreground">Select a note type to browse</p>
+    );
   } else if (!validModel) {
-    mainContent = <p className="text-destructive">Model "{urlModel}" not found</p>;
+    mainContent = (
+      <p className="text-destructive">Model "{urlModel}" not found</p>
+    );
   } else {
     mainContent = (
       <NotesView
@@ -134,8 +147,20 @@ interface NotesViewProps {
   onStateChange: (newState: Record<string, string | number>) => void;
 }
 
-function NotesView({ model, fields, page, pageSize, search, onStateChange }: NotesViewProps) {
-  const { data: notes = [], isLoading, isFetching, error } = useQuery({
+function NotesView({
+  model,
+  fields,
+  page,
+  pageSize,
+  search,
+  onStateChange,
+}: NotesViewProps) {
+  const {
+    data: notes = [],
+    isLoading,
+    isFetching,
+    error,
+  } = useQuery({
     queryKey: ["notes", model, search],
     queryFn: () => fetchNotes(model, search || undefined),
     placeholderData: keepPreviousData,
@@ -153,7 +178,10 @@ function NotesView({ model, fields, page, pageSize, search, onStateChange }: Not
     }
   };
 
-  if (error) return <p className="text-destructive">Error loading notes: {error.message}</p>;
+  if (error)
+    return (
+      <p className="text-destructive">Error loading notes: {error.message}</p>
+    );
 
   return (
     <div className="space-y-4">
@@ -167,7 +195,9 @@ function NotesView({ model, fields, page, pageSize, search, onStateChange }: Not
           onBlur={submitSearch}
           className="max-w-md"
         />
-        {isFetching && <span className="text-sm text-muted-foreground">Loading...</span>}
+        {isFetching && (
+          <span className="text-sm text-muted-foreground">Loading...</span>
+        )}
       </div>
 
       {isLoading ? (

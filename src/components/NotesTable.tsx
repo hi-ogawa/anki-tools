@@ -8,24 +8,16 @@ import {
   type PaginationState,
   type VisibilityState,
 } from "@tanstack/react-table";
-import { useEffect, useMemo, useState } from "react";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Columns3,
+} from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -34,7 +26,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Columns3 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import type { Note } from "@/providers/anki-connect";
 
 // TODO: Add "Smart Search" mode with toggle button
@@ -101,7 +107,8 @@ export function NotesTable({
       header: "Tags",
       cell: ({ getValue }) => {
         const tags = getValue() as string[];
-        if (!tags?.length) return <span className="text-muted-foreground">-</span>;
+        if (!tags?.length)
+          return <span className="text-muted-foreground">-</span>;
         return (
           <div className="flex flex-wrap gap-1">
             {tags.slice(0, 3).map((tag) => (
@@ -110,7 +117,9 @@ export function NotesTable({
               </Badge>
             ))}
             {tags.length > 3 && (
-              <Badge variant="outline" className="text-xs">+{tags.length - 3}</Badge>
+              <Badge variant="outline" className="text-xs">
+                +{tags.length - 3}
+              </Badge>
             )}
           </div>
         );
@@ -139,7 +148,8 @@ export function NotesTable({
     return getDefaultVisibility();
   };
 
-  const [columnVisibility, setColumnVisibility] = useState<VisibilityState>(getInitialVisibility);
+  const [columnVisibility, setColumnVisibility] =
+    useState<VisibilityState>(getInitialVisibility);
 
   // Reset visibility when model changes
   useEffect(() => {
@@ -148,7 +158,10 @@ export function NotesTable({
 
   // Persist visibility to localStorage
   useEffect(() => {
-    localStorage.setItem(getStorageKey(model), JSON.stringify(columnVisibility));
+    localStorage.setItem(
+      getStorageKey(model),
+      JSON.stringify(columnVisibility),
+    );
   }, [model, columnVisibility]);
 
   const pagination: PaginationState = {
@@ -157,7 +170,8 @@ export function NotesTable({
   };
 
   const onPaginationChange: OnChangeFn<PaginationState> = (updater) => {
-    const newState = typeof updater === "function" ? updater(pagination) : updater;
+    const newState =
+      typeof updater === "function" ? updater(pagination) : updater;
     // Convert 0-based pageIndex to 1-based page for URL
     onStateChange({
       page: newState.pageIndex + 1,
@@ -212,7 +226,10 @@ export function NotesTable({
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
                 <TableHead key={header.id}>
-                  {flexRender(header.column.columnDef.header, header.getContext())}
+                  {flexRender(
+                    header.column.columnDef.header,
+                    header.getContext(),
+                  )}
                 </TableHead>
               ))}
             </TableRow>
@@ -245,15 +262,17 @@ export function NotesTable({
           <span>
             Showing{" "}
             {notes.length > 0
-              ? table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1
+              ? table.getState().pagination.pageIndex *
+                  table.getState().pagination.pageSize +
+                1
               : 0}
             -
             {Math.min(
               (table.getState().pagination.pageIndex + 1) *
                 table.getState().pagination.pageSize,
-              notes.length
-            )}
-            {" "}of {notes.length}
+              notes.length,
+            )}{" "}
+            of {notes.length}
           </span>
         </div>
 

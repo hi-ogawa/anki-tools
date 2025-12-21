@@ -2,33 +2,33 @@
 
 ## Web Frontends (AnkiConnect-based)
 
-| Project | Tech | Notes |
-|---------|------|-------|
-| [anki-js-client](https://github.com/alicewriteswrongs/anki-js-client) | React/TS | Japanese study, [live demo](https://aliceriot.github.io/anki-js-client/) |
-| [Kian](https://github.com/phu54321/kian) | Vue.js | Full desktop alternative, markdown editor |
-| [anki-cards-web-browser](https://github.com/slavetto/anki-cards-web-browser) | Vue.js | Exports APKG to static HTML |
+| Project                                                                      | Tech     | Notes                                                                    |
+| ---------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------ |
+| [anki-js-client](https://github.com/alicewriteswrongs/anki-js-client)        | React/TS | Japanese study, [live demo](https://aliceriot.github.io/anki-js-client/) |
+| [Kian](https://github.com/phu54321/kian)                                     | Vue.js   | Full desktop alternative, markdown editor                                |
+| [anki-cards-web-browser](https://github.com/slavetto/anki-cards-web-browser) | Vue.js   | Exports APKG to static HTML                                              |
 
 ## Static/Offline Viewers
 
-| Project | Notes |
-|---------|-------|
+| Project                                            | Notes                     |
+| -------------------------------------------------- | ------------------------- |
 | [Fuzzy-Anki](https://fasiha.github.io/fuzzy-anki/) | Browser-based APKG viewer |
 
 ## Anki Add-ons
 
-| Add-on | Code | Notes |
-|--------|------|-------|
-| [Advanced Browser](https://github.com/hssm/advanced-browser) | - | Extra sortable columns |
-| Opening same window multiple times | `354407385` | Multiple browser windows |
-| [BetterSearch](https://ankiweb.net/shared/info/1052724801) | `1052724801` | Improved search bar UX |
+| Add-on                                                       | Code         | Notes                    |
+| ------------------------------------------------------------ | ------------ | ------------------------ |
+| [Advanced Browser](https://github.com/hssm/advanced-browser) | -            | Extra sortable columns   |
+| Opening same window multiple times                           | `354407385`  | Multiple browser windows |
+| [BetterSearch](https://ankiweb.net/shared/info/1052724801)   | `1052724801` | Improved search bar UX   |
 
 ## API/Integration
 
-| Project | Notes |
-|---------|-------|
-| [AnkiConnect](https://foosoft.net/projects/anki-connect/) | REST API on port 8765 |
-| [yanki-connect](https://www.npmjs.com/package/yanki-connect) | Fully-typed TS client |
-| [@autoanki/anki-connect](https://www.npmjs.com/package/@autoanki/anki-connect) | Alternative TS wrapper |
+| Project                                                                           | Notes                        |
+| --------------------------------------------------------------------------------- | ---------------------------- |
+| [AnkiConnect](https://foosoft.net/projects/anki-connect/)                         | REST API on port 8765        |
+| [yanki-connect](https://www.npmjs.com/package/yanki-connect)                      | Fully-typed TS client        |
+| [@autoanki/anki-connect](https://www.npmjs.com/package/@autoanki/anki-connect)    | Alternative TS wrapper       |
 | [AnkiConnect MCP](https://mcpservers.org/servers/spacholski1225/anki-connect-mcp) | MCP server for AI assistants |
 
 ## AnkiConnect Performance Analysis
@@ -38,6 +38,7 @@ Source: https://git.sr.ht/~foosoft/anki-connect
 ### Data Model
 
 Anki separates **notes** and **cards**:
+
 - **Note**: The content (fields, tags, model/note type)
 - **Card**: A reviewable item generated from a note (deck, scheduling, flags, suspension)
 
@@ -47,12 +48,12 @@ One note can have multiple cards (e.g., forward/reverse cards from same vocabula
 
 To display notes with card-level metadata, we need:
 
-| Step | Action | Returns | Speed |
-|------|--------|---------|-------|
-| 1 | `findNotes` | Note IDs matching query | Fast |
-| 2 | `notesInfo` | Fields, tags, modelName | Medium |
-| 3 | `findCards` | Card IDs for notes | Fast |
-| 4 | `cardsInfo` | Deck, flags, queue, HTML | **Slow** |
+| Step | Action      | Returns                  | Speed    |
+| ---- | ----------- | ------------------------ | -------- |
+| 1    | `findNotes` | Note IDs matching query  | Fast     |
+| 2    | `notesInfo` | Fields, tags, modelName  | Medium   |
+| 3    | `findCards` | Card IDs for notes       | Fast     |
+| 4    | `cardsInfo` | Deck, flags, queue, HTML | **Slow** |
 
 ### Benchmark (5239 notes, Korean Vocabulary)
 
@@ -68,16 +69,17 @@ Total:      3060ms
 ### Why `cardsInfo` is Slow
 
 From source code analysis:
+
 1. **HTML generation**: Renders full question/answer HTML per card
 2. **No field filtering**: Returns everything, can't request subset
 3. **Sequential processing**: Loops through cards one-by-one
 
 ### Faster Alternatives
 
-| Action | Time | Data |
-|--------|------|------|
-| `getDecks` | 180ms | Card → deck mapping only |
-| `cardsModTime` | ~15x faster | Modification times only |
+| Action         | Time        | Data                     |
+| -------------- | ----------- | ------------------------ |
+| `getDecks`     | 180ms       | Card → deck mapping only |
+| `cardsModTime` | ~15x faster | Modification times only  |
 
 No lightweight endpoint exists for just `flags` + `queue` (suspension).
 
@@ -107,6 +109,7 @@ CREATE INDEX ix_cards_nid ON cards (nid);  -- fast note→cards lookup
 ```
 
 **Key insight**: Note-deck mapping is trivial at DB level:
+
 ```sql
 SELECT c.nid, c.did FROM cards c WHERE c.nid IN (...)
 ```
@@ -125,6 +128,7 @@ def cardsInfo(self, cards):
 ```
 
 The HTML rendering invokes Rust backend (`render_existing_card()`) which:
+
 - Loads card, note, model, templates
 - Renders HTML with filters
 - Cannot be batched
@@ -144,6 +148,7 @@ Uses `browser_row_for_id()` which is optimized and configurable.
 No endpoint provides lightweight card metadata (noteId + deckId + flags) without HTML rendering.
 
 **Workaround options**:
+
 1. Contribute `cardsInfoLight` to AnkiConnect (skip HTML rendering)
 2. Use raw SQL queries if AnkiConnect adds query support
 3. Accept limitation: use `getDecks` for deck, skip per-note mapping
@@ -174,34 +179,36 @@ This bypasses AnkiConnect entirely and enables card mode with full metadata.
 
 Anki's browser has two modes. Data belongs to different levels:
 
-| Data | Level | Note Mode | Card Mode |
-|------|-------|-----------|-----------|
-| Fields | Note | ✓ | ✓ |
-| Tags | Note | ✓ | ✓ |
-| Model | Note | ✓ | ✓ |
-| Deck | Card | ✓ (first card) | ✓ |
-| Flags | Card | ✗ (undefined) | ✓ |
-| Suspended | Card | ✗ (undefined) | ✓ |
-| Interval/Due | Card | ✗ | ✓ |
+| Data         | Level | Note Mode      | Card Mode |
+| ------------ | ----- | -------------- | --------- |
+| Fields       | Note  | ✓              | ✓         |
+| Tags         | Note  | ✓              | ✓         |
+| Model        | Note  | ✓              | ✓         |
+| Deck         | Card  | ✓ (first card) | ✓         |
+| Flags        | Card  | ✗ (undefined)  | ✓         |
+| Suspended    | Card  | ✗ (undefined)  | ✓         |
+| Interval/Due | Card  | ✗              | ✓         |
 
 **Decision**: Remove flags/suspension from note mode - they are per-card concepts.
 
 ### Optimization Strategy
 
 **Note mode** (current):
+
 1. Use `getDecks` for deck names (180ms vs 2500ms for `cardsInfo`)
 2. Skip `cardsInfo` entirely - flags/suspension removed
 3. Expected load time: **~700ms** (down from ~3000ms)
 
 **Card mode** (future):
+
 - Show flags, suspension, scheduling info
 - Will need `cardsInfo` (accept slower load)
 
 ## CMS/Admin UI Frameworks
 
-| Framework | Notes |
-|-----------|-------|
-| [Refine](https://refine.dev/) | React, custom data providers |
-| [React Admin](https://marmelab.com/react-admin/) | React, mature ecosystem |
+| Framework                                        | Notes                        |
+| ------------------------------------------------ | ---------------------------- |
+| [Refine](https://refine.dev/)                    | React, custom data providers |
+| [React Admin](https://marmelab.com/react-admin/) | React, mature ecosystem      |
 
 **Note**: No existing project uses CMS UI + AnkiConnect data provider approach.

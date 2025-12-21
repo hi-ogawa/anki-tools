@@ -7,6 +7,7 @@ When the web app is deployed to a public HTTPS host (e.g., Vercel), Chrome's Pri
 ## Solution
 
 Package the web UI as an Anki add-on that:
+
 1. Serves the built frontend assets via a local HTTP server
 2. Provides API endpoints using Anki's Python API directly (no AnkiConnect dependency)
 3. Runs entirely on localhost, avoiding PNA/mixed-content issues
@@ -77,9 +78,9 @@ Create `addon/` directory in repo root with:
 
 API actions (tailored for our needs, not mirroring AnkiConnect):
 
-| Action | Params | Returns |
-|--------|--------|---------|
-| `getModels` | - | `{ modelName: string[] }` (model → fields) |
+| Action        | Params  | Returns                                          |
+| ------------- | ------- | ------------------------------------------------ |
+| `getModels`   | -       | `{ modelName: string[] }` (model → fields)       |
 | `browseNotes` | `query` | `Note[]` (id, modelName, fields, tags, deckName) |
 
 ### 3. Update frontend API endpoint
@@ -130,10 +131,12 @@ Vite proxies `/api` → `localhost:5678` (configured in `vite.config.ts`).
 ### 6. Packaging for distribution
 
 Option A: AnkiWeb (official add-on repository)
+
 - Zip the `addon/` folder
 - Upload to ankiweb.net
 
 Option B: GitHub releases
+
 - Zip and attach to GitHub release
 - Users download and extract to Anki add-ons folder
 
@@ -178,6 +181,7 @@ def handle_api(action, params):
 Anki's collection (`mw.col`) should only be accessed from the main thread.
 
 **Current approach (threaded HTTP server):**
+
 - Use `mw.taskman.run_on_main()` to schedule API calls
 - Use `threading.Event` to wait for result before sending response
 
@@ -191,6 +195,7 @@ event.wait()  # block until main thread completes
 ```
 
 **AnkiConnect's approach (non-blocking, single-threaded):**
+
 - Custom socket server with `select()` polling
 - `QTimer` calls `advance()` on main thread periodically
 - No threading - everything runs on Qt main thread
