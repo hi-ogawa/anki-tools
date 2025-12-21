@@ -147,7 +147,7 @@ export function NotesTable({
 
   const submitSearch = () => {
     if (localSearch !== search) {
-      onStateChange({ search: localSearch, page: 0 });
+      onStateChange({ search: localSearch, page: 1 });
     }
   };
 
@@ -158,8 +158,9 @@ export function NotesTable({
 
   const onPaginationChange: OnChangeFn<PaginationState> = (updater) => {
     const newState = typeof updater === "function" ? updater(pagination) : updater;
+    // Convert 0-based pageIndex to 1-based page for URL
     onStateChange({
-      page: newState.pageIndex,
+      page: newState.pageIndex + 1,
       pageSize: newState.pageSize,
     });
   };
@@ -177,7 +178,7 @@ export function NotesTable({
     },
     onPaginationChange,
     onColumnVisibilityChange: setColumnVisibility,
-    onGlobalFilterChange: (value) => onStateChange({ search: value, page: 0 }),
+    onGlobalFilterChange: (value) => onStateChange({ search: value, page: 1 }),
     manualPagination: false, // Client-side pagination
     manualFiltering: false, // Client-side filtering
   });
@@ -273,7 +274,7 @@ export function NotesTable({
           <Select
             value={String(pageSize)}
             onValueChange={(value) =>
-              onStateChange({ pageSize: Number(value), page: 0 })
+              onStateChange({ pageSize: Number(value), page: 1 })
             }
           >
             <SelectTrigger size="sm" className="w-[100px]">
@@ -292,7 +293,7 @@ export function NotesTable({
             <Button
               variant="outline"
               size="icon"
-              onClick={() => onStateChange({ page: 0 })}
+              onClick={() => onStateChange({ page: 1 })}
               disabled={!table.getCanPreviousPage()}
             >
               <ChevronsLeft className="size-4" />
@@ -300,7 +301,7 @@ export function NotesTable({
             <Button
               variant="outline"
               size="icon"
-              onClick={() => onStateChange({ page: page - 1 })}
+              onClick={() => onStateChange({ page })}
               disabled={!table.getCanPreviousPage()}
             >
               <ChevronLeft className="size-4" />
@@ -311,7 +312,7 @@ export function NotesTable({
             <Button
               variant="outline"
               size="icon"
-              onClick={() => onStateChange({ page: page + 1 })}
+              onClick={() => onStateChange({ page: page + 2 })}
               disabled={!table.getCanNextPage()}
             >
               <ChevronRight className="size-4" />
@@ -319,7 +320,7 @@ export function NotesTable({
             <Button
               variant="outline"
               size="icon"
-              onClick={() => onStateChange({ page: table.getPageCount() - 1 })}
+              onClick={() => onStateChange({ page: table.getPageCount() })}
               disabled={!table.getCanNextPage()}
             >
               <ChevronsRight className="size-4" />

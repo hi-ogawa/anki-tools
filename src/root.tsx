@@ -17,7 +17,9 @@ export function Root() {
 function App() {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlModel = searchParams.get("model");
-  const page = parseInt(searchParams.get("page") ?? "0", 10);
+  // URL uses 1-based page, convert to 0-based for table
+  const urlPage = parseInt(searchParams.get("page") ?? "1", 10);
+  const pageIndex = Math.max(0, urlPage - 1);
   const pageSize = parseInt(searchParams.get("pageSize") ?? "25", 10);
   const search = searchParams.get("search") ?? "";
 
@@ -86,7 +88,7 @@ function App() {
       <NotesView
         model={urlModel}
         fields={fields}
-        page={page}
+        page={pageIndex}
         pageSize={pageSize}
         search={search}
         onStateChange={setUrlState}
