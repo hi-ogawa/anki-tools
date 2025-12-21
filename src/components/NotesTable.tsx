@@ -1,6 +1,7 @@
 import {
   useReactTable,
   getCoreRowModel,
+  getPaginationRowModel,
   flexRender,
   type ColumnDef,
 } from "@tanstack/react-table";
@@ -14,6 +15,23 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Columns3 } from "lucide-react";
 import type { Note } from "@/providers/anki-connect";
 
 interface NotesTableProps {
@@ -25,8 +43,8 @@ export function NotesTable({ notes, fields }: NotesTableProps) {
   const columns = useMemo<ColumnDef<Note>[]>(() => {
     const cols: ColumnDef<Note>[] = [];
 
-    // Show first 3 fields as columns
-    for (const field of fields.slice(0, 3)) {
+    // All fields as columns
+    for (const field of fields) {
       cols.push({
         id: field,
         accessorFn: (row) => row.fields[field] ?? "",
@@ -67,14 +85,57 @@ export function NotesTable({ notes, fields }: NotesTableProps) {
     return cols;
   }, [fields]);
 
+  // Default: show first 3 fields + tags
+  const defaultColumnVisibility = useMemo(() => {
+    const visibility: Record<string, boolean> = {};
+    fields.forEach((field, index) => {
+      visibility[field] = index < 3;
+    });
+    visibility["tags"] = true;
+    return visibility;
+  }, [fields]);
+
   const table = useReactTable({
     data: notes,
     columns,
     getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    initialState: {
+      pagination: {
+        pageSize: 25,
+      },
+      columnVisibility: defaultColumnVisibility,
+    },
   });
 
   return (
-    <Table>
+    <div className="space-y-4">
+      {/* Toolbar */}
+      <div className="flex items-center justify-end">
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="sm">
+              <Columns3 className="size-4" />
+              Columns
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-48">
+            <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {table.getAllColumns().map((column) => (
+              <DropdownMenuCheckboxItem
+                key={column.id}
+                checked={column.getIsVisible()}
+                onCheckedChange={(value) => column.toggleVisibility(!!value)}
+              >
+                {column.id}
+              </DropdownMenuCheckboxItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
+      <Table>
       <TableHeader>
         {table.getHeaderGroups().map((headerGroup) => (
           <TableRow key={headerGroup.id}>
@@ -106,5 +167,77 @@ export function NotesTable({ notes, fields }: NotesTableProps) {
         )}
       </TableBody>
     </Table>
+
+      {/* Pagination Controls */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          <span>
+            {table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1}
+            -
+            {Math.min(
+              (table.getState().pagination.pageIndex + 1) * table.getState().pagination.pageSize,
+              notes.length
+            )}
+            {" "}of {notes.length}
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Select
+            value={String(table.getState().pagination.pageSize)}
+            onValueChange={(value) => table.setPageSize(Number(value))}
+          >
+            <SelectTrigger size="sm" className="w-[100px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {[10, 25, 50, 100].map((size) => (
+                <SelectItem key={size} value={String(size)}>
+                  {size} / page
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <div className="flex items-center gap-1">
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => table.setPageIndex(0)}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <ChevronsLeft className="size-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              <ChevronLeft className="size-4" />
+            </Button>
+            <span className="px-2 text-sm">
+              {table.getState().pagination.pageIndex + 1} / {table.getPageCount()}
+            </span>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              <ChevronRight className="size-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+              disabled={!table.getCanNextPage()}
+            >
+              <ChevronsRight className="size-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
