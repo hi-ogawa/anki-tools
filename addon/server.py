@@ -1,4 +1,16 @@
-"""HTTP server for Browse Web add-on."""
+"""HTTP server for Browse Web add-on.
+
+Why an Anki addon instead of AnkiConnect?
+
+1. AnkiConnect's `cardsInfo` is slow (~2.5s for 5k cards) because it renders
+   full HTML for each card. Our addon accesses card data directly without
+   HTML rendering.
+
+2. Public web deployment can't access AnkiConnect anyway (localhost:8765).
+   Bundling the web UI inside the addon solves both the API and hosting.
+
+3. Same-origin serving eliminates CORS issues entirely.
+"""
 
 import json
 import os

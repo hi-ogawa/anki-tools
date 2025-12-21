@@ -1,7 +1,8 @@
-// Always use same-origin /api (served by addon)
+// API served by Anki addon on same origin (no CORS issues).
+// Uses AnkiConnect-style JSON-RPC but with custom actions optimized for browsing.
 const API_URL = "/api";
 
-// AnkiConnect JSON-RPC helper
+// JSON-RPC helper
 export async function invoke<T>(
   action: string,
   params?: Record<string, unknown>,
