@@ -19,3 +19,5 @@ Quick notes, feedback, and todos. Process into plan.md periodically.
 - [ ] setup e2e
 - [ ] remove research.md (move to inline comment if it's still worth)
 - [ ] document agent workflow (e.g. branch, commit)
+- [ ] error boundary
+- [ ] "noUnusedLocals": true"
