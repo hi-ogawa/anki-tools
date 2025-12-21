@@ -41,7 +41,7 @@ addon/
 ├── __init__.py           # Add-on entry, hooks, menu
 ├── server.py             # HTTP server + API handlers
 ├── manifest.json         # Anki add-on manifest
-└── web/                  # Output of `npm run build`
+└── dist/                 # Output of `pnpm build`
     ├── index.html
     └── assets/
         ├── index-[hash].js
@@ -84,34 +84,52 @@ API actions to implement (mirror AnkiConnect interface):
 | `findNotes` | `query` | `number[]` |
 | `notesInfo` | `notes` | `NoteInfo[]` |
 
-### 3. Update frontend for dual-mode
+### 3. Update frontend API endpoint
 
 Modify `src/providers/anki-connect.ts`:
 
 ```typescript
-// Detect if running from add-on (localhost) or external (Vercel)
-const isAddonMode = window.location.hostname === "localhost";
-
-const API_URL = isAddonMode
-  ? `${window.location.origin}/api`
-  : "http://localhost:8765";
+// Always use same-origin /api (served by addon)
+const API_URL = `${window.location.origin}/api`;
 ```
 
 Request format stays the same (AnkiConnect-compatible JSON-RPC).
 
 ### 4. Build pipeline
 
-Add npm script to copy build output to add-on:
-
 ```json
 {
   "scripts": {
-    "build:addon": "vite build && cp -r dist/* addon/web/"
+    "build": "vite build",
+    "build-addon": "vite build && rm -rf addon/dist && cp -r dist addon/dist && cd addon && zip -r ../anki-browse-web.ankiaddon ."
   }
 }
 ```
 
-### 5. Packaging for distribution
+### 5. Development setup
+
+The addon requires Anki GUI (`aqt.mw`) - can't run standalone.
+
+**One-time setup:**
+
+```bash
+pnpm setup-dev
+```
+
+Creates symlink from Anki's addons folder to `addon/`.
+
+**Dev workflow:**
+
+1. Start Anki (loads addon via symlink, API on `:5678`)
+2. Run `pnpm dev` (UI on `:5173` with hot reload)
+3. Access `localhost:5173`
+
+Vite proxies `/api` → `localhost:5678` (configured in `vite.config.ts`).
+
+- UI changes: instant hot reload
+- Python changes: restart Anki
+
+### 6. Packaging for distribution
 
 Option A: AnkiWeb (official add-on repository)
 - Zip the `addon/` folder

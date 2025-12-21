@@ -1,10 +1,9 @@
-// https://git.sr.ht/~foosoft/anki-connect
-
-const ANKI_CONNECT_URL = "http://localhost:8765";
+// Always use same-origin /api (served by addon)
+const API_URL = "/api";
 
 // AnkiConnect JSON-RPC helper
 export async function invoke<T>(action: string, params?: Record<string, unknown>): Promise<T> {
-  const response = await fetch(ANKI_CONNECT_URL, {
+  const response = await fetch(API_URL, {
     method: "POST",
     body: JSON.stringify({ action, version: 6, params }),
   });
