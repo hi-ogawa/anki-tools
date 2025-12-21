@@ -12,6 +12,7 @@ import {
   fetchNotes,
   fetchCards,
   setCardFlag,
+  updateNoteFields,
   type Note,
   type Card,
 } from "./api";
@@ -427,6 +428,27 @@ function NotesView({
                 } catch (e) {
                   alert(
                     `Failed to set flag: ${e instanceof Error ? e.message : e}`,
+                  );
+                }
+              }}
+              onFieldsChange={async (noteId, updatedFields) => {
+                try {
+                  await updateNoteFields(noteId, updatedFields);
+                  // Update local state to reflect the change
+                  const updateItem = <T extends Note | Card>(
+                    prev: T | null,
+                  ): T | null => {
+                    if (!prev) return null;
+                    return {
+                      ...prev,
+                      fields: { ...prev.fields, ...updatedFields },
+                    };
+                  };
+                  setSelectedNote(updateItem);
+                  setSelectedCard(updateItem);
+                } catch (e) {
+                  alert(
+                    `Failed to update fields: ${e instanceof Error ? e.message : e}`,
                   );
                 }
               }}

@@ -75,3 +75,11 @@ export async function setCardFlag(
 ): Promise<boolean> {
   return invoke<boolean>("setCardFlag", { cardId, flag });
 }
+
+// Update note fields (currently UI updates one field at a time, but API supports batch)
+export async function updateNoteFields(
+  noteId: number,
+  fields: Record<string, string>,
+): Promise<boolean> {
+  return invoke<boolean>("updateNoteFields", { noteId, fields });
+}

@@ -1,4 +1,5 @@
-import { Flag, X } from "lucide-react";
+import { Flag, Pencil, X } from "lucide-react";
+import { useState } from "react";
 import type { Note, Card } from "@/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ interface NoteDetailProps {
   fields: string[];
   onClose: () => void;
   onFlagChange?: (cardId: number, flag: number) => void;
+  onFieldsChange?: (noteId: number, fields: Record<string, string>) => void;
 }
 
 function isCard(item: Note | Card): item is Card {
@@ -30,8 +32,13 @@ export function NoteDetail({
   fields,
   onClose,
   onFlagChange,
+  onFieldsChange,
 }: NoteDetailProps) {
   const card = isCard(item) ? item : null;
+  const noteId = card ? card.noteId : item.id;
+
+  const [editingField, setEditingField] = useState<string | null>(null);
+  const [editValue, setEditValue] = useState("");
 
   return (
     <div className="flex h-full flex-col border-l">
@@ -84,18 +91,63 @@ export function NoteDetail({
           {/* Fields */}
           {fields.map((field) => (
             <div key={field}>
-              <label className="text-sm font-medium text-muted-foreground">
-                {field}
-              </label>
-              <div className="mt-1 rounded border bg-muted/50 p-2 text-sm">
-                {item.fields[field] ? (
-                  <div
-                    dangerouslySetInnerHTML={{ __html: item.fields[field] }}
-                  />
-                ) : (
-                  <span className="text-muted-foreground">-</span>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium text-muted-foreground">
+                  {field}
+                </label>
+                {editingField !== field && onFieldsChange && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-6"
+                    onClick={() => {
+                      setEditingField(field);
+                      setEditValue(item.fields[field] ?? "");
+                    }}
+                  >
+                    <Pencil className="size-3" />
+                  </Button>
                 )}
               </div>
+              {editingField === field ? (
+                <div className="mt-1 space-y-2">
+                  <textarea
+                    className="w-full rounded border bg-background p-2 text-sm"
+                    rows={4}
+                    value={editValue}
+                    onChange={(e) => setEditValue(e.target.value)}
+                    autoFocus
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        onFieldsChange?.(noteId, { [field]: editValue });
+                        setEditingField(null);
+                      }}
+                    >
+                      Save
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setEditingField(null)}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="mt-1 rounded border bg-muted/50 p-2 text-sm">
+                  {item.fields[field] ? (
+                    <div
+                      dangerouslySetInnerHTML={{ __html: item.fields[field] }}
+                    />
+                  ) : (
+                    <span className="text-muted-foreground italic">empty</span>
+                  )}
+                </div>
+              )}
             </div>
           ))}
 

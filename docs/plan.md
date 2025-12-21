@@ -29,7 +29,7 @@ Goal: Replace Anki's built-in browser for daily workflow.
 
 - [x] Flag filter
 - [x] Note detail panel (click row → show all fields)
-- [ ] Edit note fields (`updateNoteFields` API)
+- [x] Edit note fields (`updateNoteFields` API)
 - [ ] Edit tags (`addTags`/`removeTags` API)
 
 ### Card Mode
