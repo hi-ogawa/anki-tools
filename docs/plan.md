@@ -19,64 +19,55 @@ Use [Refine](https://refine.dev/) as UI framework with custom data provider for 
 
 ## Phase 2: Dynamic Schema
 
-### Architecture
+### Approach
 
-Since this is a pure SPA, we can discover the schema at runtime:
+Cache schema in localStorage, model selector in UI:
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                     Landing Page                         │
-│  1. Fetch deckNames, modelNames from AnkiConnect        │
-│  2. User selects deck/model (or auto-detect)            │
-│  3. Fetch modelFieldNames for selected model            │
-│  4. Build dynamic schema → mount Refine                 │
-└─────────────────────────────────────────────────────────┘
-                          │
-                          ▼
-┌─────────────────────────────────────────────────────────┐
-│                    Notes Browser                         │
-│  - Table columns generated from schema                  │
-│  - Data provider uses dynamic field mapping             │
-│  - Preview panel shows all fields                       │
-└─────────────────────────────────────────────────────────┘
+On app load:
+  1. Check localStorage for cached schema
+  2. If stale/missing: fetch modelNames → modelFieldNames for each
+  3. Cache to localStorage
+
+UI:
+  - Model selector dropdown in header
+  - Table columns generated from selected model's fields
+  - Instant switching (no refetch needed)
 ```
 
-### AnkiConnect Actions
+### localStorage Schema
 
-| Action | Purpose |
-|--------|---------|
-| `deckNames` | List available decks |
-| `modelNames` | List note types (models) |
-| `modelFieldNames` | Get fields for a model |
-| `findNotes` | Search notes by query |
-| `notesInfo` | Get note details |
+```typescript
+interface CachedSchema {
+  models: Record<string, string[]>;  // modelName → field names
+  cachedAt: number;                   // timestamp for staleness check
+}
+
+// Example:
+{
+  "models": {
+    "Korean Vocabulary": ["number", "korean", "english", "example_ko", ...],
+    "Basic": ["Front", "Back"],
+    "Cloze": ["Text", "Extra"]
+  },
+  "cachedAt": 1703123456789
+}
+```
 
 ### Implementation
 
-- [ ] Create setup/landing page component
-- [ ] Fetch and display deck/model selectors
-- [ ] Store selected config in React state (or URL params)
-- [ ] Refactor data provider to accept dynamic schema
-- [ ] Generate table columns from field list
-- [ ] Allow user to pick which fields show as columns
-
-### State Shape
-
-```typescript
-interface AppConfig {
-  deck: string | null;      // e.g., "Korean::TOPIK1"
-  model: string;            // e.g., "Korean Vocabulary"
-  fields: string[];         // e.g., ["korean", "english", ...]
-  tableColumns: string[];   // subset of fields to show in table
-}
-```
+- [ ] Create `useSchemaCache` hook (fetch + cache logic)
+- [ ] Add model selector to header/sidebar
+- [ ] Refactor data provider to accept model name
+- [ ] Generate table columns from cached field list
+- [ ] Add refresh button to re-fetch schema
 
 ## Phase 3: Usability
 
 - [ ] Card preview panel (show all fields on row click)
 - [ ] Render HTML content safely
 - [ ] Fuzzy search (client-side with Fuse.js)
-- [ ] Persist config to localStorage
+- [ ] Column visibility picker (show/hide fields)
 
 ## Phase 4: Edit Support
 
@@ -120,19 +111,19 @@ src/
 ├── providers/
 │   └── anki-connect.ts    # Data provider + API helpers
 ├── pages/
-│   ├── setup.tsx          # Landing/config page
 │   └── notes/
 │       └── list.tsx       # Notes table (dynamic columns)
 ├── components/
+│   ├── ModelSelector.tsx  # Dropdown to pick model
 │   └── NotePreview.tsx    # Card preview panel
 ├── hooks/
-│   └── useAnkiSchema.ts   # Fetch deck/model/fields
+│   └── useSchemaCache.ts  # Fetch + cache schema to localStorage
 └── App.tsx
 ```
 
 ## Open Questions
 
-1. ~~**Field mapping**: Hardcode or configurable?~~ → Dynamic schema discovery
-2. **Pagination**: AnkiConnect returns all IDs. Paginate client-side. ✓
+1. ~~**Field mapping**: Hardcode or configurable?~~ → Dynamic schema via localStorage
+2. ~~**Pagination**~~: Client-side, AnkiConnect returns all IDs
 3. **Search**: Start with Anki's search syntax, add fuzzy later
-4. **URL state**: Store deck/model in URL for shareable links?
+4. **Cache invalidation**: When to refresh schema? Manual button? On Anki restart?
