@@ -1,39 +1,24 @@
-import { useState, useMemo } from "react";
-import { Refine } from "@refinedev/core";
-import { RefineKbar, RefineKbarProvider } from "@refinedev/kbar";
-import { BrowserRouter, Route, Routes, Outlet } from "react-router";
-import routerProvider, {
-  NavigateToResource,
-  UnsavedChangesNotifier,
-  DocumentTitleHandler,
-} from "@refinedev/react-router";
-
-import { NoteList } from "./pages/notes";
-import { ErrorComponent } from "./components/refine-ui/layout/error-component";
-import { Layout } from "./components/refine-ui/layout/layout";
-import { useNotificationProvider } from "./components/refine-ui/notification/use-notification-provider";
-import { Toaster } from "./components/refine-ui/notification/toaster";
-import { ThemeProvider } from "./components/refine-ui/theme/theme-provider";
-import { createAnkiDataProvider } from "./providers/anki-connect";
 import { useAnkiSchema } from "./hooks/useAnkiSchema";
+import { AnkiBrowser } from "./components/AnkiBrowser";
 import "./App.css";
 
 function App() {
   const { models, loading, error, refresh } = useAnkiSchema();
   const modelNames = Object.keys(models);
-  const [selectedModel, setSelectedModel] = useState<string | null>(null);
 
-  // Auto-select first model when loaded
-  const currentModel = selectedModel ?? modelNames[0] ?? null;
-  const fields = currentModel ? models[currentModel] : [];
+  // Get model from URL, fallback to first
+  const params = new URLSearchParams(window.location.search);
+  const urlModel = params.get("model");
+  const currentModel = urlModel && models[urlModel] ? urlModel : modelNames[0] ?? null;
 
-  // Create data provider for selected model
-  const dataProvider = useMemo(() => {
-    if (!currentModel || fields.length === 0) return null;
-    return createAnkiDataProvider(currentModel, fields);
-  }, [currentModel, fields]);
+  const setModel = (model: string) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("model", model);
+    window.history.pushState({}, "", url);
+    // Force re-render
+    window.location.reload();
+  };
 
-  // Loading state
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -42,7 +27,6 @@ function App() {
     );
   }
 
-  // Error state
   if (error) {
     return (
       <div className="flex h-screen flex-col items-center justify-center gap-4">
@@ -58,8 +42,7 @@ function App() {
     );
   }
 
-  // No models found
-  if (!dataProvider || !currentModel) {
+  if (!currentModel) {
     return (
       <div className="flex h-screen items-center justify-center">
         <p className="text-muted-foreground">No note types found in Anki</p>
@@ -68,66 +51,13 @@ function App() {
   }
 
   return (
-    <BrowserRouter>
-      <RefineKbarProvider>
-        <ThemeProvider>
-          <Refine
-            dataProvider={dataProvider}
-            notificationProvider={useNotificationProvider()}
-            routerProvider={routerProvider}
-            resources={[
-              {
-                name: "notes",
-                list: "/notes",
-                show: "/notes/show/:id",
-              },
-            ]}
-            options={{
-              syncWithLocation: true,
-              warnWhenUnsavedChanges: true,
-            }}
-          >
-            <Routes>
-              <Route
-                element={
-                  <Layout
-                    modelSelector={
-                      <select
-                        value={currentModel}
-                        onChange={(e) => setSelectedModel(e.target.value)}
-                        className="rounded border bg-background px-2 py-1 text-sm"
-                      >
-                        {modelNames.map((name) => (
-                          <option key={name} value={name}>
-                            {name}
-                          </option>
-                        ))}
-                      </select>
-                    }
-                  >
-                    <Outlet />
-                  </Layout>
-                }
-              >
-                <Route
-                  index
-                  element={<NavigateToResource resource="notes" />}
-                />
-                <Route path="/notes">
-                  <Route index element={<NoteList fields={fields} />} />
-                </Route>
-                <Route path="*" element={<ErrorComponent />} />
-              </Route>
-            </Routes>
-
-            <Toaster />
-            <RefineKbar />
-            <UnsavedChangesNotifier />
-            <DocumentTitleHandler />
-          </Refine>
-        </ThemeProvider>
-      </RefineKbarProvider>
-    </BrowserRouter>
+    <AnkiBrowser
+      key={currentModel}
+      model={currentModel}
+      fields={models[currentModel]}
+      modelNames={modelNames}
+      onModelChange={setModel}
+    />
   );
 }
 
