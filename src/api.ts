@@ -41,3 +41,26 @@ export async function fetchNotes(
     : `note:"${modelName}"`;
   return invoke<Note[]>("browseNotes", { query });
 }
+
+export interface Card {
+  id: number;
+  noteId: number;
+  deckName: string;
+  modelName: string;
+  sortField: string;
+  flag: number; // 0 = none, 1-7 = flag colors
+  queue: number; // -1 = suspended, 0 = new, 1 = learning, 2 = review
+  due: number;
+  interval: number;
+}
+
+// Fetch cards for a model
+export async function fetchCards(
+  modelName: string,
+  search?: string,
+): Promise<Card[]> {
+  const query = search
+    ? `note:"${modelName}" ${search}`
+    : `note:"${modelName}"`;
+  return invoke<Card[]>("browseCards", { query });
+}

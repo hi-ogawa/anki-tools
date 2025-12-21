@@ -91,6 +91,29 @@ def handle_action(action: str, params: dict):
             })
         return notes
 
+    elif action == "browseCards":
+        query = params["query"]
+        card_ids = col.find_cards(query)
+        cards = []
+        for cid in card_ids:
+            card = col.get_card(cid)
+            note = card.note()
+            model = note.note_type()
+            # Get first field as sort field (like Anki browser)
+            sort_field = note.fields[0] if note.fields else ""
+            cards.append({
+                "id": cid,
+                "noteId": card.nid,
+                "deckName": col.decks.name(card.did),
+                "modelName": model["name"],
+                "sortField": sort_field,
+                "flag": card.flags,
+                "queue": card.queue,  # -1 = suspended, 0 = new, 1 = learning, 2 = review
+                "due": card.due,
+                "interval": card.ivl,
+            })
+        return cards
+
     raise ValueError(f"Unknown action: {action}")
 
 
