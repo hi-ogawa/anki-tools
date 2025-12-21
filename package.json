@@ -65,8 +65,7 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
-    "preview": "vite preview",
-    "build-addon": "vite build && rm -rf addon/dist && cp -r dist addon/dist && cd addon && zip -r ../anki-browse-web.ankiaddon .",
+    "build-addon": "vite build && cd addon && zip -r ../anki-browse-web.ankiaddon .",
     "setup-dev": "node scripts/setup-dev.js",
     "lint": "false",
     "tsc": "tsc -b"

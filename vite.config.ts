@@ -15,4 +15,7 @@ export default defineConfig({
       "/api": "http://localhost:5679",
     },
   },
+  build: {
+    outDir: "addon/dist",
+  }
 });
