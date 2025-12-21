@@ -22,3 +22,4 @@ Quick notes, feedback, and todos. Process into plan.md periodically.
 - [x] document agent workflow (e.g. branch, commit, confirm before function change/fix)
 - [ ] error boundary
 - [x] "noUnusedLocals": true"
+- [ ] full scroll mode withou pagination
