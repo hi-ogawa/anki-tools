@@ -9,7 +9,7 @@
 - [x] **Column visibility** - Dropdown/menu to toggle which columns are shown
 
 ### Bugs
-- [ ] **Search IME bug** - Korean/CJK input breaks due to controlled input firing onChange during composition
+- [x] **Search IME bug** - Korean/CJK input breaks due to controlled input firing onChange during composition
 - [x] **Column visibility bug** - Toggle doesn't work; state always reset to default on render
 
 ### Visual/UX
@@ -28,13 +28,11 @@
 
 ### 0. Bug Fixes (Priority)
 
-#### 0a. Search IME Fix
+#### 0a. Search IME Fix ✅
 **Fix Korean/CJK input composition**
 
-- Track composition state with `useRef` (`isComposing`)
-- Add `onCompositionStart`/`onCompositionEnd` handlers to Input
-- Only trigger filter update when not composing
-- Alternative: debounce the search update
+- Use local state for input, submit on Enter or blur
+- No search-as-you-type, avoiding IME issues entirely
 
 #### 0b. Column Visibility Fix ✅
 **Make toggle actually persist**

@@ -137,6 +137,20 @@ export function NotesTable({
     localStorage.setItem(getStorageKey(model), JSON.stringify(columnVisibility));
   }, [model, columnVisibility]);
 
+  // Search on submit (Enter key)
+  const [localSearch, setLocalSearch] = useState(search);
+
+  // Sync from parent when search prop changes (e.g., URL navigation)
+  useEffect(() => {
+    setLocalSearch(search);
+  }, [search]);
+
+  const submitSearch = () => {
+    if (localSearch !== search) {
+      onStateChange({ search: localSearch, page: 0 });
+    }
+  };
+
   const pagination: PaginationState = {
     pageIndex: page,
     pageSize,
@@ -174,8 +188,10 @@ export function NotesTable({
       <div className="flex items-center justify-between">
         <Input
           placeholder="Search all fields..."
-          value={search}
-          onChange={(e) => onStateChange({ search: e.target.value, page: 0 })}
+          value={localSearch}
+          onChange={(e) => setLocalSearch(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && submitSearch()}
+          onBlur={submitSearch}
           className="max-w-sm"
         />
         <DropdownMenu>
