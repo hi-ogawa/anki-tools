@@ -132,6 +132,19 @@ def handle_action(action: str, params: dict):
         col.set_user_flag_for_cards(flag, [card_id])
         return True
 
+    elif action == "updateNoteFields":
+        note_id = params["noteId"]
+        fields = params["fields"]  # dict of field name -> value
+        note = col.get_note(note_id)
+        model = note.note_type()
+        field_names = [f["name"] for f in model["flds"]]
+        for name, value in fields.items():
+            if name in field_names:
+                idx = field_names.index(name)
+                note.fields[idx] = value
+        col.update_note(note)
+        return True
+
     raise ValueError(f"Unknown action: {action}")
 
 
