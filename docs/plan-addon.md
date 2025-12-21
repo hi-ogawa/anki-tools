@@ -37,11 +37,11 @@ Package the web UI as an Anki add-on that:
 ## File Structure
 
 ```
-anki-browse-web-addon/
+addon/
 ├── __init__.py           # Add-on entry, hooks, menu
 ├── server.py             # HTTP server + API handlers
 ├── manifest.json         # Anki add-on manifest
-└── web/                  # Output of `npm run build`
+└── dist/                 # Output of `pnpm build`
     ├── index.html
     └── assets/
         ├── index-[hash].js
@@ -52,7 +52,7 @@ anki-browse-web-addon/
 
 ### 1. Create add-on skeleton
 
-Create `anki-addon/` directory in repo root with:
+Create `addon/` directory in repo root with:
 
 - `__init__.py` - Entry point
   - Hook into `profile_did_open` to start server
@@ -75,46 +75,62 @@ Create `anki-addon/` directory in repo root with:
 - Handle `POST /api` for Anki API calls
 - Run in daemon thread to not block Anki
 
-API actions to implement (mirror AnkiConnect interface):
+API actions (tailored for our needs, not mirroring AnkiConnect):
 
 | Action | Params | Returns |
 |--------|--------|---------|
-| `modelNames` | - | `string[]` |
-| `modelFieldNames` | `modelName` | `string[]` |
-| `findNotes` | `query` | `number[]` |
-| `notesInfo` | `notes` | `NoteInfo[]` |
+| `getModels` | - | `{ modelName: string[] }` (model → fields) |
+| `browseNotes` | `query` | `Note[]` (id, modelName, fields, tags, deckName) |
 
-### 3. Update frontend for dual-mode
+### 3. Update frontend API endpoint
 
 Modify `src/providers/anki-connect.ts`:
 
 ```typescript
-// Detect if running from add-on (localhost) or external (Vercel)
-const isAddonMode = window.location.hostname === "localhost";
-
-const API_URL = isAddonMode
-  ? `${window.location.origin}/api`
-  : "http://localhost:8765";
+// Always use same-origin /api (served by addon)
+const API_URL = `${window.location.origin}/api`;
 ```
 
 Request format stays the same (AnkiConnect-compatible JSON-RPC).
 
 ### 4. Build pipeline
 
-Add npm script to copy build output to add-on:
-
 ```json
 {
   "scripts": {
-    "build:addon": "vite build && cp -r dist/* anki-addon/web/"
+    "build": "vite build",
+    "build-addon": "vite build && rm -rf addon/dist && cp -r dist addon/dist && cd addon && zip -r ../anki-browse-web.ankiaddon ."
   }
 }
 ```
 
-### 5. Packaging for distribution
+### 5. Development setup
+
+The addon requires Anki GUI (`aqt.mw`) - can't run standalone.
+
+**One-time setup:**
+
+```bash
+pnpm setup-dev
+```
+
+Creates symlink from Anki's addons folder to `addon/`.
+
+**Dev workflow:**
+
+1. Start Anki (loads addon via symlink, API on `:5678`)
+2. Run `pnpm dev` (UI on `:5173` with hot reload)
+3. Access `localhost:5173`
+
+Vite proxies `/api` → `localhost:5678` (configured in `vite.config.ts`).
+
+- UI changes: instant hot reload
+- Python changes: restart Anki
+
+### 6. Packaging for distribution
 
 Option A: AnkiWeb (official add-on repository)
-- Zip the `anki-addon/` folder
+- Zip the `addon/` folder
 - Upload to ankiweb.net
 
 Option B: GitHub releases
@@ -159,19 +175,34 @@ def handle_api(action, params):
 
 ## Thread Safety Considerations
 
-Anki's collection (`mw.col`) should only be accessed from the main thread. Options:
+Anki's collection (`mw.col`) should only be accessed from the main thread.
 
-1. **Simple**: Use `mw.taskman.run_on_main()` to schedule API calls on main thread
-2. **Complex**: Queue requests and process in main thread loop
+**Current approach (threaded HTTP server):**
+- Use `mw.taskman.run_on_main()` to schedule API calls
+- Use `threading.Event` to wait for result before sending response
 
-Recommend option 1 for simplicity.
+```python
+event = threading.Event()
+def run():
+    result["result"] = handle_action(...)
+    event.set()
+mw.taskman.run_on_main(run)
+event.wait()  # block until main thread completes
+```
+
+**AnkiConnect's approach (non-blocking, single-threaded):**
+- Custom socket server with `select()` polling
+- `QTimer` calls `advance()` on main thread periodically
+- No threading - everything runs on Qt main thread
+
+AnkiConnect's pattern is more efficient but requires custom socket handling.
 
 ## Future Enhancements
 
-- [ ] Add configuration UI (port selection)
-- [ ] Support more AnkiConnect actions as needed
+- [ ] Add configuration UI (port selection, like AnkiConnect's config)
+- [ ] Efficient fetching (cardsInfoLight, see docs/research.md)
 - [ ] Auto-open browser on Anki start (optional setting)
-- [ ] Hot-reload for development
+- [ ] Rework README.md
 
 ## Open Questions
 
