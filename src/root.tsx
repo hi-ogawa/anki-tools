@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
-import { Routes, Route, useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router";
 import { fetchAllModelsWithFields, fetchNotes } from "./providers/anki-connect";
 import { NotesTable } from "./components/NotesTable";
 
@@ -9,14 +9,12 @@ const queryClient = new QueryClient();
 export function Root() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Routes>
-        <Route path="/" element={<AppContent />} />
-      </Routes>
+      <App />
     </QueryClientProvider>
   );
 }
 
-function AppContent() {
+function App() {
   const [searchParams, setSearchParams] = useSearchParams();
   const urlModel = searchParams.get("model");
   const page = parseInt(searchParams.get("page") ?? "0", 10);
@@ -101,7 +99,7 @@ function AppContent() {
       <header className="border-b px-4 py-3">
         <div className="flex items-center gap-4">
           <h1 className="text-lg font-semibold">
-            <a href="/">Anki Browser</a>
+            <Link to="/">Anki Browser</Link>
           </h1>
           {modelNames.length > 0 && (
             <select
