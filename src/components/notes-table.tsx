@@ -1,52 +1,8 @@
-import {
-  useReactTable,
-  getCoreRowModel,
-  getPaginationRowModel,
-  flexRender,
-  type ColumnDef,
-  type OnChangeFn,
-  type PaginationState,
-  type VisibilityState,
-} from "@tanstack/react-table";
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-  Columns3,
-} from "lucide-react";
+import { type ColumnDef, type VisibilityState } from "@tanstack/react-table";
 import { useEffect, useMemo, useState } from "react";
 import type { Note } from "@/api";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-
-// TODO: Add "Smart Search" mode with toggle button
-// - Client-side filtering with modern UX
-// - Pattern matching: field:value, deck:name, tag:name, *wildcards*
-// - For now, only "Anki Query" mode is supported (passes search directly to AnkiConnect)
+import { DataTable } from "./data-table";
 
 interface NotesTableProps {
   notes: Note[];
@@ -160,6 +116,7 @@ export function NotesTable({
   // Reset visibility when model changes
   useEffect(() => {
     setColumnVisibility(getInitialVisibility());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [model]);
 
   // Persist visibility to localStorage
@@ -170,182 +127,19 @@ export function NotesTable({
     );
   }, [model, columnVisibility]);
 
-  const pagination: PaginationState = {
-    pageIndex: page,
-    pageSize,
-  };
-
-  const onPaginationChange: OnChangeFn<PaginationState> = (updater) => {
-    const newState =
-      typeof updater === "function" ? updater(pagination) : updater;
-    // Convert 0-based pageIndex to 1-based page for URL
-    onStateChange({
-      page: newState.pageIndex + 1,
-      pageSize: newState.pageSize,
-    });
-  };
-
-  const table = useReactTable({
-    data: notes,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    state: {
-      pagination,
-      columnVisibility,
-    },
-    onPaginationChange,
-    onColumnVisibilityChange: setColumnVisibility,
-  });
-
   return (
-    <div className="space-y-4">
-      {/* Toolbar */}
-      <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">{toolbarLeft}</div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Columns3 className="size-4" />
-              Columns
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {table.getAllColumns().map((column) => (
-              <DropdownMenuCheckboxItem
-                key={column.id}
-                checked={column.getIsVisible()}
-                onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                onSelect={(e) => e.preventDefault()}
-              >
-                {column.id}
-              </DropdownMenuCheckboxItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-
-      <Table>
-        <TableHeader>
-          {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
-              {headerGroup.headers.map((header) => (
-                <TableHead key={header.id}>
-                  {flexRender(
-                    header.column.columnDef.header,
-                    header.getContext(),
-                  )}
-                </TableHead>
-              ))}
-            </TableRow>
-          ))}
-        </TableHeader>
-        <TableBody>
-          {table.getRowModel().rows.length ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                onClick={() => onNoteSelect(row.original)}
-                className="cursor-pointer"
-                data-state={row.original.id === selectedNoteId ? "selected" : undefined}
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))
-          ) : (
-            <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
-                No notes found.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
-
-      {/* Pagination Controls */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-          <span>
-            Showing{" "}
-            {notes.length > 0
-              ? table.getState().pagination.pageIndex *
-                  table.getState().pagination.pageSize +
-                1
-              : 0}
-            -
-            {Math.min(
-              (table.getState().pagination.pageIndex + 1) *
-                table.getState().pagination.pageSize,
-              notes.length,
-            )}{" "}
-            of {notes.length}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Select
-            value={String(pageSize)}
-            onValueChange={(value) =>
-              onStateChange({ pageSize: Number(value), page: 1 })
-            }
-          >
-            <SelectTrigger size="sm" className="w-[100px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {[10, 20, 50, 100].map((size) => (
-                <SelectItem key={size} value={String(size)}>
-                  {size} / page
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-
-          <div className="flex items-center gap-1">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => onStateChange({ page: 1 })}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <ChevronsLeft className="size-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => onStateChange({ page })}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <ChevronLeft className="size-4" />
-            </Button>
-            <span className="px-2 text-sm">
-              {page + 1} / {table.getPageCount()}
-            </span>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => onStateChange({ page: page + 2 })}
-              disabled={!table.getCanNextPage()}
-            >
-              <ChevronRight className="size-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => onStateChange({ page: table.getPageCount() })}
-              disabled={!table.getCanNextPage()}
-            >
-              <ChevronsRight className="size-4" />
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <DataTable
+      data={notes}
+      columns={columns}
+      page={page}
+      pageSize={pageSize}
+      onStateChange={onStateChange}
+      getRowId={(note) => note.id}
+      selectedId={selectedNoteId}
+      onSelect={onNoteSelect}
+      toolbarLeft={toolbarLeft}
+      columnVisibility={columnVisibility}
+      onColumnVisibilityChange={setColumnVisibility}
+    />
   );
 }
