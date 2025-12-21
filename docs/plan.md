@@ -34,10 +34,10 @@ Goal: Replace Anki's built-in browser for daily workflow.
 
 ### Card Mode
 
-- [ ] Toggle: Note ↔ Card view
-- [ ] Card table (each row = card, not note)
-- [ ] `browseCards` API endpoint
-- [ ] Set/clear flag (`setFlag` API)
+- [x] Toggle: Note ↔ Card view
+- [x] Card table (each row = card, not note)
+- [x] `browseCards` API endpoint
+- [x] Set/clear flag (`setCardFlag` API)
 - [ ] Suspend/unsuspend (`suspend`/`unsuspend` API)
 
 ## Phase 4: Polish
@@ -45,6 +45,7 @@ Goal: Replace Anki's built-in browser for daily workflow.
 - [ ] Render HTML content safely (in detail panel)
 - [ ] Add refresh button to re-fetch schema
 - [ ] Smart Search mode (separate inputs for deck, tag, flag)
+- [ ] Query cache invalidation after mutations (table reflects changes)
 
 ## Phase 5: Future
 
