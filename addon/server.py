@@ -34,14 +34,18 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
         # Run on main thread for thread safety
         result = {"result": None, "error": None}
+        event = threading.Event()
 
         def run():
             try:
                 result["result"] = handle_action(action, params)
             except Exception as e:
                 result["error"] = str(e)
+            finally:
+                event.set()
 
         mw.taskman.run_on_main(run)
+        event.wait()
 
         self._send_json(result)
 

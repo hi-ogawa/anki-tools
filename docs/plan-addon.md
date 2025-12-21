@@ -177,12 +177,27 @@ def handle_api(action, params):
 
 ## Thread Safety Considerations
 
-Anki's collection (`mw.col`) should only be accessed from the main thread. Options:
+Anki's collection (`mw.col`) should only be accessed from the main thread.
 
-1. **Simple**: Use `mw.taskman.run_on_main()` to schedule API calls on main thread
-2. **Complex**: Queue requests and process in main thread loop
+**Current approach (threaded HTTP server):**
+- Use `mw.taskman.run_on_main()` to schedule API calls
+- Use `threading.Event` to wait for result before sending response
 
-Recommend option 1 for simplicity.
+```python
+event = threading.Event()
+def run():
+    result["result"] = handle_action(...)
+    event.set()
+mw.taskman.run_on_main(run)
+event.wait()  # block until main thread completes
+```
+
+**AnkiConnect's approach (non-blocking, single-threaded):**
+- Custom socket server with `select()` polling
+- `QTimer` calls `advance()` on main thread periodically
+- No threading - everything runs on Qt main thread
+
+AnkiConnect's pattern is more efficient but requires custom socket handling.
 
 ## Future Enhancements
 
