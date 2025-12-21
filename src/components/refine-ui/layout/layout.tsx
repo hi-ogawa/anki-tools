@@ -4,16 +4,20 @@ import { Header } from "@/components/refine-ui/layout/header";
 import { ThemeProvider } from "@/components/refine-ui/theme/theme-provider";
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { cn } from "@/lib/utils";
-import type { PropsWithChildren } from "react";
+import type { PropsWithChildren, ReactNode } from "react";
 import { Sidebar } from "./sidebar";
 
-export function Layout({ children }: PropsWithChildren) {
+interface LayoutProps extends PropsWithChildren {
+  modelSelector?: ReactNode;
+}
+
+export function Layout({ children, modelSelector }: LayoutProps) {
   return (
     <ThemeProvider>
       <SidebarProvider>
         <Sidebar />
         <SidebarInset>
-          <Header />
+          <Header modelSelector={modelSelector} />
           <main
             className={cn(
               "@container/main",

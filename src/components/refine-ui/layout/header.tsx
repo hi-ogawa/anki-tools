@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import {
   useRefineOptions,
   useActiveAuthProvider,
@@ -15,13 +16,17 @@ import { useSidebar, SidebarTrigger } from "@/components/ui/sidebar";
 import { LogOutIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export const Header = () => {
+interface HeaderProps {
+  modelSelector?: ReactNode;
+}
+
+export const Header = ({ modelSelector }: HeaderProps) => {
   const { isMobile } = useSidebar();
 
-  return <>{isMobile ? <MobileHeader /> : <DesktopHeader />}</>;
+  return <>{isMobile ? <MobileHeader modelSelector={modelSelector} /> : <DesktopHeader modelSelector={modelSelector} />}</>;
 };
 
-function DesktopHeader() {
+function DesktopHeader({ modelSelector }: HeaderProps) {
   return (
     <header
       className={cn(
@@ -35,18 +40,23 @@ function DesktopHeader() {
         "border-b",
         "border-border",
         "bg-sidebar",
-        "pr-3",
-        "justify-end",
+        "px-4",
+        "justify-between",
         "z-40"
       )}
     >
-      <ThemeToggle />
-      <UserDropdown />
+      <div className="flex items-center gap-2">
+        {modelSelector}
+      </div>
+      <div className="flex items-center gap-2">
+        <ThemeToggle />
+        <UserDropdown />
+      </div>
     </header>
   );
 }
 
-function MobileHeader() {
+function MobileHeader({ modelSelector }: HeaderProps) {
   const { open, isMobile } = useSidebar();
 
   const { title } = useRefineOptions();
@@ -69,14 +79,17 @@ function MobileHeader() {
         "z-40"
       )}
     >
-      <SidebarTrigger
-        className={cn("text-muted-foreground", "rotate-180", "ml-1", {
-          "opacity-0": open,
-          "opacity-100": !open || isMobile,
-          "pointer-events-auto": !open || isMobile,
-          "pointer-events-none": open && !isMobile,
-        })}
-      />
+      <div className="flex items-center gap-2">
+        <SidebarTrigger
+          className={cn("text-muted-foreground", "rotate-180", "ml-1", {
+            "opacity-0": open,
+            "opacity-100": !open || isMobile,
+            "pointer-events-auto": !open || isMobile,
+            "pointer-events-none": open && !isMobile,
+          })}
+        />
+        {modelSelector}
+      </div>
 
       <div
         className={cn(
