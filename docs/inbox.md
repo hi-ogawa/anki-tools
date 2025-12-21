@@ -11,7 +11,8 @@ Quick notes, feedback, and todos. Process into plan.md periodically.
   - [x] persist in localstorage
 - [ ] avoid "-" for empty field.
 - [x] README.md: requires anki restart when changing python code
-- [ ] `toolbarLeft` feels odd
+- [ ] `toolbarLeft` abstraction feels odd (improve component architecture)
+- [ ] tweak fontsize
 
 ## Ideas
 
