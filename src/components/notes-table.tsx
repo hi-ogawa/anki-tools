@@ -55,6 +55,8 @@ interface NotesTableProps {
   page: number;
   pageSize: number;
   onStateChange: (newState: Record<string, string | number>) => void;
+  selectedNoteId: number | null;
+  onNoteSelect: (note: Note) => void;
 }
 
 function getStorageKey(model: string) {
@@ -68,6 +70,8 @@ export function NotesTable({
   page,
   pageSize,
   onStateChange,
+  selectedNoteId,
+  onNoteSelect,
 }: NotesTableProps) {
   const columns = useMemo<ColumnDef<Note>[]>(() => {
     const cols: ColumnDef<Note>[] = [];
@@ -238,7 +242,12 @@ export function NotesTable({
         <TableBody>
           {table.getRowModel().rows.length ? (
             table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
+              <TableRow
+                key={row.id}
+                onClick={() => onNoteSelect(row.original)}
+                className="cursor-pointer"
+                data-state={row.original.id === selectedNoteId ? "selected" : undefined}
+              >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}

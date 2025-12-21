@@ -4,11 +4,31 @@ import {
   useQuery,
   keepPreviousData,
 } from "@tanstack/react-query";
+import { Flag } from "lucide-react";
 import { useMemo, useState, useEffect } from "react";
 import { Link, useSearchParams } from "react-router";
-import { fetchAllModelsWithFields, fetchNotes } from "./api";
+import { fetchAllModelsWithFields, fetchNotes, type Note } from "./api";
+import { NoteDetail } from "./components/note-detail";
 import { NotesTable } from "./components/notes-table";
 import { Input } from "./components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./components/ui/select";
+
+const FLAG_OPTIONS = [
+  { value: "none", label: "All", color: undefined },
+  { value: "1", label: "Red", color: "#ef4444" },
+  { value: "2", label: "Orange", color: "#f97316" },
+  { value: "3", label: "Green", color: "#22c55e" },
+  { value: "4", label: "Blue", color: "#3b82f6" },
+  { value: "5", label: "Pink", color: "#ec4899" },
+  { value: "6", label: "Turquoise", color: "#14b8a6" },
+  { value: "7", label: "Purple", color: "#a855f7" },
+] as const;
 
 const queryClient = new QueryClient();
 
@@ -28,6 +48,7 @@ function App() {
   const pageIndex = Math.max(0, urlPage - 1);
   const pageSize = parseInt(searchParams.get("pageSize") ?? "20", 10);
   const search = searchParams.get("search") ?? "";
+  const flag = searchParams.get("flag") ?? "";
 
   // Fetch schema
   const {
@@ -105,6 +126,7 @@ function App() {
         page={pageIndex}
         pageSize={pageSize}
         search={search}
+        flag={flag}
         onStateChange={setUrlState}
       />
     );
@@ -144,6 +166,7 @@ interface NotesViewProps {
   page: number;
   pageSize: number;
   search: string;
+  flag: string;
   onStateChange: (newState: Record<string, string | number>) => void;
 }
 
@@ -153,16 +176,27 @@ function NotesView({
   page,
   pageSize,
   search,
+  flag,
   onStateChange,
 }: NotesViewProps) {
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+
+  // Build full query with flag filter
+  const fullSearch = useMemo(() => {
+    const parts: string[] = [];
+    if (search) parts.push(search);
+    if (flag && flag !== "none") parts.push(`flag:${flag}`);
+    return parts.join(" ") || undefined;
+  }, [search, flag]);
+
   const {
     data: notes = [],
     isLoading,
     isFetching,
     error,
   } = useQuery({
-    queryKey: ["notes", model, search],
-    queryFn: () => fetchNotes(model, search || undefined),
+    queryKey: ["notes", model, fullSearch],
+    queryFn: () => fetchNotes(model, fullSearch),
     placeholderData: keepPreviousData,
   });
 
@@ -183,9 +217,12 @@ function NotesView({
       <p className="text-destructive">Error loading notes: {error.message}</p>
     );
 
+  const flagValue = flag || "none";
+  const selectedFlag = FLAG_OPTIONS.find((f) => f.value === flagValue);
+
   return (
     <div className="space-y-4">
-      {/* Search input - always mounted */}
+      {/* Search and filters */}
       <div className="flex items-center gap-2">
         <Input
           placeholder="Anki search: deck:name, tag:name, field:value, *wild*"
@@ -195,6 +232,36 @@ function NotesView({
           onBlur={submitSearch}
           className="max-w-md"
         />
+        <Select
+          value={flagValue}
+          onValueChange={(value) =>
+            onStateChange({ flag: value === "none" ? "" : value, page: 1 })
+          }
+        >
+          <SelectTrigger className="w-[140px]">
+            <Flag
+              className="size-4"
+              style={{ color: selectedFlag?.color }}
+              fill={selectedFlag?.color ?? "none"}
+            />
+            <SelectValue placeholder="Flag" />
+          </SelectTrigger>
+          <SelectContent>
+            {FLAG_OPTIONS.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                <span className="flex items-center gap-2">
+                  {opt.color && (
+                    <span
+                      className="size-3 rounded-full"
+                      style={{ backgroundColor: opt.color }}
+                    />
+                  )}
+                  {opt.label}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         {isFetching && (
           <span className="text-sm text-muted-foreground">Loading...</span>
         )}
@@ -203,14 +270,29 @@ function NotesView({
       {isLoading ? (
         <p className="text-muted-foreground">Loading notes...</p>
       ) : (
-        <NotesTable
-          notes={notes}
-          model={model}
-          fields={fields}
-          page={page}
-          pageSize={pageSize}
-          onStateChange={onStateChange}
-        />
+        <div className="flex gap-4">
+          <div className={selectedNote ? "flex-1" : "w-full"}>
+            <NotesTable
+              notes={notes}
+              model={model}
+              fields={fields}
+              page={page}
+              pageSize={pageSize}
+              onStateChange={onStateChange}
+              selectedNoteId={selectedNote?.id ?? null}
+              onNoteSelect={setSelectedNote}
+            />
+          </div>
+          {selectedNote && (
+            <div className="w-80 shrink-0">
+              <NoteDetail
+                note={selectedNote}
+                fields={fields}
+                onClose={() => setSelectedNote(null)}
+              />
+            </div>
+          )}
+        </div>
       )}
     </div>
   );
