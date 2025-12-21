@@ -1,3 +1,5 @@
+// https://git.sr.ht/~foosoft/anki-connect
+
 const ANKI_CONNECT_URL = "http://localhost:8765";
 
 // AnkiConnect JSON-RPC helper
