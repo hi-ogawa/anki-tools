@@ -1,8 +1,9 @@
-import { useMemo } from "react";
-import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
+import { useMemo, useState, useEffect } from "react";
+import { QueryClient, QueryClientProvider, useQuery, keepPreviousData } from "@tanstack/react-query";
 import { Link, useSearchParams } from "react-router";
 import { fetchAllModelsWithFields, fetchNotes } from "./providers/anki-connect";
 import { NotesTable } from "./components/NotesTable";
+import { Input } from "./components/ui/input";
 
 const queryClient = new QueryClient();
 
@@ -134,22 +135,53 @@ interface NotesViewProps {
 }
 
 function NotesView({ model, fields, page, pageSize, search, onStateChange }: NotesViewProps) {
-  const { data: notes = [], isLoading, error } = useQuery({
+  const { data: notes = [], isLoading, isFetching, error } = useQuery({
     queryKey: ["notes", model, search],
     queryFn: () => fetchNotes(model, search || undefined),
+    placeholderData: keepPreviousData,
   });
 
-  if (isLoading) return <p className="text-muted-foreground">Loading notes...</p>;
+  // Local search state - synced with URL
+  const [localSearch, setLocalSearch] = useState(search);
+  useEffect(() => {
+    setLocalSearch(search);
+  }, [search]);
+
+  const submitSearch = () => {
+    if (localSearch !== search) {
+      onStateChange({ search: localSearch, page: 1 });
+    }
+  };
+
   if (error) return <p className="text-destructive">Error loading notes: {error.message}</p>;
+
   return (
-    <NotesTable
-      notes={notes}
-      model={model}
-      fields={fields}
-      page={page}
-      pageSize={pageSize}
-      search={search}
-      onStateChange={onStateChange}
-    />
+    <div className="space-y-4">
+      {/* Search input - always mounted */}
+      <div className="flex items-center gap-2">
+        <Input
+          placeholder="Anki search: deck:name, tag:name, field:value, *wild*"
+          value={localSearch}
+          onChange={(e) => setLocalSearch(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && submitSearch()}
+          onBlur={submitSearch}
+          className="max-w-md"
+        />
+        {isFetching && <span className="text-sm text-muted-foreground">Loading...</span>}
+      </div>
+
+      {isLoading ? (
+        <p className="text-muted-foreground">Loading notes...</p>
+      ) : (
+        <NotesTable
+          notes={notes}
+          model={model}
+          fields={fields}
+          page={page}
+          pageSize={pageSize}
+          onStateChange={onStateChange}
+        />
+      )}
+    </div>
   );
 }

@@ -34,7 +34,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Columns3 } from "lucide-react";
 import type { Note } from "@/providers/anki-connect";
 
@@ -49,7 +48,6 @@ interface NotesTableProps {
   fields: string[];
   page: number;
   pageSize: number;
-  search: string;
   onStateChange: (newState: Record<string, string | number>) => void;
 }
 
@@ -63,7 +61,6 @@ export function NotesTable({
   fields,
   page,
   pageSize,
-  search,
   onStateChange,
 }: NotesTableProps) {
   const columns = useMemo<ColumnDef<Note>[]>(() => {
@@ -200,20 +197,6 @@ export function NotesTable({
     localStorage.setItem(getStorageKey(model), JSON.stringify(columnVisibility));
   }, [model, columnVisibility]);
 
-  // Search on submit (Enter key)
-  const [localSearch, setLocalSearch] = useState(search);
-
-  // Sync from parent when search prop changes (e.g., URL navigation)
-  useEffect(() => {
-    setLocalSearch(search);
-  }, [search]);
-
-  const submitSearch = () => {
-    if (localSearch !== search) {
-      onStateChange({ search: localSearch, page: 1 });
-    }
-  };
-
   const pagination: PaginationState = {
     pageIndex: page,
     pageSize,
@@ -244,15 +227,7 @@ export function NotesTable({
   return (
     <div className="space-y-4">
       {/* Toolbar */}
-      <div className="flex items-center justify-between">
-        <Input
-          placeholder="Anki search: deck:name, tag:name, field:value, *wild*"
-          value={localSearch}
-          onChange={(e) => setLocalSearch(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && submitSearch()}
-          onBlur={submitSearch}
-          className="max-w-md"
-        />
+      <div className="flex items-center justify-end">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm">
