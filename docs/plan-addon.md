@@ -37,7 +37,7 @@ Package the web UI as an Anki add-on that:
 ## File Structure
 
 ```
-anki-browse-web-addon/
+addon/
 ├── __init__.py           # Add-on entry, hooks, menu
 ├── server.py             # HTTP server + API handlers
 ├── manifest.json         # Anki add-on manifest
@@ -52,7 +52,7 @@ anki-browse-web-addon/
 
 ### 1. Create add-on skeleton
 
-Create `anki-addon/` directory in repo root with:
+Create `addon/` directory in repo root with:
 
 - `__init__.py` - Entry point
   - Hook into `profile_did_open` to start server
@@ -106,7 +106,7 @@ Add npm script to copy build output to add-on:
 ```json
 {
   "scripts": {
-    "build:addon": "vite build && cp -r dist/* anki-addon/web/"
+    "build:addon": "vite build && cp -r dist/* addon/web/"
   }
 }
 ```
@@ -114,7 +114,7 @@ Add npm script to copy build output to add-on:
 ### 5. Packaging for distribution
 
 Option A: AnkiWeb (official add-on repository)
-- Zip the `anki-addon/` folder
+- Zip the `addon/` folder
 - Upload to ankiweb.net
 
 Option B: GitHub releases
