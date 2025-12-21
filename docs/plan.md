@@ -2,20 +2,9 @@
 
 ## Related Docs
 
+- [architecture.md](architecture.md) - System design, file structure, API
 - [research.md](research.md) - Technical reference, API analysis
-- [plan-addon.md](plan-addon.md) - Future: Anki add-on (bypasses AnkiConnect)
 - [inbox.md](inbox.md) - Quick notes, feedback, todos
-
-## Approach
-
-Use TanStack Table + shadcn/ui with custom AnkiConnect data provider.
-
-**Stack**:
-
-- React 19 + TypeScript + Vite
-- TanStack Query (data fetching/caching)
-- TanStack Table (table features)
-- shadcn/ui (UI components)
 
 ## Phase 1: Minimal Viable
 
@@ -33,79 +22,33 @@ Use TanStack Table + shadcn/ui with custom AnkiConnect data provider.
 - [x] Column visibility toggle (localStorage persistence)
 - [ ] Add refresh button to re-fetch schema
 
-## Phase 3: Usability
-
-- [ ] Card preview panel (show all fields on row click)
-- [ ] Render HTML content safely
-- [ ] Fuzzy search (client-side with Fuse.js)
-- [x] Column visibility picker (show/hide fields)
-
 ## Phase 3.5: Feedback Items
 
 - [x] Fix page index to start from 1 (URL uses 1-based)
-- [ ] Refactor localStorage to [TanStack DB](https://tanstack.com/db/latest/docs/collections/local-storage-collection)
 - [x] Add deck name (via `getDecks` - fast alternative to `cardsInfo`)
-- [~] Flags/suspension removed - per-card concepts, not per-note (see research.md)
 - [x] Search enhancements (Anki Query mode):
   - [x] Server-side search via AnkiConnect `findNotes`
   - [x] Supports full Anki search syntax: `deck:`, `tag:`, `field:`, wildcards
   - [ ] Add "Smart Search" mode with toggle button
+    - separate input fields for deck, field, etc.
 
-## Phase 4: Edit Support
+## Phase X: Usability
+
+- [ ] Card preview panel (show all fields on row click)
+- [ ] Render HTML content safely
+- [x] Column visibility picker (show/hide fields)
+
+## Phase X: Edit Support
 
 - [ ] Implement `update` → `updateNoteFields`
 - [ ] Tag management via `addTags`/`removeTags`
 
-## Data Mapping
+## Phase X: Add-on Enhancements
 
-AnkiConnect `notesInfo` returns:
+- [ ] Configurable port (like AnkiConnect's config)
+- [ ] Publish workflow
 
-```json
-{
-  "noteId": 1234567890,
-  "modelName": "Korean Vocabulary",
-  "fields": {
-    "korean": { "value": "사과", "order": 0 },
-    "english": { "value": "apple", "order": 1 }
-  },
-  "tags": ["fruit", "topik1"]
-}
-```
+## Phase X: Misc
 
-Normalize dynamically based on discovered schema:
-
-```typescript
-function normalizeNote(note: AnkiNoteInfo, fields: string[]) {
-  return {
-    id: note.noteId,
-    ...Object.fromEntries(
-      fields.map(f => [f, note.fields[f]?.value ?? ""])
-    ),
-    tags: note.tags,
-  };
-}
-```
-
-## File Structure (Current)
-
-```
-src/
-├── providers/
-│   └── anki-connect.ts    # AnkiConnect API + data fetching
-├── components/
-│   ├── NotesTable.tsx     # Main table with pagination/search
-│   └── ui/                # shadcn/ui components
-├── hooks/
-│   └── use-mobile.ts      # Responsive design hook
-├── lib/
-│   └── utils.ts           # Tailwind class merging utility
-├── index.tsx              # Entry point with router
-└── root.tsx               # App root with query client
-```
-
-## Open Questions
-
-1. ~~**Field mapping**~~: Dynamic schema via TanStack Query
-2. ~~**Pagination**~~: Client-side, AnkiConnect returns all IDs
-3. ~~**Search**~~: Server-side via AnkiConnect (Anki Query mode); Smart Search mode TODO
-4. ~~**Cache invalidation**~~: Add manual refresh button
+- [ ] List by card (flags, suspend, etc.)
+- [ ] Refactor localStorage to [TanStack DB](https://tanstack.com/db/latest/docs/collections/local-storage-collection)

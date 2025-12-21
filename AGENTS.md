@@ -4,12 +4,12 @@ Instructions for AI coding agents working on this project.
 
 ## Documentation Structure
 
-| File                 | Purpose                                             |
-| -------------------- | --------------------------------------------------- |
-| `docs/inbox.md`      | Quick notes, feedback, todos during development     |
-| `docs/plan.md`       | Main roadmap and task tracking (source of truth)    |
-| `docs/plan-addon.md` | Future: Anki add-on implementation plan             |
-| `docs/research.md`   | Technical reference, API analysis, design decisions |
+| File                   | Purpose                                             |
+| ---------------------- | --------------------------------------------------- |
+| `docs/inbox.md`        | Quick notes, feedback, todos during development     |
+| `docs/plan.md`         | Main roadmap and task tracking (source of truth)    |
+| `docs/architecture.md` | System design, file structure, API reference        |
+| `docs/research.md`     | Technical reference, API analysis, design decisions |
 
 ## Workflow
 
