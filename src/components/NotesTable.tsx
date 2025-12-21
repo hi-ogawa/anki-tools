@@ -94,50 +94,6 @@ export function NotesTable({
       },
     });
 
-    // Flags column
-    cols.push({
-      id: "flags",
-      accessorKey: "flags",
-      header: "Flags",
-      cell: ({ getValue }) => {
-        const flags = getValue() as number[];
-        if (!flags?.length) return <span className="text-muted-foreground">-</span>;
-        const flagColors: Record<number, string> = {
-          1: "bg-red-500",
-          2: "bg-orange-500",
-          3: "bg-green-500",
-          4: "bg-blue-500",
-          5: "bg-pink-500",
-          6: "bg-teal-500",
-          7: "bg-purple-500",
-        };
-        return (
-          <div className="flex gap-1">
-            {flags.map((flag) => (
-              <span
-                key={flag}
-                className={`inline-block size-3 rounded-full ${flagColors[flag] ?? "bg-gray-500"}`}
-              />
-            ))}
-          </div>
-        );
-      },
-    });
-
-    // Suspended column
-    cols.push({
-      id: "suspended",
-      accessorKey: "suspended",
-      header: "Status",
-      cell: ({ getValue }) => {
-        const suspended = getValue() as boolean;
-        if (suspended) {
-          return <Badge variant="destructive" className="text-xs">Suspended</Badge>;
-        }
-        return <span className="text-muted-foreground text-xs">Active</span>;
-      },
-    });
-
     // Tags column
     cols.push({
       id: "tags",
@@ -171,8 +127,6 @@ export function NotesTable({
       visibility[field] = index < 3;
     });
     visibility["deck"] = true;
-    visibility["flags"] = false;
-    visibility["suspended"] = false;
     visibility["tags"] = true;
     return visibility;
   };

@@ -31,33 +31,15 @@ interface AnkiNoteInfo {
   tags: string[];
 }
 
-// AnkiConnect cardsInfo response shape
-interface AnkiCardInfo {
-  cardId: number;
-  note: number; // noteId
-  deckName: string;
-  flags: number; // 0=none, 1=red, 2=orange, 3=green, 4=blue, 5=pink, 6=turquoise, 7=purple
-  queue: number; // -1=suspended, 0=new, 1=learning, 2=review, 3=relearning
-}
-
 export interface Note {
   id: number;
   modelName: string;
   fields: Record<string, string>;
   tags: string[];
-  // Card-level fields (aggregated if multiple cards)
   deckName: string;
-  flags: number[];
-  suspended: boolean;
 }
 
-interface CardInfoByNote {
-  deckName: string;
-  flags: number[];
-  suspended: boolean;
-}
-
-function normalizeNote(note: AnkiNoteInfo, cardInfo?: CardInfoByNote): Note {
+function normalizeNote(note: AnkiNoteInfo, deckName: string): Note {
   return {
     id: note.noteId,
     modelName: note.modelName,
@@ -65,13 +47,11 @@ function normalizeNote(note: AnkiNoteInfo, cardInfo?: CardInfoByNote): Note {
       Object.entries(note.fields).map(([k, v]) => [k, v.value])
     ),
     tags: note.tags,
-    deckName: cardInfo?.deckName ?? "",
-    flags: cardInfo?.flags ?? [],
-    suspended: cardInfo?.suspended ?? false,
+    deckName,
   };
 }
 
-// Fetch notes for a model with card info
+// Fetch notes for a model
 // search: optional Anki search syntax (e.g., "field:value", "deck:name", "tag:name")
 export async function fetchNotes(modelName: string, search?: string): Promise<Note[]> {
   // Build query: always filter by model, optionally add user search
@@ -84,38 +64,26 @@ export async function fetchNotes(modelName: string, search?: string): Promise<No
   // Fetch notes and cards in parallel
   const [notesInfo, cardIds] = await Promise.all([
     invoke<AnkiNoteInfo[]>("notesInfo", { notes: noteIds }),
-    invoke<number[]>("findCards", { query: `note:"${modelName}"` }),
+    invoke<number[]>("findCards", { query }),
   ]);
 
-  // Fetch card details
-  const cardsInfo = cardIds.length > 0
-    ? await invoke<AnkiCardInfo[]>("cardsInfo", { cards: cardIds })
-    : [];
+  // Get deck names via getDecks (much faster than cardsInfo)
+  // Returns: { "DeckName": [cardId, ...], ... }
+  const decksByName = cardIds.length > 0
+    ? await invoke<Record<string, number[]>>("getDecks", { cards: cardIds })
+    : {};
 
-  // Group cards by noteId
-  const cardsByNote = new Map<number, AnkiCardInfo[]>();
-  for (const card of cardsInfo) {
-    const existing = cardsByNote.get(card.note) ?? [];
-    existing.push(card);
-    cardsByNote.set(card.note, existing);
+  // Find primary deck (the one with most cards)
+  // Note: We can't map individual cards to notes without cardsInfo,
+  // but most note types have all cards in one deck
+  let primaryDeck = "";
+  let maxCards = 0;
+  for (const [deckName, cards] of Object.entries(decksByName)) {
+    if (cards.length > maxCards) {
+      maxCards = cards.length;
+      primaryDeck = deckName;
+    }
   }
 
-  // Aggregate card info per note
-  function aggregateCardInfo(cards: AnkiCardInfo[]): CardInfoByNote {
-    // Use first card's deck, collect all unique flags, check if any card is suspended
-    const decks = [...new Set(cards.map(c => c.deckName))];
-    const flags = [...new Set(cards.map(c => c.flags).filter(f => f > 0))];
-    const suspended = cards.some(c => c.queue === -1);
-    return {
-      deckName: decks.length === 1 ? decks[0] : `${decks[0]} (+${decks.length - 1})`,
-      flags,
-      suspended,
-    };
-  }
-
-  return notesInfo.map(note => {
-    const cards = cardsByNote.get(note.noteId);
-    const cardInfo = cards ? aggregateCardInfo(cards) : undefined;
-    return normalizeNote(note, cardInfo);
-  });
+  return notesInfo.map(note => normalizeNote(note, primaryDeck));
 }

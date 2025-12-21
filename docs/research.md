@@ -81,11 +81,99 @@ From source code analysis:
 
 No lightweight endpoint exists for just `flags` + `queue` (suspension).
 
+### Anki Internals
+
+**Database Schema** (from `rslib/src/storage/schema11.sql`):
+
+```sql
+-- Notes table (content)
+CREATE TABLE notes (
+  id integer PRIMARY KEY,
+  mid integer NOT NULL,    -- model/notetype ID
+  flds text NOT NULL,      -- fields (0x1F separated)
+  tags text NOT NULL
+);
+
+-- Cards table (scheduling + deck)
+CREATE TABLE cards (
+  id integer PRIMARY KEY,
+  nid integer NOT NULL,    -- note ID (foreign key)
+  did integer NOT NULL,    -- deck ID ← note-deck mapping!
+  queue integer NOT NULL,  -- -1=suspended
+  flags integer NOT NULL
+);
+
+CREATE INDEX ix_cards_nid ON cards (nid);  -- fast note→cards lookup
+```
+
+**Key insight**: Note-deck mapping is trivial at DB level:
+```sql
+SELECT c.nid, c.did FROM cards c WHERE c.nid IN (...)
+```
+
+**Why `cardsInfo` is slow** (from `anki-connect/plugin/__init__.py`):
+
+```python
+def cardsInfo(self, cards):
+    for cid in cards:
+        card = self.getCard(cid)
+        # ... loads note, model ...
+
+        # SLOW: renders full HTML per card
+        'question': util.cardQuestion(card),
+        'answer': util.cardAnswer(card),
+```
+
+The HTML rendering invokes Rust backend (`render_existing_card()`) which:
+- Loads card, note, model, templates
+- Renders HTML with filters
+- Cannot be batched
+
+**How Anki's browser does it efficiently** (from `qt/aqt/browser/table/model.py`):
+
+```python
+def _fetch_row_from_backend(self, item: ItemId) -> CellRow:
+    # Single optimized backend call - returns only needed columns
+    row = CellRow(*self.col.browser_row_for_id(item))
+```
+
+Uses `browser_row_for_id()` which is optimized and configurable.
+
+### AnkiConnect Limitation
+
+No endpoint provides lightweight card metadata (noteId + deckId + flags) without HTML rendering.
+
+**Workaround options**:
+1. Contribute `cardsInfoLight` to AnkiConnect (skip HTML rendering)
+2. Use raw SQL queries if AnkiConnect adds query support
+3. Accept limitation: use `getDecks` for deck, skip per-note mapping
+
+### Note Mode vs Card Mode
+
+Anki's browser has two modes. Data belongs to different levels:
+
+| Data | Level | Note Mode | Card Mode |
+|------|-------|-----------|-----------|
+| Fields | Note | ✓ | ✓ |
+| Tags | Note | ✓ | ✓ |
+| Model | Note | ✓ | ✓ |
+| Deck | Card | ✓ (first card) | ✓ |
+| Flags | Card | ✗ (undefined) | ✓ |
+| Suspended | Card | ✗ (undefined) | ✓ |
+| Interval/Due | Card | ✗ | ✓ |
+
+**Decision**: Remove flags/suspension from note mode - they are per-card concepts.
+
 ### Optimization Strategy
 
-1. Use `getDecks` for deck names (180ms vs 2500ms)
-2. Defer `cardsInfo` until user enables Flags/Status columns
-3. Expected load time: ~700ms (down from ~3000ms)
+**Note mode** (current):
+1. Use `getDecks` for deck names (180ms vs 2500ms for `cardsInfo`)
+2. Skip `cardsInfo` entirely - flags/suspension removed
+3. Expected load time: **~700ms** (down from ~3000ms)
+
+**Card mode** (future):
+- Show flags, suspension, scheduling info
+- Will need `cardsInfo` (accept slower load)
 
 ## CMS/Admin UI Frameworks
 
