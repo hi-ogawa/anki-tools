@@ -71,8 +71,8 @@ interface BrowseTableProps {
   toolbarLeft?: React.ReactNode;
 }
 
-function getStorageKey(model: string, viewMode: ViewMode) {
-  return `anki-browse-columns:${model}:${viewMode}`;
+function getStorageKey(model: string) {
+  return `anki-browse-columns:${model}`;
 }
 
 // Column group markers for dropdown display
@@ -149,63 +149,65 @@ export function BrowseTable({
       },
     });
 
-    // Card-specific columns (always added, visibility controlled separately)
-    cols.push({
-      id: "flag",
-      accessorFn: (row) => (row as Card).flag,
-      header: "Flag",
-      cell: ({ getValue }) => {
-        const flag = getValue() as number;
-        if (!flag) return <span className="text-muted-foreground">-</span>;
-        return (
-          <Flag
-            className="size-4"
-            style={{ color: FLAG_COLORS[flag] }}
-            fill={FLAG_COLORS[flag]}
-          />
-        );
-      },
-    });
-
-    cols.push({
-      id: "status",
-      accessorFn: (row) => (row as Card).queue,
-      header: "Status",
-      cell: ({ getValue }) => {
-        const queue = getValue() as number;
-        if (queue === -1) {
+    // Card-specific columns (only in cards view)
+    if (viewMode === "cards") {
+      cols.push({
+        id: "flag",
+        accessorFn: (row) => (row as Card).flag,
+        header: "Flag",
+        cell: ({ getValue }) => {
+          const flag = getValue() as number;
+          if (!flag) return <span className="text-muted-foreground">-</span>;
           return (
-            <span className="flex items-center gap-1 text-yellow-600">
-              <Pause className="size-3" />
-              Suspended
-            </span>
+            <Flag
+              className="size-4"
+              style={{ color: FLAG_COLORS[flag] }}
+              fill={FLAG_COLORS[flag]}
+            />
           );
-        }
-        const labels: Record<number, string> = {
-          0: "New",
-          1: "Learning",
-          2: "Review",
-          3: "Relearning",
-        };
-        return <span>{labels[queue] ?? queue}</span>;
-      },
-    });
+        },
+      });
 
-    cols.push({
-      id: "interval",
-      accessorFn: (row) => (row as Card).interval,
-      header: "Interval",
-      cell: ({ getValue }) => {
-        const ivl = getValue() as number;
-        if (ivl <= 0) return <span className="text-muted-foreground">-</span>;
-        if (ivl >= 365) return `${Math.round(ivl / 365)}y`;
-        if (ivl >= 30) return `${Math.round(ivl / 30)}mo`;
-        return `${ivl}d`;
-      },
-    });
+      cols.push({
+        id: "status",
+        accessorFn: (row) => (row as Card).queue,
+        header: "Status",
+        cell: ({ getValue }) => {
+          const queue = getValue() as number;
+          if (queue === -1) {
+            return (
+              <span className="flex items-center gap-1 text-yellow-600">
+                <Pause className="size-3" />
+                Suspended
+              </span>
+            );
+          }
+          const labels: Record<number, string> = {
+            0: "New",
+            1: "Learning",
+            2: "Review",
+            3: "Relearning",
+          };
+          return <span>{labels[queue] ?? queue}</span>;
+        },
+      });
+
+      cols.push({
+        id: "interval",
+        accessorFn: (row) => (row as Card).interval,
+        header: "Interval",
+        cell: ({ getValue }) => {
+          const ivl = getValue() as number;
+          if (ivl <= 0) return <span className="text-muted-foreground">-</span>;
+          if (ivl >= 365) return `${Math.round(ivl / 365)}y`;
+          if (ivl >= 30) return `${Math.round(ivl / 30)}mo`;
+          return `${ivl}d`;
+        },
+      });
+    }
 
     return cols;
-  }, [fields]);
+  }, [fields, viewMode]);
 
   // Column visibility
   const getDefaultVisibility = (): VisibilityState => {
@@ -214,20 +216,18 @@ export function BrowseTable({
       visibility[field] = index < 3;
     });
     visibility["deck"] = true;
-    visibility["tags"] = true;
-    // Card columns: visible in cards mode, hidden in notes mode
-    visibility["flag"] = viewMode === "cards";
-    visibility["status"] = viewMode === "cards";
-    visibility["interval"] = viewMode === "cards";
     return visibility;
   };
 
   const getInitialVisibility = (): VisibilityState => {
+    const defaults = getDefaultVisibility();
     try {
-      const stored = localStorage.getItem(getStorageKey(model, viewMode));
-      if (stored) return JSON.parse(stored);
+      const stored = localStorage.getItem(getStorageKey(model));
+      if (stored) {
+        return { ...defaults, ...JSON.parse(stored) };
+      }
     } catch {}
-    return getDefaultVisibility();
+    return defaults;
   };
 
   const [columnVisibility, setColumnVisibility] =
@@ -242,10 +242,10 @@ export function BrowseTable({
   // Persist visibility
   useEffect(() => {
     localStorage.setItem(
-      getStorageKey(model, viewMode),
+      getStorageKey(model),
       JSON.stringify(columnVisibility),
     );
-  }, [model, viewMode, columnVisibility]);
+  }, [model, columnVisibility]);
 
   // Table setup
   const pagination: PaginationState = { pageIndex: page, pageSize };
@@ -316,21 +316,27 @@ export function BrowseTable({
                   {column.id}
                 </DropdownMenuCheckboxItem>
               ))}
-            <DropdownMenuSeparator />
-            <DropdownMenuLabel>Card</DropdownMenuLabel>
-            {table
-              .getAllColumns()
-              .filter((col) => cardColumnIds.includes(col.id))
-              .map((column) => (
-                <DropdownMenuCheckboxItem
-                  key={column.id}
-                  checked={column.getIsVisible()}
-                  onCheckedChange={(value) => column.toggleVisibility(!!value)}
-                  onSelect={(e) => e.preventDefault()}
-                >
-                  {column.id}
-                </DropdownMenuCheckboxItem>
-              ))}
+            {viewMode === "cards" && (
+              <>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel>Card</DropdownMenuLabel>
+                {table
+                  .getAllColumns()
+                  .filter((col) => cardColumnIds.includes(col.id))
+                  .map((column) => (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) =>
+                        column.toggleVisibility(!!value)
+                      }
+                      onSelect={(e) => e.preventDefault()}
+                    >
+                      {column.id}
+                    </DropdownMenuCheckboxItem>
+                  ))}
+              </>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
