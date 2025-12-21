@@ -75,10 +75,6 @@ function getStorageKey(model: string) {
   return `anki-browse-columns:${model}`;
 }
 
-// Column group markers for dropdown display
-const FIELD_COLUMNS_END = "__fields_end__";
-const NOTE_COLUMNS_END = "__note_end__";
-
 export function BrowseTable({
   data,
   viewMode,

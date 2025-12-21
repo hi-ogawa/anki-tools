@@ -24,6 +24,8 @@ pnpm dev
 # Open http://localhost:5173
 ```
 
+**Note**: Restart Anki after changing Python code in `addon/`.
+
 ## Build
 
 ```bash
