@@ -56,11 +56,13 @@ if __name__ == "__main__":
 ### 2. Fixture Data
 
 Option A: **Pre-built .anki2 file** (committed to repo)
+
 ```
 tests/fixtures/test.anki2   # SQLite database with sample notes
 ```
 
 Option B: **Generate on first run**
+
 ```python
 # tests/fixtures/create.py
 from anki.collection import Collection
@@ -101,6 +103,7 @@ export default defineConfig({
 ```
 
 **Port allocation (+1000 for e2e):**
+
 - Dev: Vite `:5173` → Python `:5679`
 - E2E: Vite `:6173` → Python `:6679`
 
@@ -122,8 +125,8 @@ tests/
 
 ```bash
 # Install deps
-pip install anki
-pnpm add -D @playwright/test
+uv sync
+pnpm install
 pnpm exec playwright install
 
 # Run tests (starts servers automatically)
@@ -144,12 +147,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+      - uses: astral-sh/setup-uv@v4
       - uses: pnpm/action-setup@v2
 
-      - run: pip install anki
+      - run: uv sync
       - run: pnpm install
       - run: pnpm exec playwright install --with-deps
       - run: pnpm test:e2e

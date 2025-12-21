@@ -76,6 +76,14 @@ class BrowseServer:
                 directory = str(server.web_dir) if server.web_dir else None
                 super().__init__(*args, directory=directory, **kwargs)
 
+            def do_GET(self):
+                if self.path == "/api/health":
+                    self._send_json({"status": "ok"})
+                elif server.web_dir:
+                    super().do_GET()
+                else:
+                    self.send_error(404)
+
             def do_POST(self):
                 if self.path == "/api":
                     self._handle_api()
