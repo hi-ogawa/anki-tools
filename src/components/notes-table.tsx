@@ -57,6 +57,7 @@ interface NotesTableProps {
   onStateChange: (newState: Record<string, string | number>) => void;
   selectedNoteId: number | null;
   onNoteSelect: (note: Note) => void;
+  toolbarLeft?: React.ReactNode;
 }
 
 function getStorageKey(model: string) {
@@ -72,6 +73,7 @@ export function NotesTable({
   onStateChange,
   selectedNoteId,
   onNoteSelect,
+  toolbarLeft,
 }: NotesTableProps) {
   const columns = useMemo<ColumnDef<Note>[]>(() => {
     const cols: ColumnDef<Note>[] = [];
@@ -199,7 +201,8 @@ export function NotesTable({
   return (
     <div className="space-y-4">
       {/* Toolbar */}
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">{toolbarLeft}</div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm">

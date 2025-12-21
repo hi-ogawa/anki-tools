@@ -220,78 +220,78 @@ function NotesView({
   const flagValue = flag || "none";
   const selectedFlag = FLAG_OPTIONS.find((f) => f.value === flagValue);
 
-  return (
-    <div className="space-y-4">
-      {/* Search and filters */}
-      <div className="flex items-center gap-2">
-        <Input
-          placeholder="Anki search: deck:name, tag:name, field:value, *wild*"
-          value={localSearch}
-          onChange={(e) => setLocalSearch(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && submitSearch()}
-          onBlur={submitSearch}
-          className="max-w-md"
-        />
-        <Select
-          value={flagValue}
-          onValueChange={(value) =>
-            onStateChange({ flag: value === "none" ? "" : value, page: 1 })
-          }
-        >
-          <SelectTrigger className="w-[140px]">
-            <Flag
-              className="size-4"
-              style={{ color: selectedFlag?.color }}
-              fill={selectedFlag?.color ?? "none"}
-            />
-            <SelectValue placeholder="Flag" />
-          </SelectTrigger>
-          <SelectContent>
-            {FLAG_OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value}>
-                <span className="flex items-center gap-2">
-                  {opt.color && (
-                    <span
-                      className="size-3 rounded-full"
-                      style={{ backgroundColor: opt.color }}
-                    />
-                  )}
-                  {opt.label}
-                </span>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        {isFetching && (
-          <span className="text-sm text-muted-foreground">Loading...</span>
-        )}
-      </div>
+  const toolbarLeft = (
+    <>
+      <Input
+        placeholder="Anki search: deck:name, tag:name, field:value, *wild*"
+        value={localSearch}
+        onChange={(e) => setLocalSearch(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && submitSearch()}
+        onBlur={submitSearch}
+        className="w-80"
+      />
+      <Select
+        value={flagValue}
+        onValueChange={(value) =>
+          onStateChange({ flag: value === "none" ? "" : value, page: 1 })
+        }
+      >
+        <SelectTrigger className="w-[140px]">
+          <Flag
+            className="size-4"
+            style={{ color: selectedFlag?.color }}
+            fill={selectedFlag?.color ?? "none"}
+          />
+          <SelectValue placeholder="Flag" />
+        </SelectTrigger>
+        <SelectContent>
+          {FLAG_OPTIONS.map((opt) => (
+            <SelectItem key={opt.value} value={opt.value}>
+              <span className="flex items-center gap-2">
+                {opt.color && (
+                  <span
+                    className="size-3 rounded-full"
+                    style={{ backgroundColor: opt.color }}
+                  />
+                )}
+                {opt.label}
+              </span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      {isFetching && (
+        <span className="text-sm text-muted-foreground">Loading...</span>
+      )}
+    </>
+  );
 
-      {isLoading ? (
-        <p className="text-muted-foreground">Loading notes...</p>
-      ) : (
-        <div className="flex gap-4">
-          <div className={selectedNote ? "flex-1" : "w-full"}>
-            <NotesTable
-              notes={notes}
-              model={model}
-              fields={fields}
-              page={page}
-              pageSize={pageSize}
-              onStateChange={onStateChange}
-              selectedNoteId={selectedNote?.id ?? null}
-              onNoteSelect={setSelectedNote}
-            />
-          </div>
-          {selectedNote && (
-            <div className="w-80 shrink-0">
-              <NoteDetail
-                note={selectedNote}
-                fields={fields}
-                onClose={() => setSelectedNote(null)}
-              />
-            </div>
-          )}
+  if (isLoading) {
+    return <p className="text-muted-foreground">Loading notes...</p>;
+  }
+
+  return (
+    <div className="flex gap-4">
+      <div className={selectedNote ? "flex-1" : "w-full"}>
+        <NotesTable
+          notes={notes}
+          model={model}
+          fields={fields}
+          page={page}
+          pageSize={pageSize}
+          onStateChange={onStateChange}
+          selectedNoteId={selectedNote?.id ?? null}
+          onNoteSelect={setSelectedNote}
+          toolbarLeft={toolbarLeft}
+        />
+      </div>
+      {selectedNote && (
+        <div className="w-80 shrink-0">
+          <NoteDetail
+            note={selectedNote}
+            fields={fields}
+            onClose={() => setSelectedNote(null)}
+          />
         </div>
       )}
     </div>
