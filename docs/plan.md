@@ -25,10 +25,20 @@
 
 Goal: Replace Anki's built-in browser for daily workflow.
 
-- [ ] Flag filter (search `flag:1` via `findCards` → note IDs)
-- [ ] Note detail panel (click row → show all fields)
+### Note Mode (current)
+
+- [x] Flag filter
+- [x] Note detail panel (click row → show all fields)
 - [ ] Edit note fields (`updateNoteFields` API)
-- [ ] Tag editing (`addTags`/`removeTags` API)
+- [ ] Edit tags (`addTags`/`removeTags` API)
+
+### Card Mode
+
+- [ ] Toggle: Note ↔ Card view
+- [ ] Card table (each row = card, not note)
+- [ ] `browseCards` API endpoint
+- [ ] Set/clear flag (`setFlag` API)
+- [ ] Suspend/unsuspend (`suspend`/`unsuspend` API)
 
 ## Phase 4: Polish
 
@@ -38,7 +48,6 @@ Goal: Replace Anki's built-in browser for daily workflow.
 
 ## Phase 5: Future
 
-- [ ] Card Mode (show flags, suspension, scheduling per-card)
 - [ ] Configurable port
 - [ ] Publish workflow
 - [ ] Refactor localStorage to TanStack DB
