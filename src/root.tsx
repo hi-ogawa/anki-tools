@@ -21,7 +21,7 @@ function App() {
   // URL uses 1-based page, convert to 0-based for table
   const urlPage = parseInt(searchParams.get("page") ?? "1", 10);
   const pageIndex = Math.max(0, urlPage - 1);
-  const pageSize = parseInt(searchParams.get("pageSize") ?? "25", 10);
+  const pageSize = parseInt(searchParams.get("pageSize") ?? "20", 10);
   const search = searchParams.get("search") ?? "";
 
   // Fetch schema
