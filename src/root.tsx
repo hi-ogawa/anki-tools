@@ -11,6 +11,7 @@ import {
   fetchAllModelsWithFields,
   fetchNotes,
   fetchCards,
+  setCardFlag,
   type Note,
   type Card,
 } from "./api";
@@ -356,9 +357,22 @@ function NotesView({
       {selected && (
         <div className="w-80 shrink-0">
           <NoteDetail
-            note={selected as Note}
+            item={selected}
             fields={fields}
             onClose={clearSelected}
+            onFlagChange={async (cardId, flag) => {
+              try {
+                await setCardFlag(cardId, flag);
+                // Update local state to reflect the change
+                setSelectedCard((prev) =>
+                  prev?.id === cardId ? { ...prev, flag } : prev,
+                );
+              } catch (e) {
+                alert(
+                  `Failed to set flag: ${e instanceof Error ? e.message : e}`,
+                );
+              }
+            }}
           />
         </div>
       )}

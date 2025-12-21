@@ -66,3 +66,11 @@ export async function fetchCards(
     : `note:"${modelName}"`;
   return invoke<Card[]>("browseCards", { query });
 }
+
+// Set flag on a card (0 = no flag, 1-7 = flag colors)
+export async function setCardFlag(
+  cardId: number,
+  flag: number,
+): Promise<boolean> {
+  return invoke<boolean>("setCardFlag", { cardId, flag });
+}

@@ -114,6 +114,12 @@ def handle_action(action: str, params: dict):
             })
         return cards
 
+    elif action == "setCardFlag":
+        card_id = params["cardId"]
+        flag = params["flag"]  # 0-7
+        col.set_user_flag_for_cards(flag, [card_id])
+        return True
+
     raise ValueError(f"Unknown action: {action}")
 
 
