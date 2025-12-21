@@ -165,13 +165,23 @@ function App() {
               </select>
               <div className="flex rounded border text-sm">
                 <button
-                  onClick={() => setSearchParams((p) => { p.set("view", "notes"); return p; })}
+                  onClick={() =>
+                    setSearchParams((p) => {
+                      p.set("view", "notes");
+                      return p;
+                    })
+                  }
                   className={`px-3 py-1 ${viewMode === "notes" ? "bg-primary text-primary-foreground" : "bg-background"}`}
                 >
                   Notes
                 </button>
                 <button
-                  onClick={() => setSearchParams((p) => { p.set("view", "cards"); return p; })}
+                  onClick={() =>
+                    setSearchParams((p) => {
+                      p.set("view", "cards");
+                      return p;
+                    })
+                  }
                   className={`px-3 py-1 ${viewMode === "cards" ? "bg-primary text-primary-foreground" : "bg-background"}`}
                 >
                   Cards
@@ -318,9 +328,10 @@ function NotesView({
 
   const data = viewMode === "notes" ? notes : cards;
   const selected = viewMode === "notes" ? selectedNote : selectedCard;
-  const setSelected = viewMode === "notes"
-    ? (item: Note | Card) => setSelectedNote(item as Note)
-    : (item: Note | Card) => setSelectedCard(item as Card);
+  const setSelected =
+    viewMode === "notes"
+      ? (item: Note | Card) => setSelectedNote(item as Note)
+      : (item: Note | Card) => setSelectedCard(item as Card);
   const clearSelected = () => {
     setSelectedNote(null);
     setSelectedCard(null);

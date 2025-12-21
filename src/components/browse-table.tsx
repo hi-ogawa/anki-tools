@@ -154,55 +154,55 @@ export function BrowseTable({
       id: "flag",
       accessorFn: (row) => (row as Card).flag,
       header: "Flag",
-        cell: ({ getValue }) => {
-          const flag = getValue() as number;
-          if (!flag) return <span className="text-muted-foreground">-</span>;
+      cell: ({ getValue }) => {
+        const flag = getValue() as number;
+        if (!flag) return <span className="text-muted-foreground">-</span>;
+        return (
+          <Flag
+            className="size-4"
+            style={{ color: FLAG_COLORS[flag] }}
+            fill={FLAG_COLORS[flag]}
+          />
+        );
+      },
+    });
+
+    cols.push({
+      id: "status",
+      accessorFn: (row) => (row as Card).queue,
+      header: "Status",
+      cell: ({ getValue }) => {
+        const queue = getValue() as number;
+        if (queue === -1) {
           return (
-            <Flag
-              className="size-4"
-              style={{ color: FLAG_COLORS[flag] }}
-              fill={FLAG_COLORS[flag]}
-            />
+            <span className="flex items-center gap-1 text-yellow-600">
+              <Pause className="size-3" />
+              Suspended
+            </span>
           );
-        },
-      });
+        }
+        const labels: Record<number, string> = {
+          0: "New",
+          1: "Learning",
+          2: "Review",
+          3: "Relearning",
+        };
+        return <span>{labels[queue] ?? queue}</span>;
+      },
+    });
 
-      cols.push({
-        id: "status",
-        accessorFn: (row) => (row as Card).queue,
-        header: "Status",
-        cell: ({ getValue }) => {
-          const queue = getValue() as number;
-          if (queue === -1) {
-            return (
-              <span className="flex items-center gap-1 text-yellow-600">
-                <Pause className="size-3" />
-                Suspended
-              </span>
-            );
-          }
-          const labels: Record<number, string> = {
-            0: "New",
-            1: "Learning",
-            2: "Review",
-            3: "Relearning",
-          };
-          return <span>{labels[queue] ?? queue}</span>;
-        },
-      });
-
-      cols.push({
-        id: "interval",
-        accessorFn: (row) => (row as Card).interval,
-        header: "Interval",
-        cell: ({ getValue }) => {
-          const ivl = getValue() as number;
-          if (ivl <= 0) return <span className="text-muted-foreground">-</span>;
-          if (ivl >= 365) return `${Math.round(ivl / 365)}y`;
-          if (ivl >= 30) return `${Math.round(ivl / 30)}mo`;
-          return `${ivl}d`;
-        },
-      });
+    cols.push({
+      id: "interval",
+      accessorFn: (row) => (row as Card).interval,
+      header: "Interval",
+      cell: ({ getValue }) => {
+        const ivl = getValue() as number;
+        if (ivl <= 0) return <span className="text-muted-foreground">-</span>;
+        if (ivl >= 365) return `${Math.round(ivl / 365)}y`;
+        if (ivl >= 30) return `${Math.round(ivl / 30)}mo`;
+        return `${ivl}d`;
+      },
+    });
 
     return cols;
   }, [fields]);
@@ -383,10 +383,12 @@ export function BrowseTable({
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
           Showing{" "}
-          {data.length > 0
-            ? pagination.pageIndex * pagination.pageSize + 1
-            : 0}
-          -{Math.min((pagination.pageIndex + 1) * pagination.pageSize, data.length)}{" "}
+          {data.length > 0 ? pagination.pageIndex * pagination.pageSize + 1 : 0}
+          -
+          {Math.min(
+            (pagination.pageIndex + 1) * pagination.pageSize,
+            data.length,
+          )}{" "}
           of {data.length}
         </div>
 
