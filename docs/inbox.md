@@ -6,8 +6,8 @@ Quick notes, feedback, and todos. Process into plan.md periodically.
 
 - [x] remove unused dependencies and files
 - [x] update components.json
-- [ ] file name conventions
-- [ ] setup formatter
+- [x] file name conventions
+- [x] setup formatter
 
 ## Feedback
 
