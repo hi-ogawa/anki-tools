@@ -14,9 +14,8 @@ import {
   type Note,
   type Card,
 } from "./api";
-import { CardsTable } from "./components/cards-table";
+import { BrowseTable } from "./components/browse-table";
 import { NoteDetail } from "./components/note-detail";
-import { NotesTable } from "./components/notes-table";
 import { Input } from "./components/ui/input";
 import {
   Select,
@@ -317,41 +316,38 @@ function NotesView({
     return <p className="text-muted-foreground">Loading {viewMode}...</p>;
   }
 
-  if (viewMode === "cards") {
-    return (
-      <CardsTable
-        cards={cards}
-        page={page}
-        pageSize={pageSize}
-        onStateChange={onStateChange}
-        selectedCardId={selectedCard?.id ?? null}
-        onCardSelect={setSelectedCard}
-        toolbarLeft={toolbarLeft}
-      />
-    );
-  }
+  const data = viewMode === "notes" ? notes : cards;
+  const selected = viewMode === "notes" ? selectedNote : selectedCard;
+  const setSelected = viewMode === "notes"
+    ? (item: Note | Card) => setSelectedNote(item as Note)
+    : (item: Note | Card) => setSelectedCard(item as Card);
+  const clearSelected = () => {
+    setSelectedNote(null);
+    setSelectedCard(null);
+  };
 
   return (
     <div className="flex gap-4">
-      <div className={selectedNote ? "flex-1" : "w-full"}>
-        <NotesTable
-          notes={notes}
+      <div className={selected ? "flex-1" : "w-full"}>
+        <BrowseTable
+          data={data}
+          viewMode={viewMode}
           model={model}
           fields={fields}
           page={page}
           pageSize={pageSize}
           onStateChange={onStateChange}
-          selectedNoteId={selectedNote?.id ?? null}
-          onNoteSelect={setSelectedNote}
+          selectedId={selected?.id ?? null}
+          onSelect={setSelected}
           toolbarLeft={toolbarLeft}
         />
       </div>
-      {selectedNote && (
+      {selected && (
         <div className="w-80 shrink-0">
           <NoteDetail
-            note={selectedNote}
+            note={selected as Note}
             fields={fields}
-            onClose={() => setSelectedNote(null)}
+            onClose={clearSelected}
           />
         </div>
       )}

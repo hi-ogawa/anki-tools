@@ -99,14 +99,14 @@ def handle_action(action: str, params: dict):
             card = col.get_card(cid)
             note = card.note()
             model = note.note_type()
-            # Get first field as sort field (like Anki browser)
-            sort_field = note.fields[0] if note.fields else ""
             cards.append({
                 "id": cid,
                 "noteId": card.nid,
                 "deckName": col.decks.name(card.did),
                 "modelName": model["name"],
-                "sortField": sort_field,
+                "fields": {f["name"]: note.fields[i] for i, f in enumerate(model["flds"])},
+                "tags": list(note.tags),
+                # Card-specific
                 "flag": card.flags,
                 "queue": card.queue,  # -1 = suspended, 0 = new, 1 = learning, 2 = review
                 "due": card.due,

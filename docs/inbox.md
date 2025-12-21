@@ -10,8 +10,12 @@ Quick notes, feedback, and todos. Process into plan.md periodically.
 - [ ] resize side panel width
   - [ ] persist in localstorage
 - [ ] avoid "-" for empty field.
+- [ ] README.md: requires anki restart when changing python code
 
 ## Ideas
 
 - [ ] persist last selected model in local stroage
 - [ ] dedicated input for tag (multi select)
+- [ ] setup e2e
+- [ ] remove research.md (move to inline comment if it's still worth)
+- [ ] document agent workflow (e.g. branch, commit)

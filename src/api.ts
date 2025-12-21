@@ -47,7 +47,9 @@ export interface Card {
   noteId: number;
   deckName: string;
   modelName: string;
-  sortField: string;
+  fields: Record<string, string>;
+  tags: string[];
+  // Card-specific
   flag: number; // 0 = none, 1-7 = flag colors
   queue: number; // -1 = suspended, 0 = new, 1 = learning, 2 = review
   due: number;
