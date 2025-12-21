@@ -31,6 +31,7 @@
   - [x] Supports full Anki search syntax: `deck:`, `tag:`, `field:`, wildcards
   - [ ] Add "Smart Search" mode with toggle button
     - separate input fields for deck, field, etc.
+    - filter by flags
 
 ## Phase X: Usability
 
