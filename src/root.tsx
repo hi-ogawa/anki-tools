@@ -2,40 +2,15 @@ import { useSyncExternalStore } from "react";
 import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { fetchAllModelsWithFields, fetchNotes } from "./providers/anki-connect";
 import { NotesTable } from "./components/NotesTable";
-import "./App.css";
-
-function NotesView({ model, fields }: { model: string; fields: string[] }) {
-  const { data: notes = [], isLoading, error } = useQuery({
-    queryKey: ["notes", model],
-    queryFn: () => fetchNotes(model),
-  });
-
-  if (isLoading) return <p className="text-muted-foreground">Loading notes...</p>;
-  if (error) return <p className="text-destructive">Error loading notes: {error.message}</p>;
-  return <NotesTable notes={notes} fields={fields} />;
-}
 
 const queryClient = new QueryClient();
 
-// Subscribe to URL changes
-function useUrlParam(key: string): [string | null, (value: string) => void] {
-  const value = useSyncExternalStore(
-    (callback) => {
-      window.addEventListener("popstate", callback);
-      return () => window.removeEventListener("popstate", callback);
-    },
-    () => new URLSearchParams(window.location.search).get(key)
+export function Root() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AppContent />
+    </QueryClientProvider>
   );
-
-  const setValue = (newValue: string) => {
-    const url = new URL(window.location.href);
-    url.searchParams.set(key, newValue);
-    window.history.pushState({}, "", url);
-    // Trigger re-render by dispatching popstate
-    window.dispatchEvent(new PopStateEvent("popstate"));
-  };
-
-  return [value, setValue];
 }
 
 function AppContent() {
@@ -89,7 +64,9 @@ function AppContent() {
     <div className="flex min-h-screen flex-col">
       <header className="border-b px-4 py-3">
         <div className="flex items-center gap-4">
-          <h1 className="text-lg font-semibold">Anki Browser</h1>
+          <h1 className="text-lg font-semibold">
+            <a href="/">Anki Browser</a>
+          </h1>
           {modelNames.length > 0 && (
             <select
               value={validModel ? urlModel : ""}
@@ -111,10 +88,34 @@ function AppContent() {
   );
 }
 
-export default function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <AppContent />
-    </QueryClientProvider>
+function NotesView({ model, fields }: { model: string; fields: string[] }) {
+  const { data: notes = [], isLoading, error } = useQuery({
+    queryKey: ["notes", model],
+    queryFn: () => fetchNotes(model),
+  });
+
+  if (isLoading) return <p className="text-muted-foreground">Loading notes...</p>;
+  if (error) return <p className="text-destructive">Error loading notes: {error.message}</p>;
+  return <NotesTable notes={notes} fields={fields} />;
+}
+
+// Subscribe to URL changes
+function useUrlParam(key: string): [string | null, (value: string) => void] {
+  const value = useSyncExternalStore(
+    (callback) => {
+      window.addEventListener("popstate", callback);
+      return () => window.removeEventListener("popstate", callback);
+    },
+    () => new URLSearchParams(window.location.search).get(key)
   );
+
+  const setValue = (newValue: string) => {
+    const url = new URL(window.location.href);
+    url.searchParams.set(key, newValue);
+    window.history.pushState({}, "", url);
+    // Trigger re-render by dispatching popstate
+    window.dispatchEvent(new PopStateEvent("popstate"));
+  };
+
+  return [value, setValue];
 }

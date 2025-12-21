@@ -1,6 +1,7 @@
 {
   "include": ["src", "*.ts"],
   "compilerOptions": {
+    "types": ["vite/client"],
     "target": "esnext",
     "lib": ["DOM", "DOM.Iterable", "ESNext"],
     "module": "ESNext",
