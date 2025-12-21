@@ -6,7 +6,7 @@ Quick notes, feedback, and todos. Process into plan.md periodically.
 
 ## Feedback
 
-- [ ] search and columns selector at the same row
+- [x] search and columns selector at the same row
 - [ ] resize side panel width
   - [ ] persist in localstorage
 
