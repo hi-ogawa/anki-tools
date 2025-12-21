@@ -2,7 +2,6 @@ import {
   useReactTable,
   getCoreRowModel,
   getPaginationRowModel,
-  getFilteredRowModel,
   flexRender,
   type ColumnDef,
   type OnChangeFn,
@@ -35,9 +34,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Input } from "@/components/ui/input";
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Columns3 } from "lucide-react";
 import type { Note } from "@/providers/anki-connect";
+
+// TODO: Add "Smart Search" mode with toggle button
+// - Client-side filtering with modern UX
+// - Pattern matching: field:value, deck:name, tag:name, *wildcards*
+// - For now, only "Anki Query" mode is supported (passes search directly to AnkiConnect)
 
 interface NotesTableProps {
   notes: Note[];
@@ -45,7 +48,6 @@ interface NotesTableProps {
   fields: string[];
   page: number;
   pageSize: number;
-  search: string;
   onStateChange: (newState: Record<string, string | number>) => void;
 }
 
@@ -59,7 +61,6 @@ export function NotesTable({
   fields,
   page,
   pageSize,
-  search,
   onStateChange,
 }: NotesTableProps) {
   const columns = useMemo<ColumnDef<Note>[]>(() => {
@@ -80,6 +81,18 @@ export function NotesTable({
         },
       });
     }
+
+    // Deck column
+    cols.push({
+      id: "deck",
+      accessorKey: "deckName",
+      header: "Deck",
+      cell: ({ getValue }) => {
+        const deck = getValue() as string;
+        if (!deck) return <span className="text-muted-foreground">-</span>;
+        return <span className="text-sm">{deck}</span>;
+      },
+    });
 
     // Tags column
     cols.push({
@@ -107,12 +120,13 @@ export function NotesTable({
     return cols;
   }, [fields]);
 
-  // Default: show first 3 fields + tags
+  // Default: show first 3 fields + deck + tags
   const getDefaultVisibility = (): VisibilityState => {
     const visibility: VisibilityState = {};
     fields.forEach((field, index) => {
       visibility[field] = index < 3;
     });
+    visibility["deck"] = true;
     visibility["tags"] = true;
     return visibility;
   };
@@ -137,20 +151,6 @@ export function NotesTable({
     localStorage.setItem(getStorageKey(model), JSON.stringify(columnVisibility));
   }, [model, columnVisibility]);
 
-  // Search on submit (Enter key)
-  const [localSearch, setLocalSearch] = useState(search);
-
-  // Sync from parent when search prop changes (e.g., URL navigation)
-  useEffect(() => {
-    setLocalSearch(search);
-  }, [search]);
-
-  const submitSearch = () => {
-    if (localSearch !== search) {
-      onStateChange({ search: localSearch, page: 0 });
-    }
-  };
-
   const pagination: PaginationState = {
     pageIndex: page,
     pageSize,
@@ -158,8 +158,9 @@ export function NotesTable({
 
   const onPaginationChange: OnChangeFn<PaginationState> = (updater) => {
     const newState = typeof updater === "function" ? updater(pagination) : updater;
+    // Convert 0-based pageIndex to 1-based page for URL
     onStateChange({
-      page: newState.pageIndex,
+      page: newState.pageIndex + 1,
       pageSize: newState.pageSize,
     });
   };
@@ -169,31 +170,18 @@ export function NotesTable({
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
     state: {
       pagination,
-      globalFilter: search,
       columnVisibility,
     },
     onPaginationChange,
     onColumnVisibilityChange: setColumnVisibility,
-    onGlobalFilterChange: (value) => onStateChange({ search: value, page: 0 }),
-    manualPagination: false, // Client-side pagination
-    manualFiltering: false, // Client-side filtering
   });
 
   return (
     <div className="space-y-4">
       {/* Toolbar */}
-      <div className="flex items-center justify-between">
-        <Input
-          placeholder="Search all fields..."
-          value={localSearch}
-          onChange={(e) => setLocalSearch(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && submitSearch()}
-          onBlur={submitSearch}
-          className="max-w-sm"
-        />
+      <div className="flex items-center justify-end">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm">
@@ -256,16 +244,16 @@ export function NotesTable({
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <span>
             Showing{" "}
-            {table.getRowModel().rows.length > 0
+            {notes.length > 0
               ? table.getState().pagination.pageIndex * table.getState().pagination.pageSize + 1
               : 0}
             -
             {Math.min(
               (table.getState().pagination.pageIndex + 1) *
                 table.getState().pagination.pageSize,
-              table.getFilteredRowModel().rows.length
+              notes.length
             )}
-            {" "}of {table.getFilteredRowModel().rows.length}
+            {" "}of {notes.length}
           </span>
         </div>
 
@@ -273,7 +261,7 @@ export function NotesTable({
           <Select
             value={String(pageSize)}
             onValueChange={(value) =>
-              onStateChange({ pageSize: Number(value), page: 0 })
+              onStateChange({ pageSize: Number(value), page: 1 })
             }
           >
             <SelectTrigger size="sm" className="w-[100px]">
@@ -292,7 +280,7 @@ export function NotesTable({
             <Button
               variant="outline"
               size="icon"
-              onClick={() => onStateChange({ page: 0 })}
+              onClick={() => onStateChange({ page: 1 })}
               disabled={!table.getCanPreviousPage()}
             >
               <ChevronsLeft className="size-4" />
@@ -300,7 +288,7 @@ export function NotesTable({
             <Button
               variant="outline"
               size="icon"
-              onClick={() => onStateChange({ page: page - 1 })}
+              onClick={() => onStateChange({ page })}
               disabled={!table.getCanPreviousPage()}
             >
               <ChevronLeft className="size-4" />
@@ -311,7 +299,7 @@ export function NotesTable({
             <Button
               variant="outline"
               size="icon"
-              onClick={() => onStateChange({ page: page + 1 })}
+              onClick={() => onStateChange({ page: page + 2 })}
               disabled={!table.getCanNextPage()}
             >
               <ChevronRight className="size-4" />
@@ -319,7 +307,7 @@ export function NotesTable({
             <Button
               variant="outline"
               size="icon"
-              onClick={() => onStateChange({ page: table.getPageCount() - 1 })}
+              onClick={() => onStateChange({ page: table.getPageCount() })}
               disabled={!table.getCanNextPage()}
             >
               <ChevronsRight className="size-4" />

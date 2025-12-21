@@ -1,65 +1,35 @@
-# Implementation Plan: Refine + AnkiConnect
+# Implementation Plan
+
+## Related Docs
+
+- [research.md](research.md) - Technical reference, API analysis
+- [plan-addon.md](plan-addon.md) - Future: Anki add-on (bypasses AnkiConnect)
+- [inbox.md](inbox.md) - Quick notes, feedback, todos
 
 ## Approach
 
-Use [Refine](https://refine.dev/) as UI framework with custom data provider for AnkiConnect.
+Use TanStack Table + shadcn/ui with custom AnkiConnect data provider.
 
-**Why Refine**:
-- Built-in table, filters, pagination
-- Data provider abstraction fits AnkiConnect's API
-- Less UI code to write
+**Stack**:
+- React 19 + TypeScript + Vite
+- TanStack Query (data fetching/caching)
+- TanStack Table (table features)
+- shadcn/ui (UI components)
 
 ## Phase 1: Minimal Viable
 
 - [x] Scaffold project (Vite + React + TypeScript)
-- [x] Add Refine with TanStack Table + shadcn/ui
+- [x] Add TanStack Table + shadcn/ui
 - [x] Create AnkiConnect data provider (simple fetch)
 - [x] Notes list page with table
-- [ ] Test with live Anki
+- [x] Test with live Anki
 
 ## Phase 2: Dynamic Schema
 
-### Approach
-
-Cache schema in localStorage, model selector in UI:
-
-```
-On app load:
-  1. Check localStorage for cached schema
-  2. If stale/missing: fetch modelNames → modelFieldNames for each
-  3. Cache to localStorage
-
-UI:
-  - Model selector dropdown in header
-  - Table columns generated from selected model's fields
-  - Instant switching (no refetch needed)
-```
-
-### localStorage Schema
-
-```typescript
-interface CachedSchema {
-  models: Record<string, string[]>;  // modelName → field names
-  cachedAt: number;                   // timestamp for staleness check
-}
-
-// Example:
-{
-  "models": {
-    "Korean Vocabulary": ["number", "korean", "english", "example_ko", ...],
-    "Basic": ["Front", "Back"],
-    "Cloze": ["Text", "Extra"]
-  },
-  "cachedAt": 1703123456789
-}
-```
-
-### Implementation
-
-- [ ] Create `useSchemaCache` hook (fetch + cache logic)
-- [ ] Add model selector to header/sidebar
-- [ ] Refactor data provider to accept model name
-- [ ] Generate table columns from cached field list
+- [x] Schema fetching via TanStack Query (staleTime: Infinity)
+- [x] Model selector dropdown in header
+- [x] Dynamic table columns from model fields
+- [x] Column visibility toggle (localStorage persistence)
 - [ ] Add refresh button to re-fetch schema
 
 ## Phase 3: Usability
@@ -67,7 +37,18 @@ interface CachedSchema {
 - [ ] Card preview panel (show all fields on row click)
 - [ ] Render HTML content safely
 - [ ] Fuzzy search (client-side with Fuse.js)
-- [ ] Column visibility picker (show/hide fields)
+- [x] Column visibility picker (show/hide fields)
+
+## Phase 3.5: Feedback Items
+
+- [x] Fix page index to start from 1 (URL uses 1-based)
+- [ ] Refactor localStorage to [TanStack DB](https://tanstack.com/db/latest/docs/collections/local-storage-collection)
+- [x] Add deck name (via `getDecks` - fast alternative to `cardsInfo`)
+- [~] Flags/suspension removed - per-card concepts, not per-note (see research.md)
+- [x] Search enhancements (Anki Query mode):
+  - [x] Server-side search via AnkiConnect `findNotes`
+  - [x] Supports full Anki search syntax: `deck:`, `tag:`, `field:`, wildcards
+  - [ ] Add "Smart Search" mode with toggle button
 
 ## Phase 4: Edit Support
 
@@ -104,26 +85,26 @@ function normalizeNote(note: AnkiNoteInfo, fields: string[]) {
 }
 ```
 
-## File Structure
+## File Structure (Current)
 
 ```
 src/
 ├── providers/
-│   └── anki-connect.ts    # Data provider + API helpers
-├── pages/
-│   └── notes/
-│       └── list.tsx       # Notes table (dynamic columns)
+│   └── anki-connect.ts    # AnkiConnect API + data fetching
 ├── components/
-│   ├── ModelSelector.tsx  # Dropdown to pick model
-│   └── NotePreview.tsx    # Card preview panel
+│   ├── NotesTable.tsx     # Main table with pagination/search
+│   └── ui/                # shadcn/ui components
 ├── hooks/
-│   └── useSchemaCache.ts  # Fetch + cache schema to localStorage
-└── App.tsx
+│   └── use-mobile.ts      # Responsive design hook
+├── lib/
+│   └── utils.ts           # Tailwind class merging utility
+├── index.tsx              # Entry point with router
+└── root.tsx               # App root with query client
 ```
 
 ## Open Questions
 
-1. ~~**Field mapping**: Hardcode or configurable?~~ → Dynamic schema via localStorage
+1. ~~**Field mapping**~~: Dynamic schema via TanStack Query
 2. ~~**Pagination**~~: Client-side, AnkiConnect returns all IDs
-3. **Search**: Start with Anki's search syntax, add fuzzy later
-4. **Cache invalidation**: When to refresh schema? Manual button? On Anki restart?
+3. ~~**Search**~~: Server-side via AnkiConnect (Anki Query mode); Smart Search mode TODO
+4. ~~**Cache invalidation**~~: Add manual refresh button

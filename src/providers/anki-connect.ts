@@ -1,3 +1,5 @@
+// https://git.sr.ht/~foosoft/anki-connect
+
 const ANKI_CONNECT_URL = "http://localhost:8765";
 
 // AnkiConnect JSON-RPC helper
@@ -34,9 +36,10 @@ export interface Note {
   modelName: string;
   fields: Record<string, string>;
   tags: string[];
+  deckName: string;
 }
 
-function normalizeNote(note: AnkiNoteInfo): Note {
+function normalizeNote(note: AnkiNoteInfo, deckName: string): Note {
   return {
     id: note.noteId,
     modelName: note.modelName,
@@ -44,13 +47,43 @@ function normalizeNote(note: AnkiNoteInfo): Note {
       Object.entries(note.fields).map(([k, v]) => [k, v.value])
     ),
     tags: note.tags,
+    deckName,
   };
 }
 
 // Fetch notes for a model
-export async function fetchNotes(modelName: string): Promise<Note[]> {
-  const noteIds = await invoke<number[]>("findNotes", { query: `note:"${modelName}"` });
+// search: optional Anki search syntax (e.g., "field:value", "deck:name", "tag:name")
+export async function fetchNotes(modelName: string, search?: string): Promise<Note[]> {
+  // Build query: always filter by model, optionally add user search
+  const query = search
+    ? `note:"${modelName}" ${search}`
+    : `note:"${modelName}"`;
+  const noteIds = await invoke<number[]>("findNotes", { query });
   if (noteIds.length === 0) return [];
-  const notesInfo = await invoke<AnkiNoteInfo[]>("notesInfo", { notes: noteIds });
-  return notesInfo.map(normalizeNote);
+
+  // Fetch notes and cards in parallel
+  const [notesInfo, cardIds] = await Promise.all([
+    invoke<AnkiNoteInfo[]>("notesInfo", { notes: noteIds }),
+    invoke<number[]>("findCards", { query }),
+  ]);
+
+  // Get deck names via getDecks (much faster than cardsInfo)
+  // Returns: { "DeckName": [cardId, ...], ... }
+  const decksByName = cardIds.length > 0
+    ? await invoke<Record<string, number[]>>("getDecks", { cards: cardIds })
+    : {};
+
+  // Find primary deck (the one with most cards)
+  // Note: We can't map individual cards to notes without cardsInfo,
+  // but most note types have all cards in one deck
+  let primaryDeck = "";
+  let maxCards = 0;
+  for (const [deckName, cards] of Object.entries(decksByName)) {
+    if (cards.length > maxCards) {
+      maxCards = cards.length;
+      primaryDeck = deckName;
+    }
+  }
+
+  return notesInfo.map(note => normalizeNote(note, primaryDeck));
 }

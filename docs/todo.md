@@ -1,5 +1,0 @@
-- [ ] remove unuded dependencies and files
-- [ ] update components.json
-- [ ] file name conventions
-- [ ] setup formatter
-- [ ] deploy

@@ -1,9 +1,0 @@
-- page index starts from 1
-- refactor localstroage manipulation https://tanstack.com/db/latest/docs/collections/local-storage-collection
-- extra fields
-  - deck name
-  - flags
-  - suspension status
-- search enhancement
-  - by field
-  - by prefix/suffix pattern
