@@ -13,7 +13,7 @@ Quick notes, feedback, and todos. Process into plan.md periodically.
 
 _(empty - all processed into plan.md)_
 
-- [ ] favicon
+- [x] favicon
 
 ## Ideas
 
