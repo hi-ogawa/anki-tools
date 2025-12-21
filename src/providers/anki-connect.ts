@@ -1,7 +1,17 @@
 import type { DataProvider } from "@refinedev/core";
-import { YankiConnect } from "yanki-connect";
 
-const client = new YankiConnect();
+const ANKI_CONNECT_URL = "http://localhost:8765";
+
+// AnkiConnect JSON-RPC helper
+async function invoke<T>(action: string, params?: Record<string, unknown>): Promise<T> {
+  const response = await fetch(ANKI_CONNECT_URL, {
+    method: "POST",
+    body: JSON.stringify({ action, version: 6, params }),
+  });
+  const { result, error } = await response.json();
+  if (error) throw new Error(error);
+  return result;
+}
 
 // AnkiConnect notesInfo response shape
 interface AnkiNoteInfo {
@@ -28,9 +38,8 @@ function normalizeNote(note: AnkiNoteInfo) {
   };
 }
 
-// Cast to DataProvider to avoid generic type issues
 export const ankiConnectProvider = {
-  getApiUrl: () => "http://localhost:8765",
+  getApiUrl: () => ANKI_CONNECT_URL,
 
   getList: async ({ pagination, filters }: { pagination?: { current?: number; page?: number; pageSize?: number }; filters?: Array<{ field?: string; value?: string }> }) => {
     // Build Anki search query
@@ -45,19 +54,16 @@ export const ankiConnectProvider = {
     }
 
     // Find matching note IDs
-    const noteIds = await client.note.findNotes({ query });
+    const noteIds = await invoke<number[]>("findNotes", { query });
 
-    // Pagination - Refine uses 'current' or 'page' depending on version
+    // Pagination
     const page = pagination?.current ?? pagination?.page ?? 1;
     const pageSize = pagination?.pageSize ?? 50;
     const start = (page - 1) * pageSize;
     const paginatedIds = noteIds.slice(start, start + pageSize);
 
     // Fetch note details
-    const notesInfo = (await client.note.notesInfo({
-      notes: paginatedIds,
-    })) as AnkiNoteInfo[];
-
+    const notesInfo = await invoke<AnkiNoteInfo[]>("notesInfo", { notes: paginatedIds });
     const data = notesInfo.map(normalizeNote);
 
     return {
@@ -67,9 +73,7 @@ export const ankiConnectProvider = {
   },
 
   getOne: async ({ id }: { id: string | number }) => {
-    const notesInfo = (await client.note.notesInfo({
-      notes: [Number(id)],
-    })) as AnkiNoteInfo[];
+    const notesInfo = await invoke<AnkiNoteInfo[]>("notesInfo", { notes: [Number(id)] });
 
     if (notesInfo.length === 0) {
       throw new Error(`Note ${id} not found`);
@@ -80,7 +84,7 @@ export const ankiConnectProvider = {
     };
   },
 
-  // Read-only for MVP - these throw errors
+  // Read-only for MVP
   create: async () => {
     throw new Error("Create not implemented");
   },
