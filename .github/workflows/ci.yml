@@ -16,5 +16,6 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v6
       - run: corepack enable
+      - run: pnpm i
       - run: pnpm tsc
       - run: pnpm build-addon
