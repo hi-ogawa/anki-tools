@@ -91,6 +91,35 @@ def handle_action(action: str, params: dict):
             })
         return notes
 
+    elif action == "browseCards":
+        query = params["query"]
+        card_ids = col.find_cards(query)
+        cards = []
+        for cid in card_ids:
+            card = col.get_card(cid)
+            note = card.note()
+            model = note.note_type()
+            cards.append({
+                "id": cid,
+                "noteId": card.nid,
+                "deckName": col.decks.name(card.did),
+                "modelName": model["name"],
+                "fields": {f["name"]: note.fields[i] for i, f in enumerate(model["flds"])},
+                "tags": list(note.tags),
+                # Card-specific
+                "flag": card.flags,
+                "queue": card.queue,  # -1 = suspended, 0 = new, 1 = learning, 2 = review
+                "due": card.due,
+                "interval": card.ivl,
+            })
+        return cards
+
+    elif action == "setCardFlag":
+        card_id = params["cardId"]
+        flag = params["flag"]  # 0-7
+        col.set_user_flag_for_cards(flag, [card_id])
+        return True
+
     raise ValueError(f"Unknown action: {action}")
 
 

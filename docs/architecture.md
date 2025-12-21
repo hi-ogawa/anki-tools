@@ -22,12 +22,14 @@
 ## Stack
 
 **Frontend:**
+
 - React 19 + TypeScript + Vite
 - TanStack Query (data fetching/caching)
 - TanStack Table (table features)
 - shadcn/ui (UI components)
 
 **Backend (Anki Add-on):**
+
 - Python HTTP server (`http.server`)
 - Direct Anki Python API access
 
@@ -60,11 +62,13 @@ addon/
 | `browseNotes` | `query` | `Note[]` (id, modelName, fields, tags, deckName) |
 
 Request format (JSON-RPC style):
+
 ```json
 { "action": "browseNotes", "params": { "query": "deck:Korean" } }
 ```
 
 Response:
+
 ```json
 { "result": [...], "error": null }
 ```
@@ -84,9 +88,9 @@ event.wait()  # block until main thread completes
 
 ## Dev vs Release
 
-| Mode    | Addon folder          | Port | Menu label         |
-| ------- | --------------------- | ---- | ------------------ |
-| Dev     | `anki-browse-web-dev` | 5679 | Browse Web (Dev)   |
-| Release | `anki-browse-web`     | 5678 | Browse Web         |
+| Mode    | Addon folder          | Port | Menu label       |
+| ------- | --------------------- | ---- | ---------------- |
+| Dev     | `anki-browse-web-dev` | 5679 | Browse Web (Dev) |
+| Release | `anki-browse-web`     | 5678 | Browse Web       |
 
 Both can be installed side-by-side.

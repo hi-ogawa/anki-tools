@@ -20,35 +20,35 @@
 - [x] Model selector dropdown in header
 - [x] Dynamic table columns from model fields
 - [x] Column visibility toggle (localStorage persistence)
+
+## Phase 3: Workflow Replacement (Priority)
+
+Goal: Replace Anki's built-in browser for daily workflow.
+
+### Note Mode (current)
+
+- [x] Flag filter
+- [x] Note detail panel (click row → show all fields)
+- [ ] Edit note fields (`updateNoteFields` API)
+- [ ] Edit tags (`addTags`/`removeTags` API)
+
+### Card Mode
+
+- [x] Toggle: Note ↔ Card view
+- [x] Card table (each row = card, not note)
+- [x] `browseCards` API endpoint
+- [x] Set/clear flag (`setCardFlag` API)
+- [ ] Suspend/unsuspend (`suspend`/`unsuspend` API)
+
+## Phase 4: Polish
+
+- [ ] Render HTML content safely (in detail panel)
 - [ ] Add refresh button to re-fetch schema
+- [ ] Smart Search mode (separate inputs for deck, tag, flag)
+- [ ] Query cache invalidation after mutations (table reflects changes)
 
-## Phase 3.5: Feedback Items
+## Phase 5: Future
 
-- [x] Fix page index to start from 1 (URL uses 1-based)
-- [x] Add deck name (via `getDecks` - fast alternative to `cardsInfo`)
-- [x] Search enhancements (Anki Query mode):
-  - [x] Server-side search via AnkiConnect `findNotes`
-  - [x] Supports full Anki search syntax: `deck:`, `tag:`, `field:`, wildcards
-  - [ ] Add "Smart Search" mode with toggle button
-    - separate input fields for deck, field, etc.
-
-## Phase X: Usability
-
-- [ ] Card preview panel (show all fields on row click)
-- [ ] Render HTML content safely
-- [x] Column visibility picker (show/hide fields)
-
-## Phase X: Edit Support
-
-- [ ] Implement `update` → `updateNoteFields`
-- [ ] Tag management via `addTags`/`removeTags`
-
-## Phase X: Add-on Enhancements
-
-- [ ] Configurable port (like AnkiConnect's config)
+- [ ] Configurable port
 - [ ] Publish workflow
-
-## Phase X: Misc
-
-- [ ] List by card (flags, suspend, etc.)
-- [ ] Refactor localStorage to [TanStack DB](https://tanstack.com/db/latest/docs/collections/local-storage-collection)
+- [ ] Refactor localStorage to TanStack DB
