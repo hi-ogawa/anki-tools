@@ -31,3 +31,7 @@ Quick notes, feedback, and todos. Process into plan.md periodically.
 - [x] "noUnusedLocals": true"
 - [ ] full scroll mode withou pagination
 - [ ] transition and suspense query
+  - Suspense not needed except maybe initial loading (keepPreviousData works fine)
+  - React Router `unstable_useTransitions` is problematic/shady
+  - Plan: implement custom useTransition for URL search params only
+  - PR #16 on hold for reference
