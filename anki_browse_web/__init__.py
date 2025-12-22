@@ -6,7 +6,7 @@ from functools import partial
 from http.server import HTTPServer
 from pathlib import Path
 
-from aqt import mw, gui_hooks
+from aqt import gui_hooks, mw
 from aqt.qt import QAction
 
 from .server import RequestHandler
@@ -31,12 +31,19 @@ class AddonServer:
             mw.taskman.run_on_main(run_and_signal)
             event.wait()
 
-        handler = partial(RequestHandler, get_col=lambda: mw.col, directory=str(WEB_DIR), run=run)
+        handler = partial(
+            RequestHandler,
+            get_col=lambda: mw.col,
+            directory=str(WEB_DIR),
+            run=run,
+        )
         self._server = HTTPServer(("127.0.0.1", PORT), handler)
         self._thread: threading.Thread | None = None
 
     def start(self):
-        self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
+        self._thread = threading.Thread(
+            target=self._server.serve_forever, daemon=True
+        )
         self._thread.start()
 
     def stop(self):

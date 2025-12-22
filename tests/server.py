@@ -8,6 +8,7 @@ from http.server import HTTPServer
 from pathlib import Path
 
 from anki.collection import Collection
+
 from anki_browse_web.server import RequestHandler
 
 PORT = int(os.environ.get("ANKI_PORT", "6679"))

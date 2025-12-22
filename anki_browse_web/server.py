@@ -106,13 +106,18 @@ def handle_action(col: Collection, action: str, params: dict):
             model = note.note_type()
             cards = note.cards()
             deck_name = col.decks.name(cards[0].did) if cards else ""
-            notes.append({
-                "id": nid,
-                "modelName": model["name"],
-                "fields": {f["name"]: note.fields[i] for i, f in enumerate(model["flds"])},
-                "tags": list(note.tags),
-                "deckName": deck_name,
-            })
+            notes.append(
+                {
+                    "id": nid,
+                    "modelName": model["name"],
+                    "fields": {
+                        f["name"]: note.fields[i]
+                        for i, f in enumerate(model["flds"])
+                    },
+                    "tags": list(note.tags),
+                    "deckName": deck_name,
+                }
+            )
         return notes
 
     elif action == "browseCards":
@@ -123,19 +128,24 @@ def handle_action(col: Collection, action: str, params: dict):
             card = col.get_card(cid)
             note = card.note()
             model = note.note_type()
-            cards.append({
-                "id": cid,
-                "noteId": card.nid,
-                "deckName": col.decks.name(card.did),
-                "modelName": model["name"],
-                "fields": {f["name"]: note.fields[i] for i, f in enumerate(model["flds"])},
-                "tags": list(note.tags),
-                # Card-specific
-                "flag": card.flags,
-                "queue": card.queue,  # -1 = suspended, 0 = new, 1 = learning, 2 = review
-                "due": card.due,
-                "interval": card.ivl,
-            })
+            cards.append(
+                {
+                    "id": cid,
+                    "noteId": card.nid,
+                    "deckName": col.decks.name(card.did),
+                    "modelName": model["name"],
+                    "fields": {
+                        f["name"]: note.fields[i]
+                        for i, f in enumerate(model["flds"])
+                    },
+                    "tags": list(note.tags),
+                    # Card-specific
+                    "flag": card.flags,
+                    "queue": card.queue,  # -1 = suspended, 0 = new, 1 = learning, 2 = review
+                    "due": card.due,
+                    "interval": card.ivl,
+                }
+            )
         return cards
 
     elif action == "setCardFlag":

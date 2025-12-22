@@ -18,6 +18,7 @@ def main():
     media_dir = DATA_DIR / "test.media"
     if media_dir.exists():
         import shutil
+
         shutil.rmtree(media_dir)
 
     col = Collection(str(DATA_PATH))

@@ -8,8 +8,8 @@
     "build": "vite build",
     "build-addon": "vite build && cd anki_browse_web && zip -r ../anki-browse-web.ankiaddon . -x '__pycache__/*'",
     "setup-dev": "node scripts/setup-dev.js",
-    "lint": "oxfmt",
-    "lint-check": "oxfmt --check",
+    "lint": "oxfmt && uv run ruff format . && uv run ruff check --fix .",
+    "lint-check": "oxfmt --check && uv run ruff format --check . && uv run ruff check .",
     "tsc": "tsc -b",
     "test-e2e": "playwright test",
     "test-e2e-setup": "uv run python tests/prepare.py"
