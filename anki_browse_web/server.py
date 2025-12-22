@@ -14,6 +14,7 @@ Why an Anki addon instead of AnkiConnect?
 
 import json
 import threading
+from functools import partial
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 from pathlib import Path
 from typing import Callable
@@ -36,14 +37,6 @@ class BrowseServer:
         web_dir: Path | None = None,
         run_on_main: Callable[[Callable], None] | None = None,
     ):
-        """
-        Args:
-            get_col: Callable returning the Anki Collection. Called per-request
-                     to support profile switches.
-            web_dir: Directory to serve static files from. None disables static serving.
-            run_on_main: Thread safety wrapper. In Anki, use mw.taskman.run_on_main.
-                         None means run synchronously (safe for single-threaded tests).
-        """
         self.get_col = get_col
         self.web_dir = web_dir
         self.run_on_main = run_on_main
@@ -55,7 +48,7 @@ class BrowseServer:
         if self._server is not None:
             return
 
-        handler = self._make_handler()
+        handler = partial(RequestHandler, browse_server=self)
         self._server = HTTPServer((host, port), handler)
         self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
         self._thread.start()
@@ -67,77 +60,73 @@ class BrowseServer:
             self._server = None
             self._thread = None
 
-    def _make_handler(self):
-        """Create request handler class with access to server instance."""
-        server = self
 
-        class Handler(SimpleHTTPRequestHandler):
-            def __init__(self, *args, **kwargs):
-                directory = str(server.web_dir) if server.web_dir else None
-                super().__init__(*args, directory=directory, **kwargs)
+class RequestHandler(SimpleHTTPRequestHandler):
+    def __init__(self, *args, browse_server: BrowseServer, **kwargs):
+        self.browse_server = browse_server
+        directory = str(browse_server.web_dir) if browse_server.web_dir else None
+        super().__init__(*args, directory=directory, **kwargs)
 
-            def do_GET(self):
-                if self.path == "/api/health":
-                    self._send_json({"status": "ok"})
-                elif server.web_dir:
-                    super().do_GET()
-                else:
-                    self.send_error(404)
+    def do_GET(self):
+        if self.path == "/api/health":
+            self._send_json({"status": "ok"})
+        elif self.browse_server.web_dir:
+            super().do_GET()
+        else:
+            self.send_error(404)
 
-            def do_POST(self):
-                if self.path == "/api":
-                    self._handle_api()
-                else:
-                    self.send_error(404)
+    def do_POST(self):
+        if self.path == "/api":
+            self._handle_api()
+        else:
+            self.send_error(404)
 
-            def _handle_api(self):
-                content_length = int(self.headers.get("Content-Length", 0))
-                body = self.rfile.read(content_length)
-                request = json.loads(body)
+    def _handle_api(self):
+        content_length = int(self.headers.get("Content-Length", 0))
+        body = self.rfile.read(content_length)
+        request = json.loads(body)
 
-                action = request.get("action")
-                params = request.get("params", {})
+        action = request.get("action")
+        params = request.get("params", {})
 
-                result = {"result": None, "error": None}
+        result = {"result": None, "error": None}
 
-                def run():
-                    try:
-                        col = server.get_col()
-                        result["result"] = handle_action(col, action, params)
-                    except Exception as e:
-                        result["error"] = str(e)
+        def run():
+            try:
+                col = self.browse_server.get_col()
+                result["result"] = handle_action(col, action, params)
+            except Exception as e:
+                result["error"] = str(e)
 
-                if server.run_on_main:
-                    # Run on main thread for thread safety (Anki GUI mode)
-                    event = threading.Event()
+        if self.browse_server.run_on_main:
+            # Run on main thread for thread safety (Anki GUI mode)
+            event = threading.Event()
 
-                    def run_and_signal():
-                        run()
-                        event.set()
+            def run_and_signal():
+                run()
+                event.set()
 
-                    server.run_on_main(run_and_signal)
-                    event.wait()
-                else:
-                    # Run synchronously (test mode)
-                    run()
+            self.browse_server.run_on_main(run_and_signal)
+            event.wait()
+        else:
+            # Run synchronously (test mode)
+            run()
 
-                self._send_json(result)
+        self._send_json(result)
 
-            def _send_json(self, data):
-                try:
-                    body = json.dumps(data).encode("utf-8")
-                    self.send_response(200)
-                    self.send_header("Content-Type", "application/json")
-                    self.send_header("Content-Length", len(body))
-                    self.end_headers()
-                    self.wfile.write(body)
-                except BrokenPipeError:
-                    pass  # Client disconnected
+    def _send_json(self, data):
+        try:
+            body = json.dumps(data).encode("utf-8")
+            self.send_response(200)
+            self.send_header("Content-Type", "application/json")
+            self.send_header("Content-Length", len(body))
+            self.end_headers()
+            self.wfile.write(body)
+        except BrokenPipeError:
+            pass  # Client disconnected
 
-            def log_message(self, format, *args):
-                pass  # Suppress logging
-
-        return Handler
+    def log_message(self, format, *args):
+        pass  # Suppress logging
 
 
 def handle_action(col: Collection, action: str, params: dict):
