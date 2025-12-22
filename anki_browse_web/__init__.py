@@ -1,29 +1,30 @@
 """Browse Web - Anki add-on that serves web UI for browsing notes."""
 
-from pathlib import Path
 import webbrowser
+from pathlib import Path
 
 from aqt import mw, gui_hooks
 from aqt.qt import QAction
 
-from .server import BrowseServer
+from .server import AddonServer
 
 # Use different port for dev vs release
 ADDON_DIR = Path(__file__).parent.name
 PORT = 5679 if ADDON_DIR.endswith("-dev") else 5678
 WEB_DIR = Path(__file__).parent / "dist"
 
-_server: BrowseServer | None = None
+_server: AddonServer | None = None
 
 
 def on_profile_open():
     global _server
-    _server = BrowseServer(
+    _server = AddonServer(
+        port=PORT,
         get_col=lambda: mw.col,
-        web_dir=WEB_DIR,
+        directory=str(WEB_DIR),
         run_on_main=mw.taskman.run_on_main,
     )
-    _server.start(PORT)
+    _server.start()
 
 
 def on_profile_close():

@@ -16,61 +16,37 @@ import json
 import threading
 from functools import partial
 from http.server import HTTPServer, SimpleHTTPRequestHandler
-from pathlib import Path
 from typing import Callable
 
 # Type alias for Anki Collection (avoid import for standalone usage)
 Collection = object
 
 
-class BrowseServer:
-    """HTTP server for browsing Anki notes/cards.
+class RequestHandler(SimpleHTTPRequestHandler):
+    """HTTP request handler with dependency injection.
 
-    Decoupled from Anki GUI (aqt.mw) for testability. Can be used:
-    - In addon: get_col=lambda: mw.col, run_on_main=mw.taskman.run_on_main
-    - In tests: get_col=lambda: col (direct Collection instance)
+    Use with functools.partial to inject dependencies:
+        handler = partial(RequestHandler, get_col=lambda: col)
+        HTTPServer(("127.0.0.1", port), handler)
     """
 
     def __init__(
         self,
+        *args,
         get_col: Callable[[], Collection],
-        web_dir: Path | None = None,
-        run_on_main: Callable[[Callable], None] | None = None,
+        directory: str | None = None,
+        run: Callable[[Callable], None] | None = None,
+        **kwargs,
     ):
         self.get_col = get_col
-        self.web_dir = web_dir
-        self.run_on_main = run_on_main
-        self._server: HTTPServer | None = None
-        self._thread: threading.Thread | None = None
-
-    def start(self, port: int, host: str = "127.0.0.1"):
-        """Start the HTTP server in a background thread."""
-        if self._server is not None:
-            return
-
-        handler = partial(RequestHandler, browse_server=self)
-        self._server = HTTPServer((host, port), handler)
-        self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
-        self._thread.start()
-
-    def stop(self):
-        """Stop the HTTP server."""
-        if self._server is not None:
-            self._server.shutdown()
-            self._server = None
-            self._thread = None
-
-
-class RequestHandler(SimpleHTTPRequestHandler):
-    def __init__(self, *args, browse_server: BrowseServer, **kwargs):
-        self.browse_server = browse_server
-        directory = str(browse_server.web_dir) if browse_server.web_dir else None
+        self.run = run or (lambda f: f())
+        self._serve_static = directory is not None
         super().__init__(*args, directory=directory, **kwargs)
 
     def do_GET(self):
         if self.path == "/api/health":
             self._send_json({"status": "ok"})
-        elif self.browse_server.web_dir:
+        elif self._serve_static:
             super().do_GET()
         else:
             self.send_error(404)
@@ -91,27 +67,14 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
         result = {"result": None, "error": None}
 
-        def run():
+        def do_action():
             try:
-                col = self.browse_server.get_col()
+                col = self.get_col()
                 result["result"] = handle_action(col, action, params)
             except Exception as e:
                 result["error"] = str(e)
 
-        if self.browse_server.run_on_main:
-            # Run on main thread for thread safety (Anki GUI mode)
-            event = threading.Event()
-
-            def run_and_signal():
-                run()
-                event.set()
-
-            self.browse_server.run_on_main(run_and_signal)
-            event.wait()
-        else:
-            # Run synchronously (test mode)
-            run()
-
+        self.run(do_action)
         self._send_json(result)
 
     def _send_json(self, data):
@@ -127,6 +90,39 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
     def log_message(self, format, *args):
         pass  # Suppress logging
+
+
+class AddonServer:
+    """HTTP server for Anki addon with thread-safe request handling."""
+
+    def __init__(
+        self,
+        port: int,
+        get_col: Callable[[], Collection],
+        directory: str,
+        run_on_main: Callable[[Callable], None],
+    ):
+        def run(fn):
+            event = threading.Event()
+
+            def run_and_signal():
+                fn()
+                event.set()
+
+            run_on_main(run_and_signal)
+            event.wait()
+
+        handler = partial(RequestHandler, get_col=get_col, directory=directory, run=run)
+        self._server = HTTPServer(("127.0.0.1", port), handler)
+        self._thread: threading.Thread | None = None
+
+    def start(self):
+        self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
+        self._thread.start()
+
+    def stop(self):
+        self._server.shutdown()
+        self._thread = None
 
 
 def handle_action(col: Collection, action: str, params: dict):

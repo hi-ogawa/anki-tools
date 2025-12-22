@@ -3,10 +3,12 @@
 import os
 import signal
 import sys
+from functools import partial
+from http.server import HTTPServer
 from pathlib import Path
 
 from anki.collection import Collection
-from anki_browse_web.server import BrowseServer
+from anki_browse_web.server import RequestHandler
 
 PORT = int(os.environ.get("ANKI_PORT", "6679"))
 DATA_PATH = Path(__file__).parent / "data" / "test.anki2"
@@ -19,22 +21,21 @@ def main():
         sys.exit(1)
 
     col = Collection(str(DATA_PATH))
-    server = BrowseServer(get_col=lambda: col)
-    server.start(PORT)
+    handler = partial(RequestHandler, get_col=lambda: col)
+    server = HTTPServer(("127.0.0.1", PORT), handler)
 
     print(f"Server running on http://localhost:{PORT}")
     print(f"Collection: {DATA_PATH}")
 
-    # Wait for SIGINT/SIGTERM
     def shutdown(sig, frame):
         print("\nShutting down...")
-        server.stop()
+        server.shutdown()
         col.close()
         sys.exit(0)
 
     signal.signal(signal.SIGINT, shutdown)
     signal.signal(signal.SIGTERM, shutdown)
-    signal.pause()
+    server.serve_forever()
 
 
 if __name__ == "__main__":
