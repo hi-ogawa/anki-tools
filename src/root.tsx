@@ -18,6 +18,7 @@ import {
 } from "./api";
 import { BrowseTable } from "./components/browse-table";
 import { NoteDetail } from "./components/note-detail";
+import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 import {
   Select,
@@ -26,18 +27,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./components/ui/select";
+import { FLAG_FILTER_OPTIONS } from "./lib/constants";
 import { useLocalStorage } from "./lib/use-local-storage";
-
-const FLAG_OPTIONS = [
-  { value: "none", label: "All", color: undefined },
-  { value: "1", label: "Red", color: "#ef4444" },
-  { value: "2", label: "Orange", color: "#f97316" },
-  { value: "3", label: "Green", color: "#22c55e" },
-  { value: "4", label: "Blue", color: "#3b82f6" },
-  { value: "5", label: "Pink", color: "#ec4899" },
-  { value: "6", label: "Turquoise", color: "#14b8a6" },
-  { value: "7", label: "Purple", color: "#a855f7" },
-] as const;
 
 // TODO: separate singleton state and component
 const queryClient = new QueryClient();
@@ -133,12 +124,7 @@ function App() {
       <div className="flex flex-col items-center gap-4">
         <p className="text-destructive">Failed to connect to AnkiConnect</p>
         <p className="text-sm text-muted-foreground">{schemaError.message}</p>
-        <button
-          onClick={() => refetchSchema()}
-          className="rounded bg-primary px-4 py-2 text-primary-foreground"
-        >
-          Retry
-        </button>
+        <Button onClick={() => refetchSchema()}>Retry</Button>
       </div>
     );
   } else if (modelNames.length === 0) {
@@ -177,23 +163,26 @@ function App() {
           </h1>
           {!schemaError && (
             <>
-              <select
-                value={validModel ? urlModel : ""}
-                onChange={(e) => setUrlModel(e.target.value)}
-                className="rounded border bg-background px-2 py-1 text-sm"
+              <Select
+                value={validModel ? urlModel : undefined}
+                onValueChange={setUrlModel}
                 disabled={schemaLoading}
               >
-                {(schemaLoading || !validModel) && (
-                  <option value="">
-                    {schemaLoading ? "Loading..." : "Select model..."}
-                  </option>
-                )}
-                {modelNames.map((name) => (
-                  <option key={name} value={name}>
-                    {name}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger size="sm" className="w-[180px]">
+                  <SelectValue
+                    placeholder={
+                      schemaLoading ? "Loading..." : "Select model..."
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {modelNames.map((name) => (
+                    <SelectItem key={name} value={name}>
+                      {name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Select
                 value={viewMode}
                 onValueChange={(value) =>
@@ -348,7 +337,7 @@ function NotesView({
           <SelectValue placeholder="Flag" />
         </SelectTrigger>
         <SelectContent>
-          {FLAG_OPTIONS.map((opt) => (
+          {FLAG_FILTER_OPTIONS.map((opt) => (
             <SelectItem key={opt.value} value={opt.value}>
               <span className="flex items-center gap-2">
                 <Flag
