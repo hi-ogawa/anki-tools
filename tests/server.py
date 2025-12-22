@@ -1,19 +1,12 @@
 """Standalone test server for e2e tests."""
 
-import importlib.util
 import os
 import signal
 import sys
 from pathlib import Path
 
 from anki.collection import Collection
-
-spec = importlib.util.spec_from_file_location(
-    "server", Path(__file__).parent.parent / "addon" / "server.py"
-)
-server_module = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(server_module)
-BrowseServer = server_module.BrowseServer
+from anki_browse_web.server import BrowseServer
 
 PORT = int(os.environ.get("ANKI_PORT", "6679"))
 DATA_PATH = Path(__file__).parent / "data" / "test.anki2"

@@ -16,6 +16,6 @@ export default defineConfig({
     },
   },
   build: {
-    outDir: "addon/dist",
+    outDir: "anki_browse_web/dist",
   },
 });
