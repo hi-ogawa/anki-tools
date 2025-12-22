@@ -371,7 +371,7 @@ export function BrowseTable({
               onStateChange({ pageSize: Number(value), page: 1 })
             }
           >
-            <SelectTrigger size="sm" className="w-[100px]">
+            <SelectTrigger size="sm" className="w-[120px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

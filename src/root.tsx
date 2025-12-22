@@ -39,6 +39,7 @@ const FLAG_OPTIONS = [
   { value: "7", label: "Purple", color: "#a855f7" },
 ] as const;
 
+// TODO: separate singleton state and component
 const queryClient = new QueryClient();
 
 export function Root() {
@@ -52,6 +53,7 @@ export function Root() {
 type ViewMode = "notes" | "cards";
 
 function App() {
+  // TODO: model type-safe search params
   const [searchParams, setSearchParams] = useSearchParams();
   const urlModel = searchParams.get("model");
   // URL uses 1-based page, convert to 0-based for table
@@ -60,7 +62,7 @@ function App() {
   const pageSize = parseInt(searchParams.get("pageSize") ?? "20", 10);
   const search = searchParams.get("search") ?? "";
   const flag = searchParams.get("flag") ?? "";
-  const viewMode = (searchParams.get("view") ?? "notes") as ViewMode;
+  const viewMode = (searchParams.get("view") ?? "cards") as ViewMode;
 
   // Fetch schema
   const {
@@ -173,44 +175,43 @@ function App() {
           <h1 className="text-lg font-semibold">
             <Link to="/">Anki Browser</Link>
           </h1>
-          {modelNames.length > 0 && (
+          {!schemaError && (
             <>
               <select
                 value={validModel ? urlModel : ""}
                 onChange={(e) => setUrlModel(e.target.value)}
                 className="rounded border bg-background px-2 py-1 text-sm"
+                disabled={schemaLoading}
               >
-                {!validModel && <option value="">Select model...</option>}
+                {(schemaLoading || !validModel) && (
+                  <option value="">
+                    {schemaLoading ? "Loading..." : "Select model..."}
+                  </option>
+                )}
                 {modelNames.map((name) => (
                   <option key={name} value={name}>
                     {name}
                   </option>
                 ))}
               </select>
-              <div className="flex rounded border text-sm">
-                <button
-                  onClick={() =>
-                    setSearchParams((p) => {
-                      p.set("view", "notes");
-                      return p;
-                    })
-                  }
-                  className={`px-3 py-1 ${viewMode === "notes" ? "bg-primary text-primary-foreground" : "bg-background"}`}
-                >
-                  Notes
-                </button>
-                <button
-                  onClick={() =>
-                    setSearchParams((p) => {
-                      p.set("view", "cards");
-                      return p;
-                    })
-                  }
-                  className={`px-3 py-1 ${viewMode === "cards" ? "bg-primary text-primary-foreground" : "bg-background"}`}
-                >
-                  Cards
-                </button>
-              </div>
+              <Select
+                value={viewMode}
+                onValueChange={(value) =>
+                  setSearchParams((p) => {
+                    p.set("view", value);
+                    return p;
+                  })
+                }
+                disabled={schemaLoading}
+              >
+                <SelectTrigger size="sm" className="w-[100px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="notes">Notes</SelectItem>
+                  <SelectItem value="cards">Cards</SelectItem>
+                </SelectContent>
+              </Select>
             </>
           )}
         </div>
@@ -254,8 +255,8 @@ function NotesView({
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
       if (!isResizing.current) return;
-      const newWidth = window.innerWidth - e.clientX - 16; // 16 = padding
-      setPanelWidth(Math.max(200, Math.min(600, newWidth)));
+      const newWidth = window.innerWidth - e.clientX - 24; // 16 = padding
+      setPanelWidth(Math.max(300, Math.min(600, newWidth)));
     };
     const onMouseUp = () => {
       isResizing.current = false;
@@ -278,6 +279,7 @@ function NotesView({
     return parts.join(" ") || undefined;
   }, [search, flag]);
 
+  // TOOD: two queries should abstracted as query function level?
   const {
     data: notes = [],
     isLoading: notesLoading,
@@ -302,6 +304,7 @@ function NotesView({
     enabled: viewMode === "cards",
   });
 
+  // TODO: suspend and transition?
   const isLoading = viewMode === "notes" ? notesLoading : cardsLoading;
   const isFetching = viewMode === "notes" ? notesFetching : cardsFetching;
   const error = viewMode === "notes" ? notesError : cardsError;
@@ -318,22 +321,22 @@ function NotesView({
     }
   };
 
-  if (error)
+  if (error) {
     return (
       <p className="text-destructive">Error loading notes: {error.message}</p>
     );
+  }
 
   const flagValue = flag || "none";
 
   const toolbarLeft = (
     <>
       <Input
-        placeholder="Anki search: deck:name, tag:name, field:value, *wild*"
+        placeholder="Search by: deck:name, tag:name, field:value, *wild*, ..."
         value={localSearch}
         onChange={(e) => setLocalSearch(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && submitSearch()}
-        onBlur={submitSearch}
-        className="w-80"
+        className="w-[400px]"
       />
       <Select
         value={flagValue}
@@ -396,6 +399,7 @@ function NotesView({
           toolbarLeft={toolbarLeft}
         />
       </div>
+      {/* TODO: small panelWidth breaks layout. it depends on field data length. */}
       {selected && (
         <div className="relative flex shrink-0" style={{ width: panelWidth }}>
           <div
@@ -406,7 +410,7 @@ function NotesView({
               document.body.style.userSelect = "none";
             }}
           />
-          <div className="flex-1 pl-2">
+          <div className="flex-1 pl-1">
             <NoteDetail
               item={selected}
               fields={fields}
