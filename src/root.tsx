@@ -175,14 +175,19 @@ function App() {
           <h1 className="text-lg font-semibold">
             <Link to="/">Anki Browser</Link>
           </h1>
-          {modelNames.length > 0 && (
+          {!schemaError && (
             <>
               <select
                 value={validModel ? urlModel : ""}
                 onChange={(e) => setUrlModel(e.target.value)}
                 className="rounded border bg-background px-2 py-1 text-sm"
+                disabled={schemaLoading}
               >
-                {!validModel && <option value="">Select model...</option>}
+                {(schemaLoading || !validModel) && (
+                  <option value="">
+                    {schemaLoading ? "Loading..." : "Select model..."}
+                  </option>
+                )}
                 {modelNames.map((name) => (
                   <option key={name} value={name}>
                     {name}
@@ -197,8 +202,9 @@ function App() {
                     return p;
                   })
                 }
+                disabled={schemaLoading}
               >
-                <SelectTrigger className="w-[100px]">
+                <SelectTrigger size="sm" className="w-[100px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
