@@ -62,7 +62,7 @@ function App() {
   const pageSize = parseInt(searchParams.get("pageSize") ?? "20", 10);
   const search = searchParams.get("search") ?? "";
   const flag = searchParams.get("flag") ?? "";
-  const viewMode = (searchParams.get("view") ?? "notes") as ViewMode;
+  const viewMode = (searchParams.get("view") ?? "cards") as ViewMode;
 
   // Fetch schema
   const {
