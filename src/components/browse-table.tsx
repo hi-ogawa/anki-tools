@@ -17,7 +17,7 @@ import {
   Flag,
   Pause,
 } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import type { Note, Card } from "@/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,6 +29,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -44,7 +45,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FLAG_COLORS } from "@/lib/constants";
+import { FLAG_COLORS, FLAG_FILTER_OPTIONS } from "@/lib/constants";
 import { useLocalStorage } from "@/lib/use-local-storage";
 
 type ViewMode = "notes" | "cards";
@@ -60,7 +61,10 @@ interface BrowseTableProps {
   onStateChange: (newState: Record<string, string | number>) => void;
   selectedId: number | null;
   onSelect: (item: BrowseItem) => void;
-  toolbarLeft?: React.ReactNode;
+  // Toolbar props
+  search: string;
+  flag: string;
+  isFetching: boolean;
 }
 
 export function BrowseTable({
@@ -73,7 +77,9 @@ export function BrowseTable({
   onStateChange,
   selectedId,
   onSelect,
-  toolbarLeft,
+  search,
+  flag,
+  isFetching,
 }: BrowseTableProps) {
   // Build columns
   const columns = useMemo<ColumnDef<BrowseItem>[]>(() => {
@@ -231,11 +237,60 @@ export function BrowseTable({
   const noteColumnIds = ["deck", "tags"];
   const cardColumnIds = ["flag", "status", "interval"];
 
+  // Local search state - synced with prop, submits on Enter
+  const [localSearch, setLocalSearch] = useState(search);
+  useEffect(() => {
+    setLocalSearch(search);
+  }, [search]);
+
+  const submitSearch = () => {
+    if (localSearch !== search) {
+      onStateChange({ search: localSearch, page: 1 });
+    }
+  };
+
+  const flagValue = flag || "none";
+
   return (
     <div className="space-y-4">
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">{toolbarLeft}</div>
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="Search: deck:name, tag:name, field:value, *wild*"
+            value={localSearch}
+            onChange={(e) => setLocalSearch(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && submitSearch()}
+            className="w-[400px]"
+          />
+          <Select
+            value={flagValue}
+            onValueChange={(value) =>
+              onStateChange({ flag: value === "none" ? "" : value, page: 1 })
+            }
+          >
+            <SelectTrigger className="w-[140px]">
+              <SelectValue placeholder="Flag" />
+            </SelectTrigger>
+            <SelectContent>
+              {FLAG_FILTER_OPTIONS.map((opt) => (
+                <SelectItem key={opt.value} value={opt.value}>
+                  <span className="flex items-center gap-2">
+                    <Flag
+                      className="size-4"
+                      style={{ color: opt.color }}
+                      fill={opt.color ?? "none"}
+                    />
+                    {opt.label}
+                  </span>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {isFetching && (
+            <span className="text-sm text-muted-foreground">Loading...</span>
+          )}
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm">
