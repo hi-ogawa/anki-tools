@@ -141,26 +141,39 @@ function App() {
       <p className="text-destructive">Model "{urlModel}" not found</p>
     );
   } else {
+    // mainContent = (
+    //   <ErrorBoundary>
+    //     <Suspense
+    //       fallback={
+    //         <p className="text-muted-foreground">Loading {viewMode}...</p>
+    //       }
+    //     >
+    //       <NotesView
+    //         model={urlModel}
+    //         fields={fields}
+    //         page={pageIndex}
+    //         pageSize={pageSize}
+    //         search={search}
+    //         flag={flag}
+    //         viewMode={viewMode}
+    //         onStateChange={setUrlState}
+    //       />
+    //     </Suspense>
+    //   </ErrorBoundary>
+    // );
     mainContent = (
-      <ErrorBoundary>
-        <Suspense
-          fallback={
-            <p className="text-muted-foreground">Loading {viewMode}...</p>
-          }
-        >
-          <NotesView
-            model={urlModel}
-            fields={fields}
-            page={pageIndex}
-            pageSize={pageSize}
-            search={search}
-            flag={flag}
-            viewMode={viewMode}
-            onStateChange={setUrlState}
-          />
-        </Suspense>
-      </ErrorBoundary>
+      <NotesView
+        model={urlModel}
+        fields={fields}
+        page={pageIndex}
+        pageSize={pageSize}
+        search={search}
+        flag={flag}
+        viewMode={viewMode}
+        onStateChange={setUrlState}
+      />
     );
+    // mainContent = <div>wip</div>
   }
 
   return (

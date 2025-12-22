@@ -14,6 +14,6 @@ const router = createBrowserRouter([
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <RouterProvider router={router} unstable_useTransitions />
+    <RouterProvider router={router} />
   </StrictMode>,
 );
