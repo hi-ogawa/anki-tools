@@ -14,7 +14,7 @@ Instructions for AI coding agents working on this project.
 
 1. Create feature branch before starting work
 2. Run `pnpm tsc` and `pnpm lint` after functional changes
-3. Confirm changes work before committing
+3. Confirm changes with the user before committing
 4. Commit each logical change separately
 
 **Note**: Restart Anki after changing Python code in `addon/`.

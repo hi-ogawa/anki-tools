@@ -13,12 +13,12 @@ Quick notes, feedback, and todos. Process into plan.md periodically.
 - [x] README.md: requires anki restart when changing python code
 - [ ] `toolbarLeft` abstraction feels odd (improve component architecture)
 - [ ] tweak fontsize
-- [ ] consistent button/input hover style
-- [ ] UI component inconsistencies:
-  - [ ] native `<select>` vs `<Select>` (model selector in root.tsx)
-  - [ ] native `<button>` vs `<Button>` (flag buttons in note-detail.tsx, retry button in root.tsx)
-  - [ ] native `<textarea>` vs missing Textarea component (note-detail.tsx)
-  - [ ] FLAG_OPTIONS defined in 3 places (root.tsx, note-detail.tsx, browse-table.tsx)
+- [x] consistent button/input hover style
+- [x] UI component inconsistencies:
+  - [x] native `<select>` vs `<Select>` (model selector in root.tsx)
+  - [x] native `<button>` vs `<Button>` (flag buttons in note-detail.tsx, retry button in root.tsx)
+  - [x] native `<textarea>` vs missing Textarea component (note-detail.tsx)
+  - [x] FLAG_OPTIONS defined in 3 places (root.tsx, note-detail.tsx, browse-table.tsx)
 
 ## Ideas
 
