@@ -257,8 +257,8 @@ function NotesView({
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
       if (!isResizing.current) return;
-      const newWidth = window.innerWidth - e.clientX - 16; // 16 = padding
-      setPanelWidth(Math.max(200, Math.min(600, newWidth)));
+      const newWidth = window.innerWidth - e.clientX - 24; // 16 = padding
+      setPanelWidth(Math.max(300, Math.min(600, newWidth)));
     };
     const onMouseUp = () => {
       isResizing.current = false;
@@ -404,7 +404,6 @@ function NotesView({
       {/* TODO: small panelWidth breaks layout. it depends on field data length. */}
       {selected && (
         <div className="relative flex shrink-0" style={{ width: panelWidth }}>
-          {/* TODO: resize and panel border is slightly off */}
           <div
             className="absolute left-0 top-0 h-full w-1 cursor-col-resize hover:bg-primary/20"
             onMouseDown={() => {
@@ -413,7 +412,7 @@ function NotesView({
               document.body.style.userSelect = "none";
             }}
           />
-          <div className="flex-1 pl-2">
+          <div className="flex-1 pl-1">
             <NoteDetail
               item={selected}
               fields={fields}
