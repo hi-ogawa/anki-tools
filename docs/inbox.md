@@ -13,6 +13,7 @@ Quick notes, feedback, and todos. Process into plan.md periodically.
 - [x] README.md: requires anki restart when changing python code
 - [ ] `toolbarLeft` abstraction feels odd (improve component architecture)
 - [ ] tweak fontsize
+- [ ] consistent button/input hover style
 
 ## Ideas
 
@@ -24,3 +25,4 @@ Quick notes, feedback, and todos. Process into plan.md periodically.
 - [ ] error boundary
 - [x] "noUnusedLocals": true"
 - [ ] full scroll mode withou pagination
+- [ ] transition and suspense query
