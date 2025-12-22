@@ -189,31 +189,23 @@ function App() {
                   </option>
                 ))}
               </select>
-              {/* TODO: use select instead of two buttons */}
-              <div className="flex rounded border text-sm">
-                <button
-                  onClick={() =>
-                    setSearchParams((p) => {
-                      p.set("view", "notes");
-                      return p;
-                    })
-                  }
-                  className={`px-3 py-1 ${viewMode === "notes" ? "bg-primary text-primary-foreground" : "bg-background"}`}
-                >
-                  Notes
-                </button>
-                <button
-                  onClick={() =>
-                    setSearchParams((p) => {
-                      p.set("view", "cards");
-                      return p;
-                    })
-                  }
-                  className={`px-3 py-1 ${viewMode === "cards" ? "bg-primary text-primary-foreground" : "bg-background"}`}
-                >
-                  Cards
-                </button>
-              </div>
+              <Select
+                value={viewMode}
+                onValueChange={(value) =>
+                  setSearchParams((p) => {
+                    p.set("view", value);
+                    return p;
+                  })
+                }
+              >
+                <SelectTrigger className="w-[100px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="notes">Notes</SelectItem>
+                  <SelectItem value="cards">Cards</SelectItem>
+                </SelectContent>
+              </Select>
             </>
           )}
         </div>
