@@ -1,15 +1,15 @@
 """Standalone test server for e2e tests."""
 
 import os
-import signal
 import sys
 from functools import partial
 from http.server import HTTPServer
 from pathlib import Path
 
+# Import server module directly to avoid loading __init__.py (which imports aqt)
+sys.path.insert(0, str(Path(__file__).parent.parent / "anki_browse_web"))
 from anki.collection import Collection
-
-from anki_browse_web.server import RequestHandler
+from server import RequestHandler  # noqa: E402
 
 PORT = int(os.environ.get("ANKI_PORT", "6679"))
 DATA_PATH = Path(__file__).parent / "data" / "test.anki2"
@@ -28,15 +28,12 @@ def main():
     print(f"Server running on http://localhost:{PORT}")
     print(f"Collection: {DATA_PATH}")
 
-    def shutdown(sig, frame):
+    try:
+        server.serve_forever()
+    except KeyboardInterrupt:
         print("\nShutting down...")
-        server.shutdown()
+    finally:
         col.close()
-        sys.exit(0)
-
-    signal.signal(signal.SIGINT, shutdown)
-    signal.signal(signal.SIGTERM, shutdown)
-    server.serve_forever()
 
 
 if __name__ == "__main__":
