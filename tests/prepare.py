@@ -1,23 +1,26 @@
-"""Create test fixture collection."""
+"""Create test data collection."""
 
 import os
 from pathlib import Path
 
 from anki.collection import Collection
 
-FIXTURE_PATH = Path(__file__).parent / "test.anki2"
+DATA_DIR = Path(__file__).parent / "data"
+DATA_PATH = DATA_DIR / "test.anki2"
 
 
 def main():
-    # Remove existing fixture
-    if FIXTURE_PATH.exists():
-        os.unlink(FIXTURE_PATH)
-    media_dir = FIXTURE_PATH.parent / "test.anki2.media"
+    DATA_DIR.mkdir(exist_ok=True)
+
+    # Remove existing data
+    if DATA_PATH.exists():
+        os.unlink(DATA_PATH)
+    media_dir = DATA_DIR / "test.media"
     if media_dir.exists():
         import shutil
         shutil.rmtree(media_dir)
 
-    col = Collection(str(FIXTURE_PATH))
+    col = Collection(str(DATA_PATH))
 
     # Use the default "Basic" model (Front/Back fields)
     model = col.models.by_name("Basic")
@@ -40,7 +43,7 @@ def main():
 
     col.close()
 
-    print(f"Created fixture: {FIXTURE_PATH}")
+    print(f"Created: {DATA_PATH}")
     print(f"  Notes: 20")
     print(f"  Cards: {len(cards)}")
 

@@ -12,7 +12,7 @@
     "lint-check": "oxfmt --check",
     "tsc": "tsc -b",
     "test-e2e": "playwright test",
-    "test-e2e-setup": "uv run python tests/fixtures/create.py"
+    "test-e2e-setup": "uv run python tests/prepare.py"
   },
   "dependencies": {
     "@radix-ui/react-dropdown-menu": "^2.1.12",

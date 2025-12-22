@@ -4,12 +4,6 @@ __pycache__
 *.tsbuildinfo
 *.ankiaddon
 
-# Python / uv
 .venv
-
-# Test artifacts
 test-results/
-tests/fixtures/*.anki2
-tests/fixtures/*.anki2-wal
-tests/fixtures/*.anki2-shm
-tests/fixtures/*.anki2.media/
+tests/data/
