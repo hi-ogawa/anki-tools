@@ -2,10 +2,10 @@ import {
   QueryClient,
   QueryClientProvider,
   useQuery,
-  keepPreviousData,
+  useSuspenseQuery,
 } from "@tanstack/react-query";
 import { Flag } from "lucide-react";
-import { useMemo, useState, useEffect, useRef } from "react";
+import { useMemo, useState, useEffect, useRef, Suspense } from "react";
 import { Link, useSearchParams } from "react-router";
 import {
   fetchAllModelsWithFields,
@@ -17,6 +17,7 @@ import {
   type Card,
 } from "./api";
 import { BrowseTable } from "./components/browse-table";
+import { ErrorBoundary } from "./components/error-boundary";
 import { NoteDetail } from "./components/note-detail";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
@@ -141,16 +142,24 @@ function App() {
     );
   } else {
     mainContent = (
-      <NotesView
-        model={urlModel}
-        fields={fields}
-        page={pageIndex}
-        pageSize={pageSize}
-        search={search}
-        flag={flag}
-        viewMode={viewMode}
-        onStateChange={setUrlState}
-      />
+      <ErrorBoundary>
+        <Suspense
+          fallback={
+            <p className="text-muted-foreground">Loading {viewMode}...</p>
+          }
+        >
+          <NotesView
+            model={urlModel}
+            fields={fields}
+            page={pageIndex}
+            pageSize={pageSize}
+            search={search}
+            flag={flag}
+            viewMode={viewMode}
+            onStateChange={setUrlState}
+          />
+        </Suspense>
+      </ErrorBoundary>
     );
   }
 
@@ -268,35 +277,14 @@ function NotesView({
     return parts.join(" ") || undefined;
   }, [search, flag]);
 
-  // TOOD: two queries should abstracted as query function level?
-  const {
-    data: notes = [],
-    isLoading: notesLoading,
-    isFetching: notesFetching,
-    error: notesError,
-  } = useQuery({
-    queryKey: ["notes", model, fullSearch],
-    queryFn: () => fetchNotes(model, fullSearch),
-    placeholderData: keepPreviousData,
-    enabled: viewMode === "notes",
+  // Single query based on viewMode - suspense handles loading
+  const { data } = useSuspenseQuery({
+    queryKey: [viewMode, model, fullSearch],
+    queryFn: () =>
+      viewMode === "notes"
+        ? fetchNotes(model, fullSearch)
+        : fetchCards(model, fullSearch),
   });
-
-  const {
-    data: cards = [],
-    isLoading: cardsLoading,
-    isFetching: cardsFetching,
-    error: cardsError,
-  } = useQuery({
-    queryKey: ["cards", model, fullSearch],
-    queryFn: () => fetchCards(model, fullSearch),
-    placeholderData: keepPreviousData,
-    enabled: viewMode === "cards",
-  });
-
-  // TODO: suspend and transition?
-  const isLoading = viewMode === "notes" ? notesLoading : cardsLoading;
-  const isFetching = viewMode === "notes" ? notesFetching : cardsFetching;
-  const error = viewMode === "notes" ? notesError : cardsError;
 
   // Local search state - synced with URL
   const [localSearch, setLocalSearch] = useState(search);
@@ -309,12 +297,6 @@ function NotesView({
       onStateChange({ search: localSearch, page: 1 });
     }
   };
-
-  if (error) {
-    return (
-      <p className="text-destructive">Error loading notes: {error.message}</p>
-    );
-  }
 
   const flagValue = flag || "none";
 
@@ -351,17 +333,9 @@ function NotesView({
           ))}
         </SelectContent>
       </Select>
-      {isFetching && (
-        <span className="text-sm text-muted-foreground">Loading...</span>
-      )}
     </>
   );
 
-  if (isLoading) {
-    return <p className="text-muted-foreground">Loading {viewMode}...</p>;
-  }
-
-  const data = viewMode === "notes" ? notes : cards;
   const selected = viewMode === "notes" ? selectedNote : selectedCard;
   const setSelected =
     viewMode === "notes"
