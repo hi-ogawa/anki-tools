@@ -3,17 +3,8 @@ import { useState } from "react";
 import type { Note, Card } from "@/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-
-const FLAG_OPTIONS = [
-  { value: 0, label: "None", color: undefined },
-  { value: 1, label: "Red", color: "#ef4444" },
-  { value: 2, label: "Orange", color: "#f97316" },
-  { value: 3, label: "Green", color: "#22c55e" },
-  { value: 4, label: "Blue", color: "#3b82f6" },
-  { value: 5, label: "Pink", color: "#ec4899" },
-  { value: 6, label: "Turquoise", color: "#14b8a6" },
-  { value: 7, label: "Purple", color: "#a855f7" },
-] as const;
+import { Textarea } from "@/components/ui/textarea";
+import { FLAG_OPTIONS } from "@/lib/constants";
 
 interface NoteDetailProps {
   item: Note | Card;
@@ -63,13 +54,14 @@ export function NoteDetail({
               </label>
               <div className="mt-1 flex flex-wrap gap-1">
                 {FLAG_OPTIONS.map((opt) => (
-                  <button
+                  <Button
                     key={opt.value}
+                    variant="outline"
                     onClick={() => onFlagChange?.(card.id, opt.value)}
-                    className={`flex size-7 items-center justify-center rounded border ${
+                    className={`size-7 p-0 ${
                       card.flag === opt.value
                         ? "border-primary ring-1 ring-primary"
-                        : "border-border hover:border-primary/50"
+                        : ""
                     }`}
                     title={opt.label}
                   >
@@ -82,7 +74,7 @@ export function NoteDetail({
                     ) : (
                       <span className="text-xs text-muted-foreground">-</span>
                     )}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -111,8 +103,7 @@ export function NoteDetail({
               </div>
               {editingField === field ? (
                 <div className="mt-1 space-y-2">
-                  <textarea
-                    className="w-full rounded border bg-background p-2 text-sm"
+                  <Textarea
                     rows={4}
                     value={editValue}
                     onChange={(e) => setEditValue(e.target.value)}

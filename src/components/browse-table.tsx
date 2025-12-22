@@ -44,20 +44,11 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { FLAG_COLORS } from "@/lib/constants";
 import { useLocalStorage } from "@/lib/use-local-storage";
 
 type ViewMode = "notes" | "cards";
 type BrowseItem = Note | Card;
-
-const FLAG_COLORS: Record<number, string> = {
-  1: "#ef4444", // Red
-  2: "#f97316", // Orange
-  3: "#22c55e", // Green
-  4: "#3b82f6", // Blue
-  5: "#ec4899", // Pink
-  6: "#14b8a6", // Turquoise
-  7: "#a855f7", // Purple
-};
 
 interface BrowseTableProps {
   data: BrowseItem[];
@@ -371,7 +362,7 @@ export function BrowseTable({
               onStateChange({ pageSize: Number(value), page: 1 })
             }
           >
-            <SelectTrigger size="sm" className="w-[100px]">
+            <SelectTrigger size="sm" className="w-[120px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
