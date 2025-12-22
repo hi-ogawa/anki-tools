@@ -13,13 +13,10 @@ Why an Anki addon instead of AnkiConnect?
 """
 
 import json
-import threading
-from functools import partial
-from http.server import HTTPServer, SimpleHTTPRequestHandler
+from http.server import SimpleHTTPRequestHandler
 from typing import Callable
 
-# Type alias for Anki Collection (avoid import for standalone usage)
-Collection = object
+from anki.collection import Collection
 
 
 class RequestHandler(SimpleHTTPRequestHandler):
@@ -90,39 +87,6 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
     def log_message(self, format, *args):
         pass  # Suppress logging
-
-
-class AddonServer:
-    """HTTP server for Anki addon with thread-safe request handling."""
-
-    def __init__(
-        self,
-        port: int,
-        get_col: Callable[[], Collection],
-        directory: str,
-        run_on_main: Callable[[Callable], None],
-    ):
-        def run(fn):
-            event = threading.Event()
-
-            def run_and_signal():
-                fn()
-                event.set()
-
-            run_on_main(run_and_signal)
-            event.wait()
-
-        handler = partial(RequestHandler, get_col=get_col, directory=directory, run=run)
-        self._server = HTTPServer(("127.0.0.1", port), handler)
-        self._thread: threading.Thread | None = None
-
-    def start(self):
-        self._thread = threading.Thread(target=self._server.serve_forever, daemon=True)
-        self._thread.start()
-
-    def stop(self):
-        self._server.shutdown()
-        self._thread = None
 
 
 def handle_action(col: Collection, action: str, params: dict):
