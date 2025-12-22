@@ -26,6 +26,23 @@ pnpm dev
 
 **Note**: Restart Anki after changing Python code in `addon/`.
 
+## Testing
+
+E2E tests run against a standalone Python server using `anki` library (no GUI required).
+
+Requires [uv](https://docs.astral.sh/uv/) for Python dependency management.
+
+```bash
+# Install Python dependencies
+uv sync
+
+# One-time: create test fixture
+pnpm test-e2e-setup
+
+# Run e2e tests (uses ports 6173/6679 to avoid conflicts with dev)
+pnpm test-e2e
+```
+
 ## Build
 
 ```bash

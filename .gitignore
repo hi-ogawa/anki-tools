@@ -6,7 +6,6 @@ __pycache__
 
 # Python / uv
 .venv
-uv.lock
 
 # Test artifacts
 test-results/
