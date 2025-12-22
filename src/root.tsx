@@ -187,6 +187,7 @@ function App() {
                   </option>
                 ))}
               </select>
+              {/* TODO: use select instead of two buttons */}
               <div className="flex rounded border text-sm">
                 <button
                   onClick={() =>
@@ -328,12 +329,11 @@ function NotesView({
   const toolbarLeft = (
     <>
       <Input
-        placeholder="Anki search: deck:name, tag:name, field:value, *wild*"
+        placeholder="Search by: deck:name, tag:name, field:value, *wild*, ..."
         value={localSearch}
         onChange={(e) => setLocalSearch(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && submitSearch()}
-        onBlur={submitSearch}
-        className="w-80"
+        className="w-[400px]"
       />
       <Select
         value={flagValue}
