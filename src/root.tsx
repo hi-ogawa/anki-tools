@@ -39,6 +39,7 @@ const FLAG_OPTIONS = [
   { value: "7", label: "Purple", color: "#a855f7" },
 ] as const;
 
+// TODO: separate singleton state and component
 const queryClient = new QueryClient();
 
 export function Root() {
@@ -52,6 +53,7 @@ export function Root() {
 type ViewMode = "notes" | "cards";
 
 function App() {
+  // TODO: model type-safe search params
   const [searchParams, setSearchParams] = useSearchParams();
   const urlModel = searchParams.get("model");
   // URL uses 1-based page, convert to 0-based for table
@@ -279,6 +281,7 @@ function NotesView({
     return parts.join(" ") || undefined;
   }, [search, flag]);
 
+  // TOOD: two queries should abstracted as query function level?
   const {
     data: notes = [],
     isLoading: notesLoading,
@@ -303,6 +306,7 @@ function NotesView({
     enabled: viewMode === "cards",
   });
 
+  // TODO: suspend and transition?
   const isLoading = viewMode === "notes" ? notesLoading : cardsLoading;
   const isFetching = viewMode === "notes" ? notesFetching : cardsFetching;
   const error = viewMode === "notes" ? notesError : cardsError;
@@ -319,10 +323,11 @@ function NotesView({
     }
   };
 
-  if (error)
+  if (error) {
     return (
       <p className="text-destructive">Error loading notes: {error.message}</p>
     );
+  }
 
   const flagValue = flag || "none";
 
@@ -396,8 +401,10 @@ function NotesView({
           toolbarLeft={toolbarLeft}
         />
       </div>
+      {/* TODO: small panelWidth breaks layout. it depends on field data length. */}
       {selected && (
         <div className="relative flex shrink-0" style={{ width: panelWidth }}>
+          {/* TODO: resize and panel border is slightly off */}
           <div
             className="absolute left-0 top-0 h-full w-1 cursor-col-resize hover:bg-primary/20"
             onMouseDown={() => {
