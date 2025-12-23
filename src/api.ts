@@ -29,6 +29,43 @@ export interface Card {
 }
 
 // ============================================================================
+// Implementations
+// ============================================================================
+
+const implementations = {
+  getModels: () => {
+    return invoke<Record<string, string[]>>("getModels");
+  },
+
+  // search: optional Anki search syntax (e.g., "field:value", "deck:name", "tag:name")
+  fetchNotes: (input: { modelName: string; search?: string }) => {
+    return invoke<Note[]>("browseNotes", {
+      query: `note:"${input.modelName}" ${input.search || ""}`,
+    });
+  },
+
+  fetchCards: (input: { modelName: string; search?: string }) => {
+    return invoke<Card[]>("browseCards", {
+      query: `note:"${input.modelName}" ${input.search || ""}`,
+    });
+  },
+
+  // flag: 0 = no flag, 1-7 = flag colors
+  setCardFlag: (input: { cardId: number; flag: number }) => {
+    return invoke<boolean>("setCardFlag", input);
+  },
+
+  updateNoteFields: (input: {
+    noteId: number;
+    fields: Record<string, string>;
+  }) => {
+    return invoke<boolean>("updateNoteFields", input);
+  },
+};
+
+export const api = deriveQueryHelpers(implementations);
+
+// ============================================================================
 // JSON-RPC helper
 // ============================================================================
 
@@ -80,40 +117,3 @@ function deriveQueryHelpers<T extends Record<string, AnyFn>>(
   }
   return result;
 }
-
-// ============================================================================
-// Implementations
-// ============================================================================
-
-const implementations = {
-  getModels: () => {
-    return invoke<Record<string, string[]>>("getModels");
-  },
-
-  // search: optional Anki search syntax (e.g., "field:value", "deck:name", "tag:name")
-  fetchNotes: (input: { modelName: string; search?: string }) => {
-    return invoke<Note[]>("browseNotes", {
-      query: `note:"${input.modelName}" ${input.search || ""}`,
-    });
-  },
-
-  fetchCards: (input: { modelName: string; search?: string }) => {
-    return invoke<Card[]>("browseCards", {
-      query: `note:"${input.modelName}" ${input.search || ""}`,
-    });
-  },
-
-  // flag: 0 = no flag, 1-7 = flag colors
-  setCardFlag: (input: { cardId: number; flag: number }) => {
-    return invoke<boolean>("setCardFlag", input);
-  },
-
-  updateNoteFields: (input: {
-    noteId: number;
-    fields: Record<string, string>;
-  }) => {
-    return invoke<boolean>("updateNoteFields", input);
-  },
-};
-
-export const api = deriveQueryHelpers(implementations);
