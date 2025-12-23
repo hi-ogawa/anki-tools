@@ -8,7 +8,7 @@ import {
 import { Flag } from "lucide-react";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router";
-import { api, type Item } from "./api";
+import { api, type Item, type ViewMode } from "./api";
 import { BrowseTable } from "./components/browse-table";
 import { NoteDetail } from "./components/note-detail";
 import { Button } from "./components/ui/button";
@@ -39,8 +39,6 @@ export function Root() {
     </QueryClientProvider>
   );
 }
-
-type ViewMode = "notes" | "cards";
 
 function App() {
   // TODO: model type-safe search params

@@ -18,7 +18,7 @@ import {
   Pause,
 } from "lucide-react";
 import { useMemo } from "react";
-import type { Item } from "@/api";
+import type { Item, ViewMode } from "@/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -46,8 +46,6 @@ import {
 } from "@/components/ui/table";
 import { FLAG_COLORS } from "@/lib/constants";
 import { useLocalStorage } from "@/lib/use-local-storage";
-
-type ViewMode = "notes" | "cards";
 
 interface BrowseTableProps {
   data: Item[];

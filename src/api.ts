@@ -29,6 +29,8 @@ export type Note = NoteData & { type: "note" };
 export type Card = NoteData & CardData & { type: "card" };
 export type Item = Note | Card;
 
+export type ViewMode = "notes" | "cards";
+
 // Raw API responses (before transformation)
 type RawNote = {
   id: number;
@@ -81,8 +83,6 @@ function toCard(raw: RawCard): Card {
 // ============================================================================
 // Implementations
 // ============================================================================
-
-type ViewMode = "notes" | "cards";
 
 const implementations = {
   getModels: () => {
