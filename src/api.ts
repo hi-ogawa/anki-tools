@@ -29,7 +29,15 @@ export type Note = NoteData & { type: "note" };
 export type Card = NoteData & CardData & { type: "card" };
 export type Item = Note | Card;
 
-// Raw API response (before transformation)
+// Raw API responses (before transformation)
+type RawNote = {
+  id: number;
+  modelName: string;
+  fields: Record<string, string>;
+  tags: string[];
+  deckName: string;
+};
+
 type RawCard = {
   id: number;
   noteId: number;
@@ -42,6 +50,17 @@ type RawCard = {
   due: number;
   interval: number;
 };
+
+function toNote(raw: RawNote): Note {
+  return {
+    type: "note",
+    noteId: raw.id,
+    modelName: raw.modelName,
+    fields: raw.fields,
+    tags: raw.tags,
+    deckName: raw.deckName,
+  };
+}
 
 function toCard(raw: RawCard): Card {
   return {
@@ -63,17 +82,27 @@ function toCard(raw: RawCard): Card {
 // Implementations
 // ============================================================================
 
+type ViewMode = "notes" | "cards";
+
 const implementations = {
   getModels: () => {
     return invoke<Record<string, string[]>>("getModels");
   },
 
   // search: optional Anki search syntax (e.g., "field:value", "deck:name", "tag:name")
-  fetchCards: async (input: { modelName: string; search?: string }) => {
-    const raw = await invoke<RawCard[]>("browseCards", {
-      query: `note:"${input.modelName}" ${input.search || ""}`,
-    });
-    return raw.map(toCard);
+  fetchItems: async (input: {
+    modelName: string;
+    search?: string;
+    viewMode: ViewMode;
+  }): Promise<Item[]> => {
+    const query = `note:"${input.modelName}" ${input.search || ""}`;
+    if (input.viewMode === "notes") {
+      const raw = await invoke<RawNote[]>("browseNotes", { query });
+      return raw.map(toNote);
+    } else {
+      const raw = await invoke<RawCard[]>("browseCards", { query });
+      return raw.map(toCard);
+    }
   },
 
   // flag: 0 = no flag, 1-7 = flag colors

@@ -19,7 +19,7 @@ Quick notes, feedback, and todos. Process into plan.md periodically.
   - [x] native `<button>` vs `<Button>` (flag buttons in note-detail.tsx, retry button in root.tsx)
   - [x] native `<textarea>` vs missing Textarea component (note-detail.tsx)
   - [x] FLAG_OPTIONS defined in 3 places (root.tsx, note-detail.tsx, browse-table.tsx)
-- [ ] refactor: `cards -> notes` derivation in api.ts
+- [x] refactor: `cards -> notes` derivation in api.ts
 
 ## Ideas
 
@@ -32,5 +32,5 @@ Quick notes, feedback, and todos. Process into plan.md periodically.
 - [x] "noUnusedLocals": true"
 - [ ] full scroll mode withou pagination
 - [ ] transition and suspense query
-- [ ] refactor: unify Note/Card model (see [refactor-unified-card-model.md](refactor-unified-card-model.md))
+- [x] refactor: unify Note/Card model (see [refactor-unified-card-model.md](refactor-unified-card-model.md))
 - [ ] poll health endpoint to show server status in UI to indicate Anki is closed but browser tab is left open.

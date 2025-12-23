@@ -265,40 +265,19 @@ function NotesView({
     return parts.join(" ") || undefined;
   }, [search, flag]);
 
-  // Single query: always fetch cards
   const {
-    data: cards = [],
+    data: items = [],
     isLoading,
     isFetching,
     error,
   } = useQuery({
-    ...api.fetchCards.queryOptions({ modelName: model, search: fullSearch }),
+    ...api.fetchItems.queryOptions({
+      modelName: model,
+      search: fullSearch,
+      viewMode,
+    }),
     placeholderData: keepPreviousData,
   });
-
-  // Derive items: cards as-is, or deduplicated by noteId for notes view
-  const items: Item[] = useMemo(() => {
-    if (viewMode === "cards") return cards;
-
-    // Deduplicate by noteId, convert to Note type
-    const seen = new Set<number>();
-    return cards
-      .filter((card) => {
-        if (seen.has(card.noteId)) return false;
-        seen.add(card.noteId);
-        return true;
-      })
-      .map(
-        (card): Item => ({
-          type: "note",
-          noteId: card.noteId,
-          modelName: card.modelName,
-          fields: card.fields,
-          tags: card.tags,
-          deckName: card.deckName,
-        }),
-      );
-  }, [cards, viewMode]);
 
   // TODO: optimistic updates
   const setFlagMutation = useMutation({
