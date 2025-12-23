@@ -2,6 +2,7 @@ import {
   QueryClient,
   QueryClientProvider,
   useQuery,
+  useMutation,
   keepPreviousData,
 } from "@tanstack/react-query";
 import { Flag } from "lucide-react";
@@ -23,7 +24,13 @@ import { FLAG_FILTER_OPTIONS } from "./lib/constants";
 import { useLocalStorage } from "./lib/use-local-storage";
 
 // TODO: separate singleton state and component
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    mutations: {
+      onError: (error) => alert(error.message),
+    },
+  },
+});
 
 export function Root() {
   return (
@@ -222,6 +229,7 @@ function NotesView({
   viewMode,
   onStateChange,
 }: NotesViewProps) {
+  // TODO: refactor note/card mode duplicacy
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
 
@@ -280,6 +288,26 @@ function NotesView({
     ...api.fetchCards.queryOptions({ modelName: model, search: fullSearch }),
     placeholderData: keepPreviousData,
     enabled: viewMode === "cards",
+  });
+
+  // TODO: optimistic updates
+  const setFlagMutation = useMutation({
+    ...api.setCardFlag.mutationOptions(),
+    onSuccess: (_, { cardId, flag }) => {
+      setSelectedCard((prev) =>
+        prev?.id === cardId ? { ...prev, flag } : prev,
+      );
+    },
+  });
+
+  const updateFieldsMutation = useMutation({
+    ...api.updateNoteFields.mutationOptions(),
+    onSuccess: (_, { fields }) => {
+      const update = <T extends Note | Card>(prev: T | null): T | null =>
+        prev ? { ...prev, fields: { ...prev.fields, ...fields } } : null;
+      setSelectedNote(update);
+      setSelectedCard(update);
+    },
   });
 
   // TODO: suspend and transition?
@@ -393,40 +421,12 @@ function NotesView({
               item={selected}
               fields={fields}
               onClose={clearSelected}
-              onFlagChange={async (cardId, flag) => {
-                try {
-                  await api.setCardFlag({ cardId, flag });
-                  // Update local state to reflect the change
-                  setSelectedCard((prev) =>
-                    prev?.id === cardId ? { ...prev, flag } : prev,
-                  );
-                } catch (e) {
-                  alert(
-                    `Failed to set flag: ${e instanceof Error ? e.message : e}`,
-                  );
-                }
-              }}
-              onFieldsChange={async (noteId, updatedFields) => {
-                try {
-                  await api.updateNoteFields({ noteId, fields: updatedFields });
-                  // Update local state to reflect the change
-                  const updateItem = <T extends Note | Card>(
-                    prev: T | null,
-                  ): T | null => {
-                    if (!prev) return null;
-                    return {
-                      ...prev,
-                      fields: { ...prev.fields, ...updatedFields },
-                    };
-                  };
-                  setSelectedNote(updateItem);
-                  setSelectedCard(updateItem);
-                } catch (e) {
-                  alert(
-                    `Failed to update fields: ${e instanceof Error ? e.message : e}`,
-                  );
-                }
-              }}
+              onFlagChange={(cardId, flag) =>
+                setFlagMutation.mutate({ cardId, flag })
+              }
+              onFieldsChange={(noteId, fields) =>
+                updateFieldsMutation.mutate({ noteId, fields })
+              }
             />
           </div>
         </div>
