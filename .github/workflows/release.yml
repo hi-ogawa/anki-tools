@@ -14,8 +14,15 @@ jobs:
       - run: corepack enable
       - run: pnpm i
       - run: pnpm build-addon
+      - name: Get release info
+        id: release-info
+        run: |
+          echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+          echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
       - uses: softprops/action-gh-release@v2
         with:
+          name: ${{ steps.release-info.outputs.date }}-${{ steps.release-info.outputs.short_sha }}
           draft: true
+          body: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
           files: |
             *.ankiaddon
