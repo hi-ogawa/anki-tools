@@ -2,8 +2,37 @@
 // Uses AnkiConnect-style JSON-RPC but with custom actions optimized for browsing.
 const API_URL = "/api";
 
+// ============================================================================
+// Domain Types
+// ============================================================================
+
+export interface Note {
+  id: number;
+  modelName: string;
+  fields: Record<string, string>;
+  tags: string[];
+  deckName: string;
+}
+
+// TODO: refactor Card as Note + extra fields
+export interface Card {
+  id: number;
+  noteId: number;
+  deckName: string;
+  modelName: string;
+  fields: Record<string, string>;
+  tags: string[];
+  flag: number; // 0 = none, 1-7 = flag colors
+  queue: number; // -1 = suspended, 0 = new, 1 = learning, 2 = review
+  due: number;
+  interval: number;
+}
+
+// ============================================================================
 // JSON-RPC helper
-export async function invoke<T>(
+// ============================================================================
+
+async function invoke<T>(
   action: string,
   params?: Record<string, unknown>,
 ): Promise<T> {
@@ -16,70 +45,41 @@ export async function invoke<T>(
   return result;
 }
 
-// Schema discovery
-export async function fetchAllModelsWithFields(): Promise<
-  Record<string, string[]>
-> {
-  return invoke<Record<string, string[]>>("getModels");
+// ============================================================================
+// API Methods
+// ============================================================================
+
+function buildQuery(modelName: string, search?: string) {
+  return search ? `note:"${modelName}" ${search}` : `note:"${modelName}"`;
 }
 
-export interface Note {
-  id: number;
-  modelName: string;
-  fields: Record<string, string>;
-  tags: string[];
-  deckName: string;
-}
+export const api = {
+  fetchAllModelsWithFields: () => {
+    return invoke<Record<string, string[]>>("getModels");
+  },
 
-// Fetch notes for a model
-// search: optional Anki search syntax (e.g., "field:value", "deck:name", "tag:name")
-export async function fetchNotes(
-  modelName: string,
-  search?: string,
-): Promise<Note[]> {
-  const query = search
-    ? `note:"${modelName}" ${search}`
-    : `note:"${modelName}"`;
-  return invoke<Note[]>("browseNotes", { query });
-}
+  // search: optional Anki search syntax (e.g., "field:value", "deck:name", "tag:name")
+  fetchNotes: (input: { modelName: string; search?: string }) => {
+    return invoke<Note[]>("browseNotes", {
+      query: buildQuery(input.modelName, input.search),
+    });
+  },
 
-export interface Card {
-  id: number;
-  noteId: number;
-  deckName: string;
-  modelName: string;
-  fields: Record<string, string>;
-  tags: string[];
-  // Card-specific
-  flag: number; // 0 = none, 1-7 = flag colors
-  queue: number; // -1 = suspended, 0 = new, 1 = learning, 2 = review
-  due: number;
-  interval: number;
-}
+  fetchCards: (input: { modelName: string; search?: string }) => {
+    return invoke<Card[]>("browseCards", {
+      query: buildQuery(input.modelName, input.search),
+    });
+  },
 
-// Fetch cards for a model
-export async function fetchCards(
-  modelName: string,
-  search?: string,
-): Promise<Card[]> {
-  const query = search
-    ? `note:"${modelName}" ${search}`
-    : `note:"${modelName}"`;
-  return invoke<Card[]>("browseCards", { query });
-}
+  // flag: 0 = no flag, 1-7 = flag colors
+  setCardFlag: (input: { cardId: number; flag: number }) => {
+    return invoke<boolean>("setCardFlag", input);
+  },
 
-// Set flag on a card (0 = no flag, 1-7 = flag colors)
-export async function setCardFlag(
-  cardId: number,
-  flag: number,
-): Promise<boolean> {
-  return invoke<boolean>("setCardFlag", { cardId, flag });
-}
-
-// Update note fields (currently UI updates one field at a time, but API supports batch)
-export async function updateNoteFields(
-  noteId: number,
-  fields: Record<string, string>,
-): Promise<boolean> {
-  return invoke<boolean>("updateNoteFields", { noteId, fields });
-}
+  updateNoteFields: (input: {
+    noteId: number;
+    fields: Record<string, string>;
+  }) => {
+    return invoke<boolean>("updateNoteFields", input);
+  },
+};

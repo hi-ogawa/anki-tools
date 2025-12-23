@@ -7,15 +7,7 @@ import {
 import { Flag } from "lucide-react";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router";
-import {
-  fetchAllModelsWithFields,
-  fetchNotes,
-  fetchCards,
-  setCardFlag,
-  updateNoteFields,
-  type Note,
-  type Card,
-} from "./api";
+import { api, type Note, type Card } from "./api";
 import { BrowseTable } from "./components/browse-table";
 import { NoteDetail } from "./components/note-detail";
 import { Button } from "./components/ui/button";
@@ -63,7 +55,7 @@ function App() {
     refetch: refetchSchema,
   } = useQuery({
     queryKey: ["anki-schema"],
-    queryFn: fetchAllModelsWithFields,
+    queryFn: api.fetchAllModelsWithFields,
     staleTime: Infinity,
     retry: false,
   });
@@ -276,7 +268,7 @@ function NotesView({
     error: notesError,
   } = useQuery({
     queryKey: ["notes", model, fullSearch],
-    queryFn: () => fetchNotes(model, fullSearch),
+    queryFn: () => api.fetchNotes({ modelName: model, search: fullSearch }),
     placeholderData: keepPreviousData,
     enabled: viewMode === "notes",
   });
@@ -288,7 +280,7 @@ function NotesView({
     error: cardsError,
   } = useQuery({
     queryKey: ["cards", model, fullSearch],
-    queryFn: () => fetchCards(model, fullSearch),
+    queryFn: () => api.fetchCards({ modelName: model, search: fullSearch }),
     placeholderData: keepPreviousData,
     enabled: viewMode === "cards",
   });
@@ -406,7 +398,7 @@ function NotesView({
               onClose={clearSelected}
               onFlagChange={async (cardId, flag) => {
                 try {
-                  await setCardFlag(cardId, flag);
+                  await api.setCardFlag({ cardId, flag });
                   // Update local state to reflect the change
                   setSelectedCard((prev) =>
                     prev?.id === cardId ? { ...prev, flag } : prev,
@@ -419,7 +411,7 @@ function NotesView({
               }}
               onFieldsChange={async (noteId, updatedFields) => {
                 try {
-                  await updateNoteFields(noteId, updatedFields);
+                  await api.updateNoteFields({ noteId, fields: updatedFields });
                   // Update local state to reflect the change
                   const updateItem = <T extends Note | Card>(
                     prev: T | null,

@@ -31,3 +31,4 @@ Quick notes, feedback, and todos. Process into plan.md periodically.
 - [x] "noUnusedLocals": true"
 - [ ] full scroll mode withou pagination
 - [ ] transition and suspense query
+- [ ] refactor Card as "Note + extra fields"
