@@ -34,3 +34,5 @@ Quick notes, feedback, and todos. Process into plan.md periodically.
 - [ ] transition and suspense query
 - [x] refactor: unify Note/Card model (see [refactor-unified-card-model.md](refactor-unified-card-model.md))
 - [ ] poll health endpoint to show server status in UI to indicate Anki is closed but browser tab is left open.
+- [ ] bulk edit (e.g. bulk flag/unflag, bulk suspend/unsuspend)
+- [ ] in note-details for card, it should additionaly show card specific metadata and keep the same note details.
