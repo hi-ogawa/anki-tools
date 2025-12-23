@@ -138,6 +138,7 @@ function App() {
   } else {
     mainContent = (
       <NotesView
+        key={`${urlModel}-${viewMode}`}
         model={urlModel}
         fields={fields}
         page={pageIndex}
