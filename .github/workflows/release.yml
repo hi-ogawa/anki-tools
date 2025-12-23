@@ -1,28 +1,21 @@
 name: release
 on:
-  workflow_dispatch:
-
-permissions:
-  contents: write
-
+  push:
+    tags:
+      - "v*"
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - uses: actions/setup-node@v6
       - run: corepack enable
       - run: pnpm i
       - run: pnpm build-addon
-      - name: Get release info
-        id: release-info
-        run: |
-          echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
-          echo "short_sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
-      - uses: softprops/action-gh-release@v2
-        with:
-          name: ${{ steps.release-info.outputs.date }}-${{ steps.release-info.outputs.short_sha }}
-          draft: true
-          body: ${{ github.server_url }}/${{ github.repository }}/commit/${{ github.sha }}
-          files: |
-            *.ankiaddon
+      - run: pnpm dlx changelogithub --assets anki-browse-web.ankiaddon
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

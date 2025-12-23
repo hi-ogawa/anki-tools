@@ -10,7 +10,8 @@
     "setup-dev": "node scripts/setup-dev.js",
     "lint": "oxfmt",
     "lint-check": "oxfmt --check",
-    "tsc": "tsc -b"
+    "tsc": "tsc -b",
+    "release": "bumpp"
   },
   "dependencies": {
     "@radix-ui/react-dropdown-menu": "^2.1.12",
@@ -33,6 +34,7 @@
     "@types/react": "^19.1.0",
     "@types/react-dom": "^19.1.0",
     "@vitejs/plugin-react": "^5.1.2",
+    "bumpp": "^10.3.2",
     "oxfmt": "^0.19.0",
     "tailwindcss": "^4.1.4",
     "typescript": "^5.8.3",
