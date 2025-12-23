@@ -19,6 +19,7 @@ Quick notes, feedback, and todos. Process into plan.md periodically.
   - [x] native `<button>` vs `<Button>` (flag buttons in note-detail.tsx, retry button in root.tsx)
   - [x] native `<textarea>` vs missing Textarea component (note-detail.tsx)
   - [x] FLAG_OPTIONS defined in 3 places (root.tsx, note-detail.tsx, browse-table.tsx)
+- [ ] refactor: `cards -> notes` derivation in api.ts
 
 ## Ideas
 

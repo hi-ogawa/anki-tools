@@ -1,21 +1,17 @@
 import { Flag, Pencil, X } from "lucide-react";
 import { useState } from "react";
-import type { Note, Card } from "@/api";
+import type { Item } from "@/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { FLAG_OPTIONS } from "@/lib/constants";
 
 interface NoteDetailProps {
-  item: Note | Card;
+  item: Item;
   fields: string[];
   onClose: () => void;
-  onFlagChange?: (cardId: number, flag: number) => void;
-  onFieldsChange?: (noteId: number, fields: Record<string, string>) => void;
-}
-
-function isCard(item: Note | Card): item is Card {
-  return "flag" in item;
+  onFlagChange?: (flag: number) => void;
+  onFieldsChange?: (fields: Record<string, string>) => void;
 }
 
 export function NoteDetail({
@@ -25,8 +21,7 @@ export function NoteDetail({
   onFlagChange,
   onFieldsChange,
 }: NoteDetailProps) {
-  const card = isCard(item) ? item : null;
-  const noteId = card ? card.noteId : item.id;
+  const isCard = item.type === "card";
 
   const [editingField, setEditingField] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
@@ -36,7 +31,7 @@ export function NoteDetail({
       {/* Header */}
       <div className="flex items-center justify-between border-b px-4 py-3">
         <span className="text-sm font-medium">
-          {card ? `Card #${item.id}` : `Note #${item.id}`}
+          {isCard ? `Card #${item.cardId}` : `Note #${item.noteId}`}
         </span>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="size-4" />
@@ -47,7 +42,7 @@ export function NoteDetail({
       <div className="flex-1 overflow-y-auto p-4">
         <div className="space-y-4">
           {/* Flag selector for cards */}
-          {card && (
+          {isCard && (
             <div>
               <label className="text-sm font-medium text-muted-foreground">
                 Flag
@@ -57,9 +52,9 @@ export function NoteDetail({
                   <Button
                     key={opt.value}
                     variant="outline"
-                    onClick={() => onFlagChange?.(card.id, opt.value)}
+                    onClick={() => onFlagChange?.(opt.value)}
                     className={`size-7 p-0 ${
-                      card.flag === opt.value
+                      item.flag === opt.value
                         ? "border-primary ring-1 ring-primary"
                         : ""
                     }`}
@@ -113,7 +108,7 @@ export function NoteDetail({
                     <Button
                       size="sm"
                       onClick={() => {
-                        onFieldsChange?.(noteId, { [field]: editValue });
+                        onFieldsChange?.({ [field]: editValue });
                         setEditingField(null);
                       }}
                     >

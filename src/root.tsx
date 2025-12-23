@@ -8,7 +8,7 @@ import {
 import { Flag } from "lucide-react";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router";
-import { api, type Note, type Card } from "./api";
+import { api, type Item } from "./api";
 import { BrowseTable } from "./components/browse-table";
 import { NoteDetail } from "./components/note-detail";
 import { Button } from "./components/ui/button";
@@ -229,9 +229,7 @@ function NotesView({
   viewMode,
   onStateChange,
 }: NotesViewProps) {
-  // TODO: refactor note/card mode duplicacy
-  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
-  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
+  const [selected, setSelected] = useState<Item | null>(null);
 
   // Resizable panel
   const [panelWidth, setPanelWidth] = useLocalStorage(
@@ -267,35 +265,49 @@ function NotesView({
     return parts.join(" ") || undefined;
   }, [search, flag]);
 
-  // TOOD: two queries should abstracted as query function level?
-  const {
-    data: notes = [],
-    isLoading: notesLoading,
-    isFetching: notesFetching,
-    error: notesError,
-  } = useQuery({
-    ...api.fetchNotes.queryOptions({ modelName: model, search: fullSearch }),
-    placeholderData: keepPreviousData,
-    enabled: viewMode === "notes",
-  });
-
+  // Single query: always fetch cards
   const {
     data: cards = [],
-    isLoading: cardsLoading,
-    isFetching: cardsFetching,
-    error: cardsError,
+    isLoading,
+    isFetching,
+    error,
   } = useQuery({
     ...api.fetchCards.queryOptions({ modelName: model, search: fullSearch }),
     placeholderData: keepPreviousData,
-    enabled: viewMode === "cards",
   });
+
+  // Derive items: cards as-is, or deduplicated by noteId for notes view
+  const items: Item[] = useMemo(() => {
+    if (viewMode === "cards") return cards;
+
+    // Deduplicate by noteId, convert to Note type
+    const seen = new Set<number>();
+    return cards
+      .filter((card) => {
+        if (seen.has(card.noteId)) return false;
+        seen.add(card.noteId);
+        return true;
+      })
+      .map(
+        (card): Item => ({
+          type: "note",
+          noteId: card.noteId,
+          modelName: card.modelName,
+          fields: card.fields,
+          tags: card.tags,
+          deckName: card.deckName,
+        }),
+      );
+  }, [cards, viewMode]);
 
   // TODO: optimistic updates
   const setFlagMutation = useMutation({
     ...api.setCardFlag.mutationOptions(),
     onSuccess: (_, { cardId, flag }) => {
-      setSelectedCard((prev) =>
-        prev?.id === cardId ? { ...prev, flag } : prev,
+      setSelected((prev) =>
+        prev?.type === "card" && prev.cardId === cardId
+          ? { ...prev, flag }
+          : prev,
       );
     },
   });
@@ -303,17 +315,11 @@ function NotesView({
   const updateFieldsMutation = useMutation({
     ...api.updateNoteFields.mutationOptions(),
     onSuccess: (_, { fields }) => {
-      const update = <T extends Note | Card>(prev: T | null): T | null =>
-        prev ? { ...prev, fields: { ...prev.fields, ...fields } } : null;
-      setSelectedNote(update);
-      setSelectedCard(update);
+      setSelected((prev) =>
+        prev ? { ...prev, fields: { ...prev.fields, ...fields } } : null,
+      );
     },
   });
-
-  // TODO: suspend and transition?
-  const isLoading = viewMode === "notes" ? notesLoading : cardsLoading;
-  const isFetching = viewMode === "notes" ? notesFetching : cardsFetching;
-  const error = viewMode === "notes" ? notesError : cardsError;
 
   // Local search state - synced with URL
   const [localSearch, setLocalSearch] = useState(search);
@@ -378,29 +384,22 @@ function NotesView({
     return <p className="text-muted-foreground">Loading {viewMode}...</p>;
   }
 
-  const data = viewMode === "notes" ? notes : cards;
-  const selected = viewMode === "notes" ? selectedNote : selectedCard;
-  const setSelected =
-    viewMode === "notes"
-      ? (item: Note | Card) => setSelectedNote(item as Note)
-      : (item: Note | Card) => setSelectedCard(item as Card);
-  const clearSelected = () => {
-    setSelectedNote(null);
-    setSelectedCard(null);
-  };
+  // Get unique ID for selection (noteId for notes, cardId for cards)
+  const getItemId = (item: Item) =>
+    item.type === "card" ? item.cardId : item.noteId;
 
   return (
     <div className="flex gap-4">
       <div className={selected ? "flex-1" : "w-full"}>
         <BrowseTable
-          data={data}
+          data={items}
           viewMode={viewMode}
           model={model}
           fields={fields}
           page={page}
           pageSize={pageSize}
           onStateChange={onStateChange}
-          selectedId={selected?.id ?? null}
+          selectedId={selected ? getItemId(selected) : null}
           onSelect={setSelected}
           toolbarLeft={toolbarLeft}
         />
@@ -420,12 +419,15 @@ function NotesView({
             <NoteDetail
               item={selected}
               fields={fields}
-              onClose={clearSelected}
-              onFlagChange={(cardId, flag) =>
-                setFlagMutation.mutate({ cardId, flag })
+              onClose={() => setSelected(null)}
+              onFlagChange={
+                selected.type === "card"
+                  ? (flag) =>
+                      setFlagMutation.mutate({ cardId: selected.cardId, flag })
+                  : undefined
               }
-              onFieldsChange={(noteId, fields) =>
-                updateFieldsMutation.mutate({ noteId, fields })
+              onFieldsChange={(fields) =>
+                updateFieldsMutation.mutate({ noteId: selected.noteId, fields })
               }
             />
           </div>
