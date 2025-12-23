@@ -85,10 +85,6 @@ function deriveQueryHelpers<T extends Record<string, AnyFn>>(
 // Implementations
 // ============================================================================
 
-function buildQuery(modelName: string, search?: string) {
-  return search ? `note:"${modelName}" ${search}` : `note:"${modelName}"`;
-}
-
 const implementations = {
   getModels: () => {
     return invoke<Record<string, string[]>>("getModels");
@@ -97,13 +93,13 @@ const implementations = {
   // search: optional Anki search syntax (e.g., "field:value", "deck:name", "tag:name")
   fetchNotes: (input: { modelName: string; search?: string }) => {
     return invoke<Note[]>("browseNotes", {
-      query: buildQuery(input.modelName, input.search),
+      query: `note:"${input.modelName}" ${input.search || ""}`,
     });
   },
 
   fetchCards: (input: { modelName: string; search?: string }) => {
     return invoke<Card[]>("browseCards", {
-      query: buildQuery(input.modelName, input.search),
+      query: `note:"${input.modelName}" ${input.search || ""}`,
     });
   },
 
