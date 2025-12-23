@@ -46,15 +46,51 @@ async function invoke<T>(
 }
 
 // ============================================================================
-// API Methods
+// Derive helpers
+// ============================================================================
+
+import type { queryOptions, mutationOptions } from "@tanstack/react-query";
+
+type AnyFn = (...args: never[]) => Promise<unknown>;
+
+type DerivedQueryHelper<TFn extends AnyFn> = TFn & {
+  queryOptions: (
+    ...args: Parameters<TFn>
+  ) => ReturnType<typeof queryOptions<Awaited<ReturnType<TFn>>>>;
+  mutationOptions: () => ReturnType<
+    typeof mutationOptions<Awaited<ReturnType<TFn>>, Error, Parameters<TFn>[0]>
+  >;
+};
+
+function deriveQueryHelpers<T extends Record<string, AnyFn>>(
+  implementations: T,
+): { [K in keyof T]: DerivedQueryHelper<T[K]> } {
+  const result = {} as { [K in keyof T]: DerivedQueryHelper<T[K]> };
+  for (const [name, fn] of Object.entries(implementations)) {
+    (result as Record<string, unknown>)[name] = Object.assign(
+      (...args: unknown[]) => fn(...(args as never[])),
+      {
+        queryOptions: (...args: unknown[]) => ({
+          queryKey: [name, ...args],
+          queryFn: () => fn(...(args as never[])),
+        }),
+        mutationOptions: () => ({ mutationFn: fn as never }),
+      },
+    );
+  }
+  return result;
+}
+
+// ============================================================================
+// Implementations
 // ============================================================================
 
 function buildQuery(modelName: string, search?: string) {
   return search ? `note:"${modelName}" ${search}` : `note:"${modelName}"`;
 }
 
-export const api = {
-  fetchAllModelsWithFields: () => {
+const implementations = {
+  getModels: () => {
     return invoke<Record<string, string[]>>("getModels");
   },
 
@@ -83,3 +119,5 @@ export const api = {
     return invoke<boolean>("updateNoteFields", input);
   },
 };
+
+export const api = deriveQueryHelpers(implementations);

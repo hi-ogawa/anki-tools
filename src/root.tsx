@@ -54,8 +54,7 @@ function App() {
     error: schemaError,
     refetch: refetchSchema,
   } = useQuery({
-    queryKey: ["anki-schema"],
-    queryFn: api.fetchAllModelsWithFields,
+    ...api.getModels.queryOptions(),
     staleTime: Infinity,
     retry: false,
   });
@@ -267,8 +266,7 @@ function NotesView({
     isFetching: notesFetching,
     error: notesError,
   } = useQuery({
-    queryKey: ["notes", model, fullSearch],
-    queryFn: () => api.fetchNotes({ modelName: model, search: fullSearch }),
+    ...api.fetchNotes.queryOptions({ modelName: model, search: fullSearch }),
     placeholderData: keepPreviousData,
     enabled: viewMode === "notes",
   });
@@ -279,8 +277,7 @@ function NotesView({
     isFetching: cardsFetching,
     error: cardsError,
   } = useQuery({
-    queryKey: ["cards", model, fullSearch],
-    queryFn: () => api.fetchCards({ modelName: model, search: fullSearch }),
+    ...api.fetchCards.queryOptions({ modelName: model, search: fullSearch }),
     placeholderData: keepPreviousData,
     enabled: viewMode === "cards",
   });
