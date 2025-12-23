@@ -3,6 +3,13 @@ import { useState } from "react";
 import type { Item } from "@/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { FLAG_OPTIONS } from "@/lib/constants";
 
@@ -30,9 +37,11 @@ export function NoteDetail({
     <div className="flex h-full flex-col border-l">
       {/* Header */}
       <div className="flex items-center justify-between border-b px-4 py-3">
-        <span className="text-sm font-medium">
-          {isCard ? `Card #${item.cardId}` : `Note #${item.noteId}`}
-        </span>
+        <div className="text-sm font-medium">
+          <div>Note #{item.noteId}</div>
+          {isCard && <div>Card #{item.cardId}</div>}
+          <div className="text-muted-foreground">Deck - {item.deckName}</div>
+        </div>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <X className="size-4" />
         </Button>
@@ -41,41 +50,6 @@ export function NoteDetail({
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4">
         <div className="space-y-4">
-          {/* Flag selector for cards */}
-          {isCard && (
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">
-                Flag
-              </label>
-              <div className="mt-1 flex flex-wrap gap-1">
-                {FLAG_OPTIONS.map((opt) => (
-                  <Button
-                    key={opt.value}
-                    variant="outline"
-                    onClick={() => onFlagChange?.(opt.value)}
-                    className={`size-7 p-0 ${
-                      item.flag === opt.value
-                        ? "border-primary ring-1 ring-primary"
-                        : ""
-                    }`}
-                    title={opt.label}
-                  >
-                    {opt.color ? (
-                      <Flag
-                        className="size-4"
-                        style={{ color: opt.color }}
-                        fill={opt.color}
-                      />
-                    ) : (
-                      <span className="text-xs text-muted-foreground">-</span>
-                    )}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Fields */}
           {fields.map((field) => (
             <div key={field}>
               <div className="flex items-center justify-between">
@@ -137,14 +111,6 @@ export function NoteDetail({
             </div>
           ))}
 
-          {/* Deck */}
-          <div>
-            <label className="text-sm font-medium text-muted-foreground">
-              Deck
-            </label>
-            <div className="mt-1 text-sm">{item.deckName || "-"}</div>
-          </div>
-
           {/* Tags */}
           <div>
             <label className="text-sm font-medium text-muted-foreground">
@@ -162,6 +128,82 @@ export function NoteDetail({
               )}
             </div>
           </div>
+
+          {/* Card metadata */}
+          {isCard && (
+            <>
+              <hr className="border-border" />
+
+              {/* Flag selector */}
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground">Flag:</span>
+                <Select
+                  value={String(item.flag)}
+                  onValueChange={(v) => onFlagChange?.(Number(v))}
+                >
+                  <SelectTrigger className="h-8 w-[120px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {FLAG_OPTIONS.map((opt) => (
+                      <SelectItem key={opt.value} value={String(opt.value)}>
+                        <span className="flex items-center gap-2">
+                          <Flag
+                            className="size-4"
+                            style={{ color: opt.color }}
+                            fill={opt.color ?? "none"}
+                          />
+                          {opt.label}
+                        </span>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Status - TODO: implement suspend/unsuspend */}
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground">Status:</span>
+                <Select value={String(item.queue)} disabled>
+                  <SelectTrigger className="h-8 w-[120px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[
+                      { value: -1, label: "Suspended" },
+                      { value: 0, label: "New" },
+                      { value: 1, label: "Learning" },
+                      { value: 2, label: "Review" },
+                      { value: 3, label: "Relearning" },
+                    ].map((opt) => (
+                      <SelectItem key={opt.value} value={String(opt.value)}>
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {/* Interval / Due */}
+              <div className="flex gap-4 text-sm text-muted-foreground">
+                <span>
+                  Interval:{" "}
+                  <span className="text-foreground">
+                    {item.interval <= 0
+                      ? "-"
+                      : item.interval >= 365
+                        ? `${Math.round(item.interval / 365)}y`
+                        : item.interval >= 30
+                          ? `${Math.round(item.interval / 30)}mo`
+                          : `${item.interval}d`}
+                  </span>
+                </span>
+                <span>
+                  Due: <span className="text-foreground">{item.due}</span>
+                </span>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>
