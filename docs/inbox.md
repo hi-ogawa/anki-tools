@@ -31,4 +31,5 @@ Quick notes, feedback, and todos. Process into plan.md periodically.
 - [x] "noUnusedLocals": true"
 - [ ] full scroll mode withou pagination
 - [ ] transition and suspense query
-- [ ] refactor Card as "Note + extra fields"
+- [ ] refactor: unify Note/Card model (see [refactor-unified-card-model.md](refactor-unified-card-model.md))
+- [ ] poll health endpoint to show server status in UI to indicate Anki is closed but browser tab is left open.
