@@ -92,23 +92,24 @@ class RequestHandler(SimpleHTTPRequestHandler):
 def handle_action(col: Collection, action: str, params: dict):
     """Handle API action with given collection."""
     if action == "getModels":
+        # Build model->decks mapping in one pass through all cards
+        model_decks: dict[str, set[str]] = {}
+        for cid in col.find_cards(""):
+            card = col.get_card(cid)
+            model_name = card.note().note_type()["name"]
+            if model_name not in model_decks:
+                model_decks[model_name] = set()
+            model_decks[model_name].add(col.decks.name(card.did))
+
+        # Build response with fields and decks for each model
         models = {}
         for model in col.models.all():
-            models[model["name"]] = [f["name"] for f in model["flds"]]
+            name = model["name"]
+            models[name] = {
+                "fields": [f["name"] for f in model["flds"]],
+                "decks": sorted(model_decks.get(name, [])),
+            }
         return models
-
-    elif action == "getDecks":
-        model_name = params.get("modelName")
-        if model_name:
-            # Get unique deck names for notes of this model
-            note_ids = col.find_notes(f'note:"{model_name}"')
-            deck_names = set()
-            for nid in note_ids:
-                note = col.get_note(nid)
-                for card in note.cards():
-                    deck_names.add(col.decks.name(card.did))
-            return sorted(deck_names)
-        return [d.name for d in col.decks.all_names_and_ids()]
 
     elif action == "browseNotes":
         query = params["query"]

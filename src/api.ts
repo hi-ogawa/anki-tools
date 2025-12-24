@@ -83,13 +83,14 @@ function toCard(raw: RawCard): Card {
 // Implementations
 // ============================================================================
 
+export type ModelInfo = {
+  fields: string[];
+  decks: string[];
+};
+
 const implementations = {
   getModels: () => {
-    return invoke<Record<string, string[]>>("getModels");
-  },
-
-  getDecks: (input: { modelName: string }) => {
-    return invoke<string[]>("getDecks", input);
+    return invoke<Record<string, ModelInfo>>("getModels");
   },
 
   // search: optional Anki search syntax (e.g., "field:value", "deck:name", "tag:name")

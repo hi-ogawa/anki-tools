@@ -70,7 +70,7 @@ function App() {
 
   const modelNames = useMemo(() => Object.keys(models ?? {}), [models]);
   const validModel = urlModel && models?.[urlModel];
-  const fields = validModel ? models[urlModel] : [];
+  const modelInfo = validModel ? models[urlModel] : undefined;
 
   // Persist last selected model
   const [lastModel, setLastModel] = useLocalStorage<string | null>(
@@ -149,7 +149,8 @@ function App() {
       <NotesView
         key={`${urlModel}-${viewMode}`}
         model={urlModel}
-        fields={fields}
+        fields={modelInfo!.fields}
+        decks={modelInfo!.decks}
         page={pageIndex}
         pageSize={pageSize}
         search={search}
@@ -226,6 +227,7 @@ interface UrlState {
 interface NotesViewProps {
   model: string;
   fields: string[];
+  decks: string[];
   page: number;
   pageSize: number;
   search?: string;
@@ -238,6 +240,7 @@ interface NotesViewProps {
 function NotesView({
   model,
   fields,
+  decks,
   page,
   pageSize,
   search,
@@ -258,12 +261,6 @@ function NotesView({
     onWidthChange: setPanelWidth,
     minWidth: 200,
     maxWidth: 700,
-  });
-
-  // Fetch decks for filter (filtered by current model)
-  const { data: decks = [] } = useQuery({
-    ...api.getDecks.queryOptions({ modelName: model }),
-    staleTime: Infinity,
   });
 
   // Build full query with filters
