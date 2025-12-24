@@ -44,7 +44,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FLAG_COLORS, QUEUE_LABELS } from "@/lib/constants";
+import {
+  CARD_COLUMNS,
+  FLAG_COLORS,
+  formatInterval,
+  NOTE_COLUMNS,
+  QUEUE_LABELS,
+} from "@/lib/constants";
 import { useLocalStorage } from "@/lib/use-local-storage";
 
 interface BrowseTableProps {
@@ -55,7 +61,7 @@ interface BrowseTableProps {
   page: number;
   pageSize: number;
   onStateChange: (newState: Record<string, string | number>) => void;
-  selectedId: number | null;
+  selected?: Item;
   onSelect: (item: Item) => void;
   toolbarLeft?: React.ReactNode;
 }
@@ -68,7 +74,7 @@ export function BrowseTable({
   page,
   pageSize,
   onStateChange,
-  selectedId,
+  selected,
   onSelect,
   toolbarLeft,
 }: BrowseTableProps) {
@@ -92,7 +98,7 @@ export function BrowseTable({
       });
     }
 
-    // Deck column
+    // Note columns
     cols.push({
       id: "deck",
       accessorFn: (row) => row.deckName ?? "",
@@ -104,7 +110,6 @@ export function BrowseTable({
       },
     });
 
-    // Tags column
     cols.push({
       id: "tags",
       accessorFn: (row) => row.tags ?? [],
@@ -130,7 +135,7 @@ export function BrowseTable({
       },
     });
 
-    // Card-specific columns (only in cards view)
+    // Card columns (only in cards view)
     if (viewMode === "cards") {
       cols.push({
         id: "flag",
@@ -175,11 +180,9 @@ export function BrowseTable({
         header: "Interval",
         cell: ({ getValue }) => {
           const ivl = getValue() as number | undefined;
-          if (ivl === undefined || ivl <= 0)
+          if (ivl === undefined)
             return <span className="text-muted-foreground">-</span>;
-          if (ivl >= 365) return `${Math.round(ivl / 365)}y`;
-          if (ivl >= 30) return `${Math.round(ivl / 30)}mo`;
-          return `${ivl}d`;
+          return formatInterval(ivl);
         },
       });
     }
@@ -220,11 +223,6 @@ export function BrowseTable({
     onColumnVisibilityChange: setColumnVisibility,
   });
 
-  // Group columns for dropdown
-  const fieldColumnIds = fields;
-  const noteColumnIds = ["deck", "tags"];
-  const cardColumnIds = ["flag", "status", "interval"];
-
   return (
     <div className="space-y-4">
       {/* Toolbar */}
@@ -241,7 +239,7 @@ export function BrowseTable({
             <DropdownMenuLabel>Fields</DropdownMenuLabel>
             {table
               .getAllColumns()
-              .filter((col) => fieldColumnIds.includes(col.id))
+              .filter((col) => fields.includes(col.id))
               .map((column) => (
                 <DropdownMenuCheckboxItem
                   key={column.id}
@@ -256,7 +254,7 @@ export function BrowseTable({
             <DropdownMenuLabel>Note</DropdownMenuLabel>
             {table
               .getAllColumns()
-              .filter((col) => noteColumnIds.includes(col.id))
+              .filter((col) => NOTE_COLUMNS.includes(col.id as never))
               .map((column) => (
                 <DropdownMenuCheckboxItem
                   key={column.id}
@@ -264,7 +262,7 @@ export function BrowseTable({
                   onCheckedChange={(value) => column.toggleVisibility(!!value)}
                   onSelect={(e) => e.preventDefault()}
                 >
-                  {column.id}
+                  {column.columnDef.header as string}
                 </DropdownMenuCheckboxItem>
               ))}
             {viewMode === "cards" && (
@@ -273,7 +271,7 @@ export function BrowseTable({
                 <DropdownMenuLabel>Card</DropdownMenuLabel>
                 {table
                   .getAllColumns()
-                  .filter((col) => cardColumnIds.includes(col.id))
+                  .filter((col) => CARD_COLUMNS.includes(col.id as never))
                   .map((column) => (
                     <DropdownMenuCheckboxItem
                       key={column.id}
@@ -283,7 +281,7 @@ export function BrowseTable({
                       }
                       onSelect={(e) => e.preventDefault()}
                     >
-                      {column.id}
+                      {column.columnDef.header as string}
                     </DropdownMenuCheckboxItem>
                   ))}
               </>
@@ -312,13 +310,17 @@ export function BrowseTable({
           {table.getRowModel().rows.length ? (
             table.getRowModel().rows.map((row) => {
               const item = row.original;
-              const itemId = item.type === "card" ? item.cardId : item.noteId;
+              const isSelected =
+                selected &&
+                (item.type === "card" && selected.type === "card"
+                  ? item.cardId === selected.cardId
+                  : item.noteId === selected.noteId);
               return (
                 <TableRow
                   key={row.id}
                   onClick={() => onSelect(item)}
                   className="cursor-pointer"
-                  data-state={itemId === selectedId ? "selected" : undefined}
+                  data-state={isSelected ? "selected" : undefined}
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>

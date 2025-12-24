@@ -321,8 +321,6 @@ function NotesView({
     );
   }
 
-  const flagValue = flag || "none";
-
   const toolbarLeft = (
     <>
       <Input
@@ -333,7 +331,7 @@ function NotesView({
         className="w-[400px]"
       />
       <Select
-        value={flagValue}
+        value={flag || "none"}
         onValueChange={(value) =>
           onStateChange({ flag: value === "none" ? "" : value, page: 1 })
         }
@@ -366,10 +364,6 @@ function NotesView({
     return <p className="text-muted-foreground">Loading {viewMode}...</p>;
   }
 
-  // Get unique ID for selection (noteId for notes, cardId for cards)
-  const getItemId = (item: Item) =>
-    item.type === "card" ? item.cardId : item.noteId;
-
   return (
     <div className="flex gap-4">
       <div className={selected ? "flex-1 min-w-[400px]" : "w-full"}>
@@ -381,7 +375,7 @@ function NotesView({
           page={page}
           pageSize={pageSize}
           onStateChange={onStateChange}
-          selectedId={selected ? getItemId(selected) : null}
+          selected={selected ?? undefined}
           onSelect={setSelected}
           toolbarLeft={toolbarLeft}
         />
