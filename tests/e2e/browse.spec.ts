@@ -157,11 +157,11 @@ test("update note tags", async ({ page }) => {
 test("stale indicator and refresh button", async ({ page }) => {
   await page.goto("/?model=Basic");
 
-  // Stale indicator should not be visible initially
-  await expect(page.getByTestId("stale-indicator")).not.toBeVisible();
+  const refreshButton = page.getByTestId("refresh-button");
 
-  // Refresh button should be visible
-  await expect(page.getByTestId("refresh-button")).toBeVisible();
+  // Refresh button should be visible and not stale initially
+  await expect(refreshButton).toBeVisible();
+  await expect(refreshButton).not.toHaveAttribute("data-stale", "true");
 
   // Click first data row to open detail panel
   await page.getByRole("row").nth(1).click();
@@ -175,17 +175,21 @@ test("stale indicator and refresh button", async ({ page }) => {
     .fill("Stale Test Question");
   await page.getByRole("button", { name: "Save" }).click();
 
-  // Stale indicator should appear after mutation
-  await expect(page.getByTestId("stale-indicator")).toBeVisible();
-  await expect(page.getByTestId("stale-indicator")).toContainText(
-    "Data may be outdated",
-  );
+  // Refresh button should indicate stale state after mutation
+  await expect(refreshButton).toHaveAttribute("data-stale", "true");
+
+  // Table should still show old data (stale)
+  const firstRow = page.getByRole("row").nth(1);
+  await expect(firstRow).not.toContainText("Stale Test Question");
 
   // Click refresh button
-  await page.getByTestId("refresh-button").click();
+  await refreshButton.click();
 
-  // Stale indicator should disappear after refresh
-  await expect(page.getByTestId("stale-indicator")).not.toBeVisible();
+  // Stale state should clear after refresh
+  await expect(refreshButton).not.toHaveAttribute("data-stale", "true");
+
+  // Table should now show updated data
+  await expect(firstRow).toContainText("Stale Test Question");
 });
 
 test("panel resize - drag to change width", async ({ page }) => {

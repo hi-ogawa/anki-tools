@@ -276,13 +276,6 @@ function NotesView({
     placeholderData: keepPreviousData,
   });
 
-  // Clear stale flag when data is refetched
-  useEffect(() => {
-    if (!isFetching) {
-      setIsStale(false);
-    }
-  }, [isFetching]);
-
   // TODO: optimistic updates
   const setFlagMutation = useMutation({
     ...api.setCardFlag.mutationOptions(),
@@ -380,17 +373,13 @@ function NotesView({
       <Button
         variant="ghost"
         size="icon"
-        onClick={() => refetch()}
+        onClick={() => refetch().then(() => setIsStale(false))}
         disabled={isFetching}
-        title={
-          isStale && !isFetching
-            ? "Data may be outdated - click to refresh"
-            : "Refresh"
-        }
+        title={isStale ? "Data may be outdated - click to refresh" : "Refresh"}
         data-testid="refresh-button"
-        data-stale={isStale && !isFetching ? "true" : undefined}
+        data-stale={isStale ? "true" : undefined}
         className={
-          isStale && !isFetching
+          isStale
             ? "text-yellow-600 hover:text-yellow-700 hover:bg-yellow-100"
             : ""
         }
