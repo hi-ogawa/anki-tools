@@ -2,10 +2,10 @@
 
 ## Quick Reference
 
-| Command                         | When               |
-| ------------------------------- | ------------------ |
-| `pnpm tsc && pnpm lint`         | After code changes |
-| `pnpm fixture && pnpm test-e2e` | Run e2e tests      |
+| Command                         | When          |
+| ------------------------------- | ------------- |
+| `pnpm tsc && pnpm lint`         | After changes |
+| `pnpm fixture && pnpm test-e2e` | Run e2e tests |
 
 ## Git Workflow
 
