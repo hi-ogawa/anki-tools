@@ -11,7 +11,13 @@ Quick notes, feedback, and todos. Process into plan.md periodically.
   - [x] persist in localstorage
 - [ ] avoid "-" for empty field.
 - [x] README.md: requires anki restart when changing python code
-- [ ] `toolbarLeft` abstraction feels odd (improve component architecture)
+- [x] `toolbarLeft` abstraction feels odd (improve component architecture)
+  - **Plan**: Refactor component tree - toolbar as sibling, not render prop
+  - Actions:
+    1. [x] Remove `toolbarLeft` prop from BrowseTable (pass explicit props: search, flag, isFetching)
+    2. [x] Move toolbar UI and local search state into BrowseTable
+    3. [x] Rename NotesView → BrowseView
+    4. [x] Extract DetailPanel (resizable wrapper)
 - [ ] tweak fontsize
 - [x] consistent button/input hover style
 - [x] UI component inconsistencies:

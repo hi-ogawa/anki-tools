@@ -4,7 +4,6 @@ import {
   useQuery,
   keepPreviousData,
 } from "@tanstack/react-query";
-import { Flag } from "lucide-react";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router";
 import {
@@ -19,7 +18,6 @@ import {
 import { BrowseTable } from "./components/browse-table";
 import { NoteDetail } from "./components/note-detail";
 import { Button } from "./components/ui/button";
-import { Input } from "./components/ui/input";
 import {
   Select,
   SelectContent,
@@ -27,7 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./components/ui/select";
-import { FLAG_FILTER_OPTIONS } from "./lib/constants";
 import { useLocalStorage } from "./lib/use-local-storage";
 
 // TODO: separate singleton state and component
@@ -141,7 +138,7 @@ function App() {
     );
   } else {
     mainContent = (
-      <NotesView
+      <BrowseView
         model={urlModel}
         fields={fields}
         page={pageIndex}
@@ -210,42 +207,24 @@ function App() {
   );
 }
 
-interface NotesViewProps {
-  model: string;
-  fields: string[];
-  page: number;
-  pageSize: number;
-  search: string;
-  flag: string;
-  viewMode: ViewMode;
-  onStateChange: (newState: Record<string, string | number>) => void;
+interface DetailPanelProps {
+  width: number;
+  onWidthChange: (width: number) => void;
+  children: React.ReactNode;
 }
 
-function NotesView({
-  model,
-  fields,
-  page,
-  pageSize,
-  search,
-  flag,
-  viewMode,
-  onStateChange,
-}: NotesViewProps) {
-  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
-  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
-
-  // Resizable panel
-  const [panelWidth, setPanelWidth] = useLocalStorage(
-    "anki-browse-panel-width",
-    320,
-  );
+function DetailPanel({
+  width,
+  onWidthChange,
+  children,
+}: DetailPanelProps) {
   const isResizing = useRef(false);
 
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
       if (!isResizing.current) return;
-      const newWidth = window.innerWidth - e.clientX - 24; // 16 = padding
-      setPanelWidth(Math.max(300, Math.min(600, newWidth)));
+      const newWidth = window.innerWidth - e.clientX - 24;
+      onWidthChange(Math.max(300, Math.min(600, newWidth)));
     };
     const onMouseUp = () => {
       isResizing.current = false;
@@ -258,7 +237,50 @@ function NotesView({
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseup", onMouseUp);
     };
-  }, [setPanelWidth]);
+  }, [onWidthChange]);
+
+  return (
+    <div className="relative flex shrink-0" style={{ width }}>
+      <div
+        className="absolute left-0 top-0 h-full w-1 cursor-col-resize hover:bg-primary/20"
+        onMouseDown={() => {
+          isResizing.current = true;
+          document.body.style.cursor = "col-resize";
+          document.body.style.userSelect = "none";
+        }}
+      />
+      <div className="flex-1 pl-1">{children}</div>
+    </div>
+  );
+}
+
+interface BrowseViewProps {
+  model: string;
+  fields: string[];
+  page: number;
+  pageSize: number;
+  search: string;
+  flag: string;
+  viewMode: ViewMode;
+  onStateChange: (newState: Record<string, string | number>) => void;
+}
+
+function BrowseView({
+  model,
+  fields,
+  page,
+  pageSize,
+  search,
+  flag,
+  viewMode,
+  onStateChange,
+}: BrowseViewProps) {
+  const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+  const [selectedCard, setSelectedCard] = useState<Card | null>(null);
+  const [panelWidth, setPanelWidth] = useLocalStorage(
+    "anki-browse-panel-width",
+    320,
+  );
 
   // Build full query with flag filter
   const fullSearch = useMemo(() => {
@@ -298,64 +320,11 @@ function NotesView({
   const isFetching = viewMode === "notes" ? notesFetching : cardsFetching;
   const error = viewMode === "notes" ? notesError : cardsError;
 
-  // Local search state - synced with URL
-  const [localSearch, setLocalSearch] = useState(search);
-  useEffect(() => {
-    setLocalSearch(search);
-  }, [search]);
-
-  const submitSearch = () => {
-    if (localSearch !== search) {
-      onStateChange({ search: localSearch, page: 1 });
-    }
-  };
-
   if (error) {
     return (
       <p className="text-destructive">Error loading notes: {error.message}</p>
     );
   }
-
-  const flagValue = flag || "none";
-
-  const toolbarLeft = (
-    <>
-      <Input
-        placeholder="Search by: deck:name, tag:name, field:value, *wild*, ..."
-        value={localSearch}
-        onChange={(e) => setLocalSearch(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && submitSearch()}
-        className="w-[400px]"
-      />
-      <Select
-        value={flagValue}
-        onValueChange={(value) =>
-          onStateChange({ flag: value === "none" ? "" : value, page: 1 })
-        }
-      >
-        <SelectTrigger className="w-[140px]">
-          <SelectValue placeholder="Flag" />
-        </SelectTrigger>
-        <SelectContent>
-          {FLAG_FILTER_OPTIONS.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value}>
-              <span className="flex items-center gap-2">
-                <Flag
-                  className="size-4"
-                  style={{ color: opt.color }}
-                  fill={opt.color ?? "none"}
-                />
-                {opt.label}
-              </span>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      {isFetching && (
-        <span className="text-sm text-muted-foreground">Loading...</span>
-      )}
-    </>
-  );
 
   if (isLoading) {
     return <p className="text-muted-foreground">Loading {viewMode}...</p>;
@@ -385,62 +354,54 @@ function NotesView({
           onStateChange={onStateChange}
           selectedId={selected?.id ?? null}
           onSelect={setSelected}
-          toolbarLeft={toolbarLeft}
+          search={search}
+          flag={flag}
+          isFetching={isFetching}
         />
       </div>
       {/* TODO: small panelWidth breaks layout. it depends on field data length. */}
       {selected && (
-        <div className="relative flex shrink-0" style={{ width: panelWidth }}>
-          <div
-            className="absolute left-0 top-0 h-full w-1 cursor-col-resize hover:bg-primary/20"
-            onMouseDown={() => {
-              isResizing.current = true;
-              document.body.style.cursor = "col-resize";
-              document.body.style.userSelect = "none";
+        <DetailPanel width={panelWidth} onWidthChange={setPanelWidth}>
+          <NoteDetail
+            item={selected}
+            fields={fields}
+            onClose={clearSelected}
+            onFlagChange={async (cardId, flag) => {
+              try {
+                await setCardFlag(cardId, flag);
+                // Update local state to reflect the change
+                setSelectedCard((prev) =>
+                  prev?.id === cardId ? { ...prev, flag } : prev,
+                );
+              } catch (e) {
+                alert(
+                  `Failed to set flag: ${e instanceof Error ? e.message : e}`,
+                );
+              }
+            }}
+            onFieldsChange={async (noteId, updatedFields) => {
+              try {
+                await updateNoteFields(noteId, updatedFields);
+                // Update local state to reflect the change
+                const updateItem = <T extends Note | Card>(
+                  prev: T | null,
+                ): T | null => {
+                  if (!prev) return null;
+                  return {
+                    ...prev,
+                    fields: { ...prev.fields, ...updatedFields },
+                  };
+                };
+                setSelectedNote(updateItem);
+                setSelectedCard(updateItem);
+              } catch (e) {
+                alert(
+                  `Failed to update fields: ${e instanceof Error ? e.message : e}`,
+                );
+              }
             }}
           />
-          <div className="flex-1 pl-1">
-            <NoteDetail
-              item={selected}
-              fields={fields}
-              onClose={clearSelected}
-              onFlagChange={async (cardId, flag) => {
-                try {
-                  await setCardFlag(cardId, flag);
-                  // Update local state to reflect the change
-                  setSelectedCard((prev) =>
-                    prev?.id === cardId ? { ...prev, flag } : prev,
-                  );
-                } catch (e) {
-                  alert(
-                    `Failed to set flag: ${e instanceof Error ? e.message : e}`,
-                  );
-                }
-              }}
-              onFieldsChange={async (noteId, updatedFields) => {
-                try {
-                  await updateNoteFields(noteId, updatedFields);
-                  // Update local state to reflect the change
-                  const updateItem = <T extends Note | Card>(
-                    prev: T | null,
-                  ): T | null => {
-                    if (!prev) return null;
-                    return {
-                      ...prev,
-                      fields: { ...prev.fields, ...updatedFields },
-                    };
-                  };
-                  setSelectedNote(updateItem);
-                  setSelectedCard(updateItem);
-                } catch (e) {
-                  alert(
-                    `Failed to update fields: ${e instanceof Error ? e.message : e}`,
-                  );
-                }
-              }}
-            />
-          </div>
-        </div>
+        </DetailPanel>
       )}
     </div>
   );
