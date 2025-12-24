@@ -42,15 +42,14 @@ export function Root() {
 }
 
 function App() {
-  // TODO: model type-safe search params
   const [searchParams, setSearchParams] = useSearchParams();
   const urlModel = searchParams.get("model");
   // URL uses 1-based page, convert to 0-based for table
   const urlPage = parseInt(searchParams.get("page") ?? "1", 10);
   const pageIndex = Math.max(0, urlPage - 1);
   const pageSize = parseInt(searchParams.get("pageSize") ?? "20", 10);
-  const search = searchParams.get("search") ?? "";
-  const flag = searchParams.get("flag") ?? "";
+  const search = searchParams.get("search") ?? undefined;
+  const flag = searchParams.get("flag") ?? undefined;
   const viewMode = (searchParams.get("view") ?? "cards") as ViewMode;
 
   // Fetch schema
@@ -101,10 +100,14 @@ function App() {
     });
   };
 
-  const setUrlState = (newState: Record<string, string | number>) => {
+  const setUrlState = (newState: UrlState) => {
     setSearchParams((prev) => {
       for (const [key, value] of Object.entries(newState)) {
-        prev.set(key, String(value));
+        if (value === undefined || value === "") {
+          prev.delete(key);
+        } else {
+          prev.set(key, String(value));
+        }
       }
       return prev;
     });
@@ -208,15 +211,22 @@ function App() {
   );
 }
 
+interface UrlState {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  flag?: string;
+}
+
 interface NotesViewProps {
   model: string;
   fields: string[];
   page: number;
   pageSize: number;
-  search: string;
-  flag: string;
+  search?: string;
+  flag?: string;
   viewMode: ViewMode;
-  onStateChange: (newState: Record<string, string | number>) => void;
+  onStateChange: (newState: UrlState) => void;
 }
 
 function NotesView({
@@ -229,7 +239,7 @@ function NotesView({
   viewMode,
   onStateChange,
 }: NotesViewProps) {
-  const [selected, setSelected] = useState<Item | null>(null);
+  const [selected, setSelected] = useState<Item>();
 
   // Resizable panel
   const [panelWidth, setPanelWidth] = useLocalStorage(
@@ -246,7 +256,7 @@ function NotesView({
   const fullSearch = useMemo(() => {
     const parts: string[] = [];
     if (search) parts.push(search);
-    if (flag && flag !== "none") parts.push(`flag:${flag}`);
+    if (flag) parts.push(`flag:${flag}`);
     return parts.join(" ") || undefined;
   }, [search, flag]);
 
@@ -280,7 +290,7 @@ function NotesView({
     ...api.updateNoteFields.mutationOptions(),
     onSuccess: (_, { fields }) => {
       setSelected((prev) =>
-        prev ? { ...prev, fields: { ...prev.fields, ...fields } } : null,
+        prev ? { ...prev, fields: { ...prev.fields, ...fields } } : undefined,
       );
     },
   });
@@ -288,7 +298,7 @@ function NotesView({
   const updateTagsMutation = useMutation({
     ...api.updateNoteTags.mutationOptions(),
     onSuccess: (_, { tags }) => {
-      setSelected((prev) => (prev ? { ...prev, tags } : null));
+      setSelected((prev) => (prev ? { ...prev, tags } : undefined));
     },
   });
 
@@ -304,14 +314,14 @@ function NotesView({
   });
 
   // Local search state - synced with URL
-  const [localSearch, setLocalSearch] = useState(search);
+  const [localSearch, setLocalSearch] = useState(search ?? "");
   useEffect(() => {
-    setLocalSearch(search);
+    setLocalSearch(search ?? "");
   }, [search]);
 
   const submitSearch = () => {
-    if (localSearch !== search) {
-      onStateChange({ search: localSearch, page: 1 });
+    if (localSearch !== (search ?? "")) {
+      onStateChange({ search: localSearch || undefined, page: 1 });
     }
   };
 
@@ -320,8 +330,6 @@ function NotesView({
       <p className="text-destructive">Error loading notes: {error.message}</p>
     );
   }
-
-  const flagValue = flag || "none";
 
   const toolbarLeft = (
     <>
@@ -333,9 +341,9 @@ function NotesView({
         className="w-[400px]"
       />
       <Select
-        value={flagValue}
+        value={flag ?? "none"}
         onValueChange={(value) =>
-          onStateChange({ flag: value === "none" ? "" : value, page: 1 })
+          onStateChange({ flag: value === "none" ? undefined : value, page: 1 })
         }
       >
         <SelectTrigger className="w-[140px]">
@@ -366,10 +374,6 @@ function NotesView({
     return <p className="text-muted-foreground">Loading {viewMode}...</p>;
   }
 
-  // Get unique ID for selection (noteId for notes, cardId for cards)
-  const getItemId = (item: Item) =>
-    item.type === "card" ? item.cardId : item.noteId;
-
   return (
     <div className="flex gap-4">
       <div className={selected ? "flex-1 min-w-[400px]" : "w-full"}>
@@ -381,7 +385,7 @@ function NotesView({
           page={page}
           pageSize={pageSize}
           onStateChange={onStateChange}
-          selectedId={selected ? getItemId(selected) : null}
+          selected={selected}
           onSelect={setSelected}
           toolbarLeft={toolbarLeft}
         />
@@ -402,7 +406,7 @@ function NotesView({
             <NoteDetail
               item={selected}
               fields={fields}
-              onClose={() => setSelected(null)}
+              onClose={() => setSelected(undefined)}
               onFlagChange={
                 selected.type === "card"
                   ? (flag) =>
