@@ -13,22 +13,40 @@ Why an Anki addon instead of AnkiConnect?
 """
 
 import json
-import os
-import threading
-from http.server import HTTPServer, SimpleHTTPRequestHandler
-from pathlib import Path
+from http.server import SimpleHTTPRequestHandler
+from typing import Callable
 
-from aqt import mw
-
-_server: HTTPServer | None = None
-_thread: threading.Thread | None = None
-
-WEB_DIR = Path(__file__).parent / "dist"
+from anki.collection import Collection
 
 
 class RequestHandler(SimpleHTTPRequestHandler):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, directory=str(WEB_DIR), **kwargs)
+    """HTTP request handler with dependency injection.
+
+    Use with functools.partial to inject dependencies:
+        handler = partial(RequestHandler, get_col=lambda: col)
+        HTTPServer(("127.0.0.1", port), handler)
+    """
+
+    def __init__(
+        self,
+        *args,
+        get_col: Callable[[], Collection],
+        directory: str | None = None,
+        run: Callable[[Callable], None] | None = None,
+        **kwargs,
+    ):
+        self.get_col = get_col
+        self.run = run or (lambda f: f())
+        self._serve_static = directory is not None
+        super().__init__(*args, directory=directory, **kwargs)
+
+    def do_GET(self):
+        if self.path == "/api/health":
+            self._send_json({"status": "ok"})
+        elif self._serve_static:
+            super().do_GET()
+        else:
+            self.send_error(404)
 
     def do_POST(self):
         if self.path == "/api":
@@ -44,21 +62,16 @@ class RequestHandler(SimpleHTTPRequestHandler):
         action = request.get("action")
         params = request.get("params", {})
 
-        # Run on main thread for thread safety
         result = {"result": None, "error": None}
-        event = threading.Event()
 
-        def run():
+        def do_action():
             try:
-                result["result"] = handle_action(action, params)
+                col = self.get_col()
+                result["result"] = handle_action(col, action, params)
             except Exception as e:
                 result["error"] = str(e)
-            finally:
-                event.set()
 
-        mw.taskman.run_on_main(run)
-        event.wait()
-
+        self.run(do_action)
         self._send_json(result)
 
     def _send_json(self, data):
@@ -76,9 +89,8 @@ class RequestHandler(SimpleHTTPRequestHandler):
         pass  # Suppress logging
 
 
-def handle_action(action: str, params: dict):
-    col = mw.col
-
+def handle_action(col: Collection, action: str, params: dict):
+    """Handle API action with given collection."""
     if action == "getModels":
         models = {}
         for model in col.models.all():
@@ -94,13 +106,18 @@ def handle_action(action: str, params: dict):
             model = note.note_type()
             cards = note.cards()
             deck_name = col.decks.name(cards[0].did) if cards else ""
-            notes.append({
-                "id": nid,
-                "modelName": model["name"],
-                "fields": {f["name"]: note.fields[i] for i, f in enumerate(model["flds"])},
-                "tags": list(note.tags),
-                "deckName": deck_name,
-            })
+            notes.append(
+                {
+                    "id": nid,
+                    "modelName": model["name"],
+                    "fields": {
+                        f["name"]: note.fields[i]
+                        for i, f in enumerate(model["flds"])
+                    },
+                    "tags": list(note.tags),
+                    "deckName": deck_name,
+                }
+            )
         return notes
 
     elif action == "browseCards":
@@ -111,19 +128,24 @@ def handle_action(action: str, params: dict):
             card = col.get_card(cid)
             note = card.note()
             model = note.note_type()
-            cards.append({
-                "id": cid,
-                "noteId": card.nid,
-                "deckName": col.decks.name(card.did),
-                "modelName": model["name"],
-                "fields": {f["name"]: note.fields[i] for i, f in enumerate(model["flds"])},
-                "tags": list(note.tags),
-                # Card-specific
-                "flag": card.flags,
-                "queue": card.queue,  # -1 = suspended, 0 = new, 1 = learning, 2 = review
-                "due": card.due,
-                "interval": card.ivl,
-            })
+            cards.append(
+                {
+                    "id": cid,
+                    "noteId": card.nid,
+                    "deckName": col.decks.name(card.did),
+                    "modelName": model["name"],
+                    "fields": {
+                        f["name"]: note.fields[i]
+                        for i, f in enumerate(model["flds"])
+                    },
+                    "tags": list(note.tags),
+                    # Card-specific
+                    "flag": card.flags,
+                    "queue": card.queue,  # -1 = suspended, 0 = new, 1 = learning, 2 = review
+                    "due": card.due,
+                    "interval": card.ivl,
+                }
+            )
         return cards
 
     elif action == "setCardFlag":
@@ -146,23 +168,3 @@ def handle_action(action: str, params: dict):
         return True
 
     raise ValueError(f"Unknown action: {action}")
-
-
-def start_server(port: int):
-    global _server, _thread
-
-    if _server is not None:
-        return
-
-    _server = HTTPServer(("127.0.0.1", port), RequestHandler)
-    _thread = threading.Thread(target=_server.serve_forever, daemon=True)
-    _thread.start()
-
-
-def stop_server():
-    global _server, _thread
-
-    if _server is not None:
-        _server.shutdown()
-        _server = None
-        _thread = None

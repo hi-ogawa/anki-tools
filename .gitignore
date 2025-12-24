@@ -3,3 +3,7 @@ dist
 __pycache__
 *.tsbuildinfo
 *.ankiaddon
+
+.venv
+test-results/
+tests/data/

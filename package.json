@@ -5,12 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
+    "dev-addon": "node scripts/setup-dev.js",
+    "dev-api": "node --watch-path=addon scripts/exec.js uv run python tests/server.py",
+    "dev-fixture": "ANKI_PORT=${ANKI_PORT:-5680} pnpm run --stream '/^dev$|^dev-api$/'",
+    "fixture": "uv run python tests/prepare.py",
     "build": "vite build",
     "build-addon": "vite build && cd addon && zip -r ../anki-browse-web.ankiaddon . -x '__pycache__/*'",
-    "setup-dev": "node scripts/setup-dev.js",
-    "lint": "oxfmt",
-    "lint-check": "oxfmt --check",
+    "lint": "oxfmt && uv run ruff format . && uv run ruff check --fix .",
+    "lint-check": "oxfmt --check && uv run ruff format --check . && uv run ruff check .",
     "tsc": "tsc -b",
+    "test-e2e": "playwright test",
     "release": "bumpp"
   },
   "dependencies": {
@@ -29,6 +33,7 @@
     "tailwind-merge": "^3.2.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4.1.4",
     "@types/node": "^24.10.4",
     "@types/react": "^19.1.0",
