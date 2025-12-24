@@ -42,15 +42,14 @@ export function Root() {
 }
 
 function App() {
-  // TODO: model type-safe search params
   const [searchParams, setSearchParams] = useSearchParams();
   const urlModel = searchParams.get("model");
   // URL uses 1-based page, convert to 0-based for table
   const urlPage = parseInt(searchParams.get("page") ?? "1", 10);
   const pageIndex = Math.max(0, urlPage - 1);
   const pageSize = parseInt(searchParams.get("pageSize") ?? "20", 10);
-  const search = searchParams.get("search") ?? "";
-  const flag = searchParams.get("flag") ?? "";
+  const search = searchParams.get("search") ?? undefined;
+  const flag = searchParams.get("flag") ?? undefined;
   const viewMode = (searchParams.get("view") ?? "cards") as ViewMode;
 
   // Fetch schema
@@ -101,10 +100,14 @@ function App() {
     });
   };
 
-  const setUrlState = (newState: Record<string, string | number>) => {
+  const setUrlState = (newState: UrlState) => {
     setSearchParams((prev) => {
       for (const [key, value] of Object.entries(newState)) {
-        prev.set(key, String(value));
+        if (value === undefined || value === "") {
+          prev.delete(key);
+        } else {
+          prev.set(key, String(value));
+        }
       }
       return prev;
     });
@@ -208,15 +211,22 @@ function App() {
   );
 }
 
+interface UrlState {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  flag?: string;
+}
+
 interface NotesViewProps {
   model: string;
   fields: string[];
   page: number;
   pageSize: number;
-  search: string;
-  flag: string;
+  search?: string;
+  flag?: string;
   viewMode: ViewMode;
-  onStateChange: (newState: Record<string, string | number>) => void;
+  onStateChange: (newState: UrlState) => void;
 }
 
 function NotesView({
@@ -246,7 +256,7 @@ function NotesView({
   const fullSearch = useMemo(() => {
     const parts: string[] = [];
     if (search) parts.push(search);
-    if (flag && flag !== "none") parts.push(`flag:${flag}`);
+    if (flag) parts.push(`flag:${flag}`);
     return parts.join(" ") || undefined;
   }, [search, flag]);
 
@@ -304,14 +314,14 @@ function NotesView({
   });
 
   // Local search state - synced with URL
-  const [localSearch, setLocalSearch] = useState(search);
+  const [localSearch, setLocalSearch] = useState(search ?? "");
   useEffect(() => {
-    setLocalSearch(search);
+    setLocalSearch(search ?? "");
   }, [search]);
 
   const submitSearch = () => {
-    if (localSearch !== search) {
-      onStateChange({ search: localSearch, page: 1 });
+    if (localSearch !== (search ?? "")) {
+      onStateChange({ search: localSearch || undefined, page: 1 });
     }
   };
 
@@ -331,9 +341,9 @@ function NotesView({
         className="w-[400px]"
       />
       <Select
-        value={flag || "none"}
+        value={flag ?? "none"}
         onValueChange={(value) =>
-          onStateChange({ flag: value === "none" ? "" : value, page: 1 })
+          onStateChange({ flag: value === "none" ? undefined : value, page: 1 })
         }
       >
         <SelectTrigger className="w-[140px]">

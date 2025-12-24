@@ -60,7 +60,7 @@ interface BrowseTableProps {
   fields: string[];
   page: number;
   pageSize: number;
-  onStateChange: (newState: Record<string, string | number>) => void;
+  onStateChange: (newState: { page?: number; pageSize?: number }) => void;
   selected?: Item;
   onSelect: (item: Item) => void;
   toolbarLeft?: React.ReactNode;
