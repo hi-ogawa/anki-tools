@@ -16,8 +16,6 @@
 
 ## Fix
 
-- Fix table and panel width (panel shouldn't be hidden)
-
 ## Refactor
 
 - `toolbarLeft` abstraction feels odd

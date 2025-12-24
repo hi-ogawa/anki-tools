@@ -202,7 +202,7 @@ function App() {
           )}
         </div>
       </header>
-      <main className="flex-1 p-4">{mainContent}</main>
+      <main className="flex-1 overflow-x-auto p-4">{mainContent}</main>
     </div>
   );
 }
@@ -379,7 +379,7 @@ function NotesView({
 
   return (
     <div className="flex gap-4">
-      <div className={selected ? "flex-1" : "w-full"}>
+      <div className={selected ? "flex-1 min-w-[400px]" : "w-full"}>
         <BrowseTable
           data={items}
           viewMode={viewMode}
@@ -393,7 +393,6 @@ function NotesView({
           toolbarLeft={toolbarLeft}
         />
       </div>
-      {/* TODO: small panelWidth breaks layout. it depends on field data length. */}
       {selected && (
         <div className="relative flex shrink-0" style={{ width: panelWidth }}>
           <div
