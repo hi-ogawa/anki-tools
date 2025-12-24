@@ -5,16 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
+    "dev-addon": "node scripts/setup-dev.js",
     "dev-api": "node --watch-path=addon scripts/exec.js uv run python tests/server.py",
     "dev-fixture": "ANKI_PORT=5680 pnpm run --stream '/^dev$|^dev-api$/'",
+    "fixture": "uv run python tests/prepare.py",
     "build": "vite build",
     "build-addon": "vite build && cd addon && zip -r ../anki-browse-web.ankiaddon . -x '__pycache__/*'",
-    "setup-dev": "node scripts/setup-dev.js",
     "lint": "oxfmt && uv run ruff format . && uv run ruff check --fix .",
     "lint-check": "oxfmt --check && uv run ruff format --check . && uv run ruff check .",
     "tsc": "tsc -b",
     "test-e2e": "playwright test",
-    "test-e2e-setup": "uv run python tests/prepare.py",
     "release": "bumpp"
   },
   "dependencies": {
