@@ -25,3 +25,4 @@
 
 - tweak fontsize
 - Configurable port
+- show search query syntax help https://docs.ankiweb.net/searching.html

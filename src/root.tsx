@@ -5,7 +5,7 @@ import {
   useMutation,
   keepPreviousData,
 } from "@tanstack/react-query";
-import { Flag, RefreshCw } from "lucide-react";
+import { Flag, Library, RefreshCw } from "lucide-react";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router";
 import { api, type Item, type ViewMode } from "./api";
@@ -357,8 +357,10 @@ function NotesView({
           onStateChange({ flag: value === "none" ? undefined : value, page: 1 })
         }
       >
-        <SelectTrigger className="w-[140px]">
-          <SelectValue placeholder="Flag" />
+        <SelectTrigger
+          className={flag ? "w-[140px]" : "w-9 px-0 justify-center"}
+        >
+          {flag ? <SelectValue /> : <Flag className="size-4" />}
         </SelectTrigger>
         <SelectContent>
           {FLAG_FILTER_OPTIONS.map((opt) => (
@@ -381,8 +383,11 @@ function NotesView({
           onStateChange({ deck: value === "all" ? undefined : value, page: 1 })
         }
       >
-        <SelectTrigger className="w-[180px]" data-testid="deck-filter">
-          <SelectValue placeholder="Deck" />
+        <SelectTrigger
+          className={deck ? "w-[180px]" : "w-9 px-0 justify-center"}
+          data-testid="deck-filter"
+        >
+          {deck ? <SelectValue /> : <Library className="size-4" />}
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All decks</SelectItem>
