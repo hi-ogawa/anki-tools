@@ -22,6 +22,7 @@ import {
 } from "./components/ui/select";
 import { FLAG_FILTER_OPTIONS } from "./lib/constants";
 import { useLocalStorage } from "./lib/use-local-storage";
+import { useResize } from "./lib/use-resize";
 
 // TODO: separate singleton state and component
 const queryClient = new QueryClient({
@@ -41,15 +42,14 @@ export function Root() {
 }
 
 function App() {
-  // TODO: model type-safe search params
   const [searchParams, setSearchParams] = useSearchParams();
   const urlModel = searchParams.get("model");
   // URL uses 1-based page, convert to 0-based for table
   const urlPage = parseInt(searchParams.get("page") ?? "1", 10);
   const pageIndex = Math.max(0, urlPage - 1);
   const pageSize = parseInt(searchParams.get("pageSize") ?? "20", 10);
-  const search = searchParams.get("search") ?? "";
-  const flag = searchParams.get("flag") ?? "";
+  const search = searchParams.get("search") ?? undefined;
+  const flag = searchParams.get("flag") ?? undefined;
   const viewMode = (searchParams.get("view") ?? "cards") as ViewMode;
 
   // Fetch schema
@@ -100,10 +100,14 @@ function App() {
     });
   };
 
-  const setUrlState = (newState: Record<string, string | number>) => {
+  const setUrlState = (newState: UrlState) => {
     setSearchParams((prev) => {
       for (const [key, value] of Object.entries(newState)) {
-        prev.set(key, String(value));
+        if (value === undefined || value === "") {
+          prev.delete(key);
+        } else {
+          prev.set(key, String(value));
+        }
       }
       return prev;
     });
@@ -202,9 +206,16 @@ function App() {
           )}
         </div>
       </header>
-      <main className="flex-1 p-4">{mainContent}</main>
+      <main className="flex-1 overflow-x-auto p-4">{mainContent}</main>
     </div>
   );
+}
+
+interface UrlState {
+  page?: number;
+  pageSize?: number;
+  search?: string;
+  flag?: string;
 }
 
 interface NotesViewProps {
@@ -212,10 +223,10 @@ interface NotesViewProps {
   fields: string[];
   page: number;
   pageSize: number;
-  search: string;
-  flag: string;
+  search?: string;
+  flag?: string;
   viewMode: ViewMode;
-  onStateChange: (newState: Record<string, string | number>) => void;
+  onStateChange: (newState: UrlState) => void;
 }
 
 function NotesView({
@@ -228,7 +239,7 @@ function NotesView({
   viewMode,
   onStateChange,
 }: NotesViewProps) {
-  const [selected, setSelected] = useState<Item | null>(null);
+  const [selected, setSelected] = useState<Item>();
   const [isStale, setIsStale] = useState(false);
 
   // Resizable panel
@@ -236,32 +247,17 @@ function NotesView({
     "anki-browse-panel-width",
     320,
   );
-  const isResizing = useRef(false);
-
-  useEffect(() => {
-    const onMouseMove = (e: MouseEvent) => {
-      if (!isResizing.current) return;
-      const newWidth = window.innerWidth - e.clientX - 24; // 16 = padding
-      setPanelWidth(Math.max(300, Math.min(600, newWidth)));
-    };
-    const onMouseUp = () => {
-      isResizing.current = false;
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-    };
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-    };
-  }, [setPanelWidth]);
+  const { panelRef, startResize } = useResize({
+    onWidthChange: setPanelWidth,
+    minWidth: 200,
+    maxWidth: 700,
+  });
 
   // Build full query with flag filter
   const fullSearch = useMemo(() => {
     const parts: string[] = [];
     if (search) parts.push(search);
-    if (flag && flag !== "none") parts.push(`flag:${flag}`);
+    if (flag) parts.push(`flag:${flag}`);
     return parts.join(" ") || undefined;
   }, [search, flag]);
 
@@ -305,7 +301,7 @@ function NotesView({
     onSuccess: (_, { fields }) => {
       setIsStale(true);
       setSelected((prev) =>
-        prev ? { ...prev, fields: { ...prev.fields, ...fields } } : null,
+        prev ? { ...prev, fields: { ...prev.fields, ...fields } } : undefined,
       );
     },
   });
@@ -314,7 +310,7 @@ function NotesView({
     ...api.updateNoteTags.mutationOptions(),
     onSuccess: (_, { tags }) => {
       setIsStale(true);
-      setSelected((prev) => (prev ? { ...prev, tags } : null));
+      setSelected((prev) => (prev ? { ...prev, tags } : undefined));
     },
   });
 
@@ -331,14 +327,14 @@ function NotesView({
   });
 
   // Local search state - synced with URL
-  const [localSearch, setLocalSearch] = useState(search);
+  const [localSearch, setLocalSearch] = useState(search ?? "");
   useEffect(() => {
-    setLocalSearch(search);
+    setLocalSearch(search ?? "");
   }, [search]);
 
   const submitSearch = () => {
-    if (localSearch !== search) {
-      onStateChange({ search: localSearch, page: 1 });
+    if (localSearch !== (search ?? "")) {
+      onStateChange({ search: localSearch || undefined, page: 1 });
     }
   };
 
@@ -347,8 +343,6 @@ function NotesView({
       <p className="text-destructive">Error loading notes: {error.message}</p>
     );
   }
-
-  const flagValue = flag || "none";
 
   const toolbarLeft = (
     <>
@@ -360,9 +354,9 @@ function NotesView({
         className="w-[400px]"
       />
       <Select
-        value={flagValue}
+        value={flag ?? "none"}
         onValueChange={(value) =>
-          onStateChange({ flag: value === "none" ? "" : value, page: 1 })
+          onStateChange({ flag: value === "none" ? undefined : value, page: 1 })
         }
       >
         <SelectTrigger className="w-[140px]">
@@ -412,13 +406,9 @@ function NotesView({
     return <p className="text-muted-foreground">Loading {viewMode}...</p>;
   }
 
-  // Get unique ID for selection (noteId for notes, cardId for cards)
-  const getItemId = (item: Item) =>
-    item.type === "card" ? item.cardId : item.noteId;
-
   return (
     <div className="flex gap-4">
-      <div className={selected ? "flex-1" : "w-full"}>
+      <div className={selected ? "flex-1 min-w-[400px]" : "w-full"}>
         <BrowseTable
           data={items}
           viewMode={viewMode}
@@ -427,27 +417,28 @@ function NotesView({
           page={page}
           pageSize={pageSize}
           onStateChange={onStateChange}
-          selectedId={selected ? getItemId(selected) : null}
+          selected={selected}
           onSelect={setSelected}
           toolbarLeft={toolbarLeft}
         />
       </div>
-      {/* TODO: small panelWidth breaks layout. it depends on field data length. */}
       {selected && (
-        <div className="relative flex shrink-0" style={{ width: panelWidth }}>
+        <div
+          ref={panelRef}
+          data-testid="detail-panel"
+          className="relative flex shrink-0"
+          style={{ width: panelWidth }}
+        >
           <div
-            className="absolute left-0 top-0 h-full w-1 cursor-col-resize hover:bg-primary/20"
-            onMouseDown={() => {
-              isResizing.current = true;
-              document.body.style.cursor = "col-resize";
-              document.body.style.userSelect = "none";
-            }}
+            data-testid="panel-resize-handle"
+            className="absolute left-0 top-0 h-full w-2 cursor-col-resize hover:bg-primary/20"
+            onMouseDown={startResize}
           />
-          <div className="flex-1 pl-1">
+          <div className="flex-1 overflow-hidden pl-1">
             <NoteDetail
               item={selected}
               fields={fields}
-              onClose={() => setSelected(null)}
+              onClose={() => setSelected(undefined)}
               onFlagChange={
                 selected.type === "card"
                   ? (flag) =>

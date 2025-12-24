@@ -187,3 +187,30 @@ test("stale indicator and refresh button", async ({ page }) => {
   // Stale indicator should disappear after refresh
   await expect(page.getByTestId("stale-indicator")).not.toBeVisible();
 });
+
+test("panel resize - drag to change width", async ({ page }) => {
+  await page.goto("/?model=Basic");
+
+  // Click first data row to open detail panel
+  await page.getByRole("row").nth(1).click();
+
+  // Get panel and its initial width
+  const panel = page.getByTestId("detail-panel");
+  const initialBox = await panel.boundingBox();
+  expect(initialBox).not.toBeNull();
+
+  // Find resize handle and drag left to make panel wider
+  const handle = page.getByTestId("panel-resize-handle");
+  const handleBox = await handle.boundingBox();
+  expect(handleBox).not.toBeNull();
+
+  const dragDistance = 100;
+  await page.mouse.move(handleBox!.x + 2, handleBox!.y + 100);
+  await page.mouse.down();
+  await page.mouse.move(handleBox!.x - dragDistance, handleBox!.y + 100);
+  await page.mouse.up();
+
+  // Verify panel width increased by drag distance
+  const newBox = await panel.boundingBox();
+  expect(newBox!.width).toBe(initialBox!.width + dragDistance);
+});

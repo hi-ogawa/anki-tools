@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { FLAG_OPTIONS, QUEUE_LABELS } from "@/lib/constants";
+import { FLAG_OPTIONS, formatInterval, QUEUE_LABELS } from "@/lib/constants";
 
 interface NoteDetailProps {
   item: Item;
@@ -263,13 +263,7 @@ export function NoteDetail({
                 <span>
                   Interval:{" "}
                   <span className="text-foreground">
-                    {item.interval <= 0
-                      ? "-"
-                      : item.interval >= 365
-                        ? `${Math.round(item.interval / 365)}y`
-                        : item.interval >= 30
-                          ? `${Math.round(item.interval / 30)}mo`
-                          : `${item.interval}d`}
+                    {formatInterval(item.interval)}
                   </span>
                 </span>
                 <span>

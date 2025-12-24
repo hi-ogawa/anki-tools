@@ -34,3 +34,15 @@ export const QUEUE_LABELS: Record<number, string> = {
   [2]: "Review",
   [3]: "Relearning",
 };
+
+// Column definitions for browse table
+export const NOTE_COLUMNS = ["deck", "tags"] as const;
+export const CARD_COLUMNS = ["flag", "status", "interval"] as const;
+
+// Format interval as human-readable string
+export function formatInterval(days: number): string {
+  if (days <= 0) return "-";
+  if (days >= 365) return `${Math.round(days / 365)}y`;
+  if (days >= 30) return `${Math.round(days / 30)}mo`;
+  return `${days}d`;
+}
