@@ -241,7 +241,7 @@ function NotesView({
     const onMouseMove = (e: MouseEvent) => {
       if (!isResizing.current) return;
       const newWidth = window.innerWidth - e.clientX - 24; // 16 = padding
-      setPanelWidth(Math.max(300, Math.min(600, newWidth)));
+      setPanelWidth(Math.max(200, Math.min(700, newWidth)));
     };
     const onMouseUp = () => {
       isResizing.current = false;
