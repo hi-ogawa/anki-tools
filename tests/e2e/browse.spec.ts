@@ -291,3 +291,116 @@ test("panel resize - drag to change width", async ({ page }) => {
   const newBox = await panel.boundingBox();
   expect(newBox!.width).toBe(initialBox!.width + dragDistance);
 });
+
+test("bulk set flag on multiple cards", async ({ page }) => {
+  // Use cards view for bulk operations
+  await page.goto("/?model=Basic&view=cards");
+
+  // Initially no bulk actions toolbar should be visible
+  await expect(page.getByTestId("bulk-flag-select")).not.toBeVisible();
+
+  // Select first 3 cards using checkboxes
+  await page.getByRole("row").nth(1).getByRole("checkbox").click();
+  await page.getByRole("row").nth(2).getByRole("checkbox").click();
+  await page.getByRole("row").nth(3).getByRole("checkbox").click();
+
+  // Bulk actions toolbar should be visible with count
+  await expect(page.getByText("3 cards selected")).toBeVisible();
+
+  // Set flag to Blue (flag 4)
+  await page.getByTestId("bulk-flag-select").click();
+  await page.getByRole("option", { name: /Blue/ }).click();
+
+  // Toolbar should disappear (selection cleared after mutation)
+  await expect(page.getByText("3 cards selected")).not.toBeVisible();
+
+  // Reload and verify flags were set
+  await page.reload();
+  // Wait for table to load
+  await expect(page.getByRole("row")).toHaveCount(21); // 20 data + header
+
+  // Click first card to check flag in detail panel
+  await page.getByRole("row").nth(1).click();
+  await expect(page.getByTestId("flag-select")).toContainText("Blue");
+});
+
+test("bulk suspend cards", async ({ page }) => {
+  await page.goto("/?model=Basic&view=cards");
+
+  // Select first 2 cards
+  await page.getByRole("row").nth(1).getByRole("checkbox").click();
+  await page.getByRole("row").nth(2).getByRole("checkbox").click();
+
+  await expect(page.getByText("2 cards selected")).toBeVisible();
+
+  // Click bulk suspend button
+  await page.getByTestId("bulk-suspend-button").click();
+
+  // Toolbar should disappear
+  await expect(page.getByText("2 cards selected")).not.toBeVisible();
+
+  // Reload and verify cards are suspended
+  await page.reload();
+  await page.getByRole("row").nth(1).click();
+  await expect(page.getByTestId("status-label")).toContainText("Suspended");
+});
+
+test("bulk unsuspend cards", async ({ page }) => {
+  // First suspend some cards (building on previous test)
+  await page.goto("/?model=Basic&view=cards");
+
+  // Select and suspend first card
+  await page.getByRole("row").nth(1).getByRole("checkbox").click();
+  await page.getByTestId("bulk-suspend-button").click();
+
+  // Reload to get fresh state
+  await page.reload();
+
+  // Select the suspended card
+  await page.getByRole("row").nth(1).getByRole("checkbox").click();
+
+  await expect(page.getByText("1 card selected")).toBeVisible();
+
+  // Unsuspend it
+  await page.getByTestId("bulk-unsuspend-button").click();
+
+  // Toolbar should disappear
+  await expect(page.getByText("1 card selected")).not.toBeVisible();
+
+  // Reload and verify card is unsuspended
+  await page.reload();
+  await page.getByRole("row").nth(1).click();
+  await expect(page.getByTestId("status-label")).toContainText("New");
+});
+
+test("bulk actions - select all and clear", async ({ page }) => {
+  await page.goto("/?model=Basic&view=cards&pageSize=10");
+
+  // Click header checkbox to select all on page
+  await page.getByRole("columnheader").getByRole("checkbox").click();
+
+  // Should show 10 cards selected (page size is 10)
+  await expect(page.getByText("10 cards selected")).toBeVisible();
+
+  // Click clear button
+  await page.getByRole("button", { name: /Clear/ }).click();
+
+  // Bulk actions toolbar should disappear
+  await expect(page.getByText("10 cards selected")).not.toBeVisible();
+});
+
+test("bulk actions only in cards view", async ({ page }) => {
+  // In notes view, checkboxes should not be visible
+  await page.goto("/?model=Basic&view=notes");
+
+  // No checkbox column should exist
+  const firstRow = page.getByRole("row").nth(1);
+  await expect(firstRow.getByRole("checkbox")).not.toBeVisible();
+
+  // Switch to cards view
+  await page.getByRole("combobox").filter({ hasText: "Notes" }).click();
+  await page.getByRole("option", { name: "Cards" }).click();
+
+  // Now checkboxes should be visible
+  await expect(firstRow.getByRole("checkbox")).toBeVisible();
+});
