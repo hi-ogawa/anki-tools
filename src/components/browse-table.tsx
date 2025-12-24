@@ -6,6 +6,7 @@ import {
   type OnChangeFn,
   type PaginationState,
   type VisibilityState,
+  type RowSelectionState,
 } from "@tanstack/react-table";
 import {
   ChevronLeft,
@@ -20,6 +21,7 @@ import { useMemo } from "react";
 import type { Item, ViewMode } from "@/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -64,6 +66,9 @@ interface BrowseTableProps {
   selected?: Item;
   onSelect: (item: Item) => void;
   toolbarLeft?: React.ReactNode;
+  rowSelection?: RowSelectionState;
+  onRowSelectionChange?: OnChangeFn<RowSelectionState>;
+  bulkActionsToolbar?: React.ReactNode;
 }
 
 export function BrowseTable({
@@ -78,10 +83,41 @@ export function BrowseTable({
   selected,
   onSelect,
   toolbarLeft,
+  rowSelection,
+  onRowSelectionChange,
+  bulkActionsToolbar,
 }: BrowseTableProps) {
   // Build columns
   const columns = useMemo<ColumnDef<Item>[]>(() => {
     const cols: ColumnDef<Item>[] = [];
+
+    // Selection checkbox column (only in cards view when bulk actions enabled)
+    if (viewMode === "cards" && onRowSelectionChange) {
+      cols.push({
+        id: "select",
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
+            aria-label="Select all"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+            onClick={(e) => e.stopPropagation()}
+          />
+        ),
+        enableHiding: false,
+      });
+    }
 
     // Field columns
     for (const field of fields) {
@@ -189,7 +225,7 @@ export function BrowseTable({
     }
 
     return cols;
-  }, [fields, viewMode]);
+  }, [fields, viewMode, onRowSelectionChange]);
 
   // Column visibility
   const [columnVisibility, setColumnVisibility] = useLocalStorage(
@@ -223,13 +259,22 @@ export function BrowseTable({
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true, // Server-side pagination
     pageCount,
-    state: { pagination, columnVisibility },
+    state: { pagination, columnVisibility, rowSelection: rowSelection ?? {} },
     onPaginationChange,
     onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange,
+    enableRowSelection: true,
+    getRowId: (row) =>
+      row.type === "card" ? `card-${row.cardId}` : `note-${row.noteId}`,
   });
 
   return (
     <div className="space-y-4">
+      {/* Bulk actions toolbar */}
+      {bulkActionsToolbar && (
+        <div className="flex items-center gap-2">{bulkActionsToolbar}</div>
+      )}
+
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">{toolbarLeft}</div>

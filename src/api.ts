@@ -164,6 +164,21 @@ const implementations = {
   setSuspended: (input: { cardId: number; suspended: boolean }) => {
     return invoke<number>("setSuspended", input);
   },
+
+  // Bulk operations
+  bulkSetCardFlag: (input: { cardIds: number[]; flag: number }) => {
+    return invoke<{ success: boolean; count: number }>(
+      "bulkSetCardFlag",
+      input,
+    );
+  },
+
+  bulkSetSuspended: (input: { cardIds: number[]; suspended: boolean }) => {
+    return invoke<{ success: boolean; count: number }>(
+      "bulkSetSuspended",
+      input,
+    );
+  },
 };
 
 export const api = deriveQueryHelpers(implementations);

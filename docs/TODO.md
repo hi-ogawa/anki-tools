@@ -2,8 +2,6 @@
 
 ## Feature
 
-- Edit
-  - bulk edit (flag/unflag, suspend/unsuspend)
 - Render HTML content safely
 - full scroll mode without pagination https://github.com/hi-ogawa/anki-tools/pull/12
 - poll health endpoint for server status

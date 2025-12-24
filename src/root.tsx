@@ -5,11 +5,13 @@ import {
   useMutation,
   keepPreviousData,
 } from "@tanstack/react-query";
+import type { RowSelectionState } from "@tanstack/react-table";
 import { CircleHelp, Flag, Library, RefreshCw, Tag } from "lucide-react";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router";
 import { api, type Item, type ViewMode } from "./api";
 import { BrowseTable } from "./components/browse-table";
+import { BulkActionsToolbar } from "./components/bulk-actions-toolbar";
 import { NoteDetail } from "./components/note-detail";
 import { TableSkeleton } from "./components/table-skeleton";
 import { Button } from "./components/ui/button";
@@ -357,6 +359,57 @@ function NotesView({
     },
   });
 
+  // Bulk operations state and mutations (only for cards view)
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+
+  const bulkSetFlagMutation = useMutation({
+    ...api.bulkSetCardFlag.mutationOptions(),
+    onSuccess: () => {
+      setIsStale(true);
+      setRowSelection({});
+    },
+  });
+
+  const bulkSetSuspendedMutation = useMutation({
+    ...api.bulkSetSuspended.mutationOptions(),
+    onSuccess: () => {
+      setIsStale(true);
+      setRowSelection({});
+    },
+  });
+
+  // Get selected card IDs from row selection
+  const selectedCardIds = useMemo(() => {
+    if (viewMode !== "cards") return [];
+    return Object.keys(rowSelection)
+      .filter((key) => rowSelection[key])
+      .map((key) => Number(key.replace("card-", "")));
+  }, [rowSelection, viewMode]);
+
+  const handleBulkSetFlag = (flag: number) => {
+    if (selectedCardIds.length === 0) return;
+    bulkSetFlagMutation.mutate({ cardIds: selectedCardIds, flag });
+  };
+
+  const handleBulkSuspend = () => {
+    if (selectedCardIds.length === 0) return;
+    bulkSetSuspendedMutation.mutate({
+      cardIds: selectedCardIds,
+      suspended: true,
+    });
+  };
+
+  const handleBulkUnsuspend = () => {
+    if (selectedCardIds.length === 0) return;
+    bulkSetSuspendedMutation.mutate({
+      cardIds: selectedCardIds,
+      suspended: false,
+    });
+  };
+
+  const isBulkOperationLoading =
+    bulkSetFlagMutation.isPending || bulkSetSuspendedMutation.isPending;
+
   // Local search state - synced with URL
   const [localSearch, setLocalSearch] = useState(search ?? "");
   useEffect(() => {
@@ -542,6 +595,22 @@ function NotesView({
           selected={selected}
           onSelect={setSelected}
           toolbarLeft={toolbarLeft}
+          rowSelection={viewMode === "cards" ? rowSelection : undefined}
+          onRowSelectionChange={
+            viewMode === "cards" ? setRowSelection : undefined
+          }
+          bulkActionsToolbar={
+            viewMode === "cards" ? (
+              <BulkActionsToolbar
+                selectedCount={selectedCardIds.length}
+                onClearSelection={() => setRowSelection({})}
+                onSetFlag={handleBulkSetFlag}
+                onSuspend={handleBulkSuspend}
+                onUnsuspend={handleBulkUnsuspend}
+                isLoading={isBulkOperationLoading}
+              />
+            ) : undefined
+          }
         />
       </div>
       {selected && (
