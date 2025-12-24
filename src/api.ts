@@ -6,26 +6,78 @@ const API_URL = "/api";
 // Domain Types
 // ============================================================================
 
-export interface Note {
+// Shared note content (underlying data)
+export type NoteData = {
+  noteId: number;
+  modelName: string;
+  fields: Record<string, string>;
+  tags: string[];
+  deckName: string;
+};
+
+// Card-specific practice metadata
+export type CardData = {
+  cardId: number;
+  flag: number; // 0 = none, 1-7 = flag colors
+  queue: number; // -1 = suspended, 0 = new, 1 = learning, 2 = review
+  due: number;
+  interval: number;
+};
+
+// Discriminated union for UI
+export type Note = NoteData & { type: "note" };
+export type Card = NoteData & CardData & { type: "card" };
+export type Item = Note | Card;
+
+export type ViewMode = "notes" | "cards";
+
+// Raw API responses (before transformation)
+type RawNote = {
   id: number;
   modelName: string;
   fields: Record<string, string>;
   tags: string[];
   deckName: string;
-}
+};
 
-// TODO: refactor Card as Note + extra fields
-export interface Card {
+type RawCard = {
   id: number;
   noteId: number;
   deckName: string;
   modelName: string;
   fields: Record<string, string>;
   tags: string[];
-  flag: number; // 0 = none, 1-7 = flag colors
-  queue: number; // -1 = suspended, 0 = new, 1 = learning, 2 = review
+  flag: number;
+  queue: number;
   due: number;
   interval: number;
+};
+
+function toNote(raw: RawNote): Note {
+  return {
+    type: "note",
+    noteId: raw.id,
+    modelName: raw.modelName,
+    fields: raw.fields,
+    tags: raw.tags,
+    deckName: raw.deckName,
+  };
+}
+
+function toCard(raw: RawCard): Card {
+  return {
+    type: "card",
+    noteId: raw.noteId,
+    modelName: raw.modelName,
+    fields: raw.fields,
+    tags: raw.tags,
+    deckName: raw.deckName,
+    cardId: raw.id,
+    flag: raw.flag,
+    queue: raw.queue,
+    due: raw.due,
+    interval: raw.interval,
+  };
 }
 
 // ============================================================================
@@ -38,16 +90,19 @@ const implementations = {
   },
 
   // search: optional Anki search syntax (e.g., "field:value", "deck:name", "tag:name")
-  fetchNotes: (input: { modelName: string; search?: string }) => {
-    return invoke<Note[]>("browseNotes", {
-      query: `note:"${input.modelName}" ${input.search || ""}`,
-    });
-  },
-
-  fetchCards: (input: { modelName: string; search?: string }) => {
-    return invoke<Card[]>("browseCards", {
-      query: `note:"${input.modelName}" ${input.search || ""}`,
-    });
+  fetchItems: async (input: {
+    modelName: string;
+    search?: string;
+    viewMode: ViewMode;
+  }): Promise<Item[]> => {
+    const query = `note:"${input.modelName}" ${input.search || ""}`;
+    if (input.viewMode === "notes") {
+      const raw = await invoke<RawNote[]>("browseNotes", { query });
+      return raw.map(toNote);
+    } else {
+      const raw = await invoke<RawCard[]>("browseCards", { query });
+      return raw.map(toCard);
+    }
   },
 
   // flag: 0 = no flag, 1-7 = flag colors

@@ -18,7 +18,7 @@ import {
   Pause,
 } from "lucide-react";
 import { useMemo } from "react";
-import type { Note, Card } from "@/api";
+import type { Item, ViewMode } from "@/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,11 +47,8 @@ import {
 import { FLAG_COLORS } from "@/lib/constants";
 import { useLocalStorage } from "@/lib/use-local-storage";
 
-type ViewMode = "notes" | "cards";
-type BrowseItem = Note | Card;
-
 interface BrowseTableProps {
-  data: BrowseItem[];
+  data: Item[];
   viewMode: ViewMode;
   model: string;
   fields: string[];
@@ -59,7 +56,7 @@ interface BrowseTableProps {
   pageSize: number;
   onStateChange: (newState: Record<string, string | number>) => void;
   selectedId: number | null;
-  onSelect: (item: BrowseItem) => void;
+  onSelect: (item: Item) => void;
   toolbarLeft?: React.ReactNode;
 }
 
@@ -76,8 +73,8 @@ export function BrowseTable({
   toolbarLeft,
 }: BrowseTableProps) {
   // Build columns
-  const columns = useMemo<ColumnDef<BrowseItem>[]>(() => {
-    const cols: ColumnDef<BrowseItem>[] = [];
+  const columns = useMemo<ColumnDef<Item>[]>(() => {
+    const cols: ColumnDef<Item>[] = [];
 
     // Field columns
     for (const field of fields) {
@@ -137,10 +134,10 @@ export function BrowseTable({
     if (viewMode === "cards") {
       cols.push({
         id: "flag",
-        accessorFn: (row) => (row as Card).flag,
+        accessorFn: (row) => (row.type === "card" ? row.flag : undefined),
         header: "Flag",
         cell: ({ getValue }) => {
-          const flag = getValue() as number;
+          const flag = getValue() as number | undefined;
           if (!flag) return <span className="text-muted-foreground">-</span>;
           return (
             <Flag
@@ -154,10 +151,12 @@ export function BrowseTable({
 
       cols.push({
         id: "status",
-        accessorFn: (row) => (row as Card).queue,
+        accessorFn: (row) => (row.type === "card" ? row.queue : undefined),
         header: "Status",
         cell: ({ getValue }) => {
-          const queue = getValue() as number;
+          const queue = getValue() as number | undefined;
+          if (queue === undefined)
+            return <span className="text-muted-foreground">-</span>;
           if (queue === -1) {
             return (
               <span className="flex items-center gap-1 text-yellow-600">
@@ -178,11 +177,12 @@ export function BrowseTable({
 
       cols.push({
         id: "interval",
-        accessorFn: (row) => (row as Card).interval,
+        accessorFn: (row) => (row.type === "card" ? row.interval : undefined),
         header: "Interval",
         cell: ({ getValue }) => {
-          const ivl = getValue() as number;
-          if (ivl <= 0) return <span className="text-muted-foreground">-</span>;
+          const ivl = getValue() as number | undefined;
+          if (ivl === undefined || ivl <= 0)
+            return <span className="text-muted-foreground">-</span>;
           if (ivl >= 365) return `${Math.round(ivl / 365)}y`;
           if (ivl >= 30) return `${Math.round(ivl / 30)}mo`;
           return `${ivl}d`;
@@ -316,22 +316,27 @@ export function BrowseTable({
         </TableHeader>
         <TableBody>
           {table.getRowModel().rows.length ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow
-                key={row.id}
-                onClick={() => onSelect(row.original)}
-                className="cursor-pointer"
-                data-state={
-                  row.original.id === selectedId ? "selected" : undefined
-                }
-              >
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))
+            table.getRowModel().rows.map((row) => {
+              const item = row.original;
+              const itemId = item.type === "card" ? item.cardId : item.noteId;
+              return (
+                <TableRow
+                  key={row.id}
+                  onClick={() => onSelect(item)}
+                  className="cursor-pointer"
+                  data-state={itemId === selectedId ? "selected" : undefined}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              );
+            })
           ) : (
             <TableRow>
               <TableCell colSpan={columns.length} className="h-24 text-center">
