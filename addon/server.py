@@ -13,6 +13,7 @@ Why an Anki addon instead of AnkiConnect?
 """
 
 import json
+import time
 from http.server import SimpleHTTPRequestHandler
 from typing import Callable
 
@@ -102,7 +103,13 @@ def handle_action(col: Collection, action: str, params: dict):
 
     elif action == "browseNotes":
         query = params["query"]
+        timing = {}
+
+        t0 = time.perf_counter()
         note_ids = col.find_notes(query)
+        timing["find_ms"] = int((time.perf_counter() - t0) * 1000)
+
+        t0 = time.perf_counter()
         notes = []
         for nid in note_ids:
             note = col.get_note(nid)
@@ -121,11 +128,20 @@ def handle_action(col: Collection, action: str, params: dict):
                     "deckName": deck_name,
                 }
             )
-        return notes
+        timing["fetch_ms"] = int((time.perf_counter() - t0) * 1000)
+        timing["count"] = len(notes)
+
+        return {"items": notes, "timing": timing}
 
     elif action == "browseCards":
         query = params["query"]
+        timing = {}
+
+        t0 = time.perf_counter()
         card_ids = col.find_cards(query)
+        timing["find_ms"] = int((time.perf_counter() - t0) * 1000)
+
+        t0 = time.perf_counter()
         cards = []
         for cid in card_ids:
             card = col.get_card(cid)
@@ -149,7 +165,10 @@ def handle_action(col: Collection, action: str, params: dict):
                     "interval": card.ivl,
                 }
             )
-        return cards
+        timing["fetch_ms"] = int((time.perf_counter() - t0) * 1000)
+        timing["count"] = len(cards)
+
+        return {"items": cards, "timing": timing}
 
     elif action == "setCardFlag":
         card_id = params["cardId"]

@@ -274,13 +274,7 @@ function NotesView({
     return parts.join(" ") || undefined;
   }, [search, flag, deck]);
 
-  const {
-    data: items = [],
-    isLoading,
-    isFetching,
-    error,
-    refetch,
-  } = useQuery({
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
     ...api.fetchItems.queryOptions({
       modelName: model,
       search: fullSearch,
@@ -288,6 +282,7 @@ function NotesView({
     }),
     placeholderData: keepPreviousData,
   });
+  const items = data?.items ?? [];
 
   // TODO: optimistic updates
   const setFlagMutation = useMutation({

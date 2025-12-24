@@ -52,6 +52,18 @@ type RawCard = {
   interval: number;
 };
 
+// Timing stats from API
+export type ApiTiming = {
+  find_ms: number;
+  fetch_ms: number;
+  count: number;
+};
+
+type BrowseResponse<T> = {
+  items: T[];
+  timing: ApiTiming;
+};
+
 function toNote(raw: RawNote): Note {
   return {
     type: "note",
@@ -98,14 +110,18 @@ const implementations = {
     modelName: string;
     search?: string;
     viewMode: ViewMode;
-  }): Promise<Item[]> => {
+  }): Promise<{ items: Item[]; timing: ApiTiming }> => {
     const query = `note:"${input.modelName}" ${input.search || ""}`;
     if (input.viewMode === "notes") {
-      const raw = await invoke<RawNote[]>("browseNotes", { query });
-      return raw.map(toNote);
+      const raw = await invoke<BrowseResponse<RawNote>>("browseNotes", {
+        query,
+      });
+      return { items: raw.items.map(toNote), timing: raw.timing };
     } else {
-      const raw = await invoke<RawCard[]>("browseCards", { query });
-      return raw.map(toCard);
+      const raw = await invoke<BrowseResponse<RawCard>>("browseCards", {
+        query,
+      });
+      return { items: raw.items.map(toCard), timing: raw.timing };
     }
   },
 
