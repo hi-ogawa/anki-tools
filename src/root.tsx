@@ -22,6 +22,7 @@ import {
 } from "./components/ui/select";
 import { FLAG_FILTER_OPTIONS } from "./lib/constants";
 import { useLocalStorage } from "./lib/use-local-storage";
+import { useResize } from "./lib/use-resize";
 
 // TODO: separate singleton state and component
 const queryClient = new QueryClient({
@@ -235,28 +236,11 @@ function NotesView({
     "anki-browse-panel-width",
     320,
   );
-  const isResizing = useRef(false);
-  const panelRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const onMouseMove = (e: MouseEvent) => {
-      if (!isResizing.current || !panelRef.current) return;
-      const panelRight = panelRef.current.getBoundingClientRect().right;
-      const newWidth = panelRight - e.clientX;
-      setPanelWidth(Math.max(200, Math.min(700, newWidth)));
-    };
-    const onMouseUp = () => {
-      isResizing.current = false;
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-    };
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-    };
-  }, [setPanelWidth]);
+  const { panelRef, startResize } = useResize({
+    onWidthChange: setPanelWidth,
+    minWidth: 200,
+    maxWidth: 700,
+  });
 
   // Build full query with flag filter
   const fullSearch = useMemo(() => {
@@ -412,11 +396,7 @@ function NotesView({
           <div
             data-testid="panel-resize-handle"
             className="absolute left-0 top-0 h-full w-2 cursor-col-resize hover:bg-primary/20"
-            onMouseDown={() => {
-              isResizing.current = true;
-              document.body.style.cursor = "col-resize";
-              document.body.style.userSelect = "none";
-            }}
+            onMouseDown={startResize}
           />
           <div className="flex-1 overflow-hidden pl-1">
             <NoteDetail
