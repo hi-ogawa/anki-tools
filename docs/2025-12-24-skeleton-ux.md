@@ -109,9 +109,9 @@ function TableSkeleton({
 }
 ```
 
-## Principle
+## Principles
 
-**Skeleton = not actionable = consistent placeholder**
+### 1. Skeleton = not actionable = consistent placeholder
 
 During loading, UI is not actionable. Therefore:
 
@@ -120,6 +120,45 @@ During loading, UI is not actionable. Therefore:
 - This eliminates flicker from transitioning between different skeleton variants
 
 This means: remove `toolbarLeft` prop from `TableSkeleton` - always show placeholder toolbar.
+
+### 2. Never delay actual data fetching for visual smoothness
+
+Fetch data as early as possible. Visual delays (like skeleton min time) should only affect **display**, not **fetching**.
+
+Bad:
+
+```
+[Schema fetch] → [Wait 300ms skeleton] → [Mount NotesView] → [Notes fetch starts]
+```
+
+Good:
+
+```
+[Schema fetch] → [Notes fetch starts immediately]
+      └─ [Visual: show skeleton] ─────────────────→ [Visual: show data]
+```
+
+If `useMinLoadingTime` delays component mounting and thus delays fetching, don't use it.
+
+### Idea: Split raw vs min-time loading state
+
+`useMinLoadingTime` can coexist with principle #2 if we split usage:
+
+```tsx
+const schemaLoading = useMinLoadingTime(schemaLoadingRaw);
+
+// Raw for mounting → fetch starts ASAP
+if (schemaLoadingRaw) {
+  mainContent = <TableSkeleton />;
+} else {
+  mainContent = <NotesView ... />;
+}
+
+// Min-time for visual smoothness (e.g., selects stay disabled)
+<Select disabled={schemaLoading || !!schemaError}>
+```
+
+Not implemented yet - exploring alternatives including async React patterns (see PR #30).
 
 ## Open Questions (Resolved)
 

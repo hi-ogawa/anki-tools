@@ -23,7 +23,6 @@ import {
 } from "./components/ui/select";
 import { FLAG_FILTER_OPTIONS } from "./lib/constants";
 import { useLocalStorage } from "./lib/use-local-storage";
-import { useMinLoadingTime } from "./lib/use-min-loading-time";
 import { useResize } from "./lib/use-resize";
 
 // TODO: separate singleton state and component
@@ -57,7 +56,7 @@ function App() {
   // Fetch schema
   const {
     data: models,
-    isLoading: schemaLoadingRaw,
+    isLoading: schemaLoading,
     error: schemaError,
     refetch: refetchSchema,
   } = useQuery({
@@ -65,9 +64,6 @@ function App() {
     staleTime: Infinity,
     retry: false,
   });
-
-  // Avoid quick skeleton flash
-  const schemaLoading = useMinLoadingTime(schemaLoadingRaw);
 
   const modelNames = useMemo(() => Object.keys(models ?? {}), [models]);
   const validModel = urlModel && models?.[urlModel];
