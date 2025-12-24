@@ -121,8 +121,11 @@ function App() {
   } else if (schemaError) {
     mainContent = (
       <div className="flex flex-col items-center gap-4">
-        <p className="text-destructive">Failed to connect to AnkiConnect</p>
-        <p className="text-sm text-muted-foreground">{schemaError.message}</p>
+        <p className="text-destructive">Failed to load Anki data</p>
+        <p className="text-sm text-muted-foreground">
+          Make sure Anki is running with the addon installed.
+        </p>
+        <p className="text-xs text-muted-foreground">{schemaError.message}</p>
         <Button onClick={() => refetchSchema()}>Retry</Button>
       </div>
     );
@@ -136,7 +139,7 @@ function App() {
     );
   } else if (!validModel) {
     mainContent = (
-      <p className="text-destructive">Model "{urlModel}" not found</p>
+      <p className="text-destructive">Note type "{urlModel}" not found</p>
     );
   } else {
     mainContent = (
@@ -167,7 +170,7 @@ function App() {
             disabled={schemaLoading || !!schemaError}
           >
             <SelectTrigger size="sm" className="w-[180px]">
-              <SelectValue placeholder="Select model..." />
+              <SelectValue placeholder="Select note type..." />
             </SelectTrigger>
             <SelectContent>
               {modelNames.map((name) => (
@@ -378,7 +381,14 @@ function NotesView({
 
   if (error) {
     return (
-      <p className="text-destructive">Error loading notes: {error.message}</p>
+      <div className="flex flex-col items-center gap-4">
+        <p className="text-destructive">Failed to load {viewMode}</p>
+        <p className="text-sm text-muted-foreground">
+          Make sure Anki is running with the addon installed.
+        </p>
+        <p className="text-xs text-muted-foreground">{error.message}</p>
+        <Button onClick={() => refetch()}>Retry</Button>
+      </div>
     );
   }
 
