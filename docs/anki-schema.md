@@ -50,6 +50,7 @@ erDiagram
 A single deck can contain cards from **multiple notetypes**. Decks are just containers with no direct relationship to notetypes.
 
 However, this browser uses **notetype-first** browsing:
+
 1. Select a notetype first
 2. Table columns are derived from that notetype's fields
 3. Deck filter shows decks containing cards of the selected notetype

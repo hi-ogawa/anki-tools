@@ -13,6 +13,11 @@
 
 ## Fix
 
+## Performance
+
+- Server-side pagination for large collections (see `docs/2025-12-25-deck-filter-and-perf.md`)
+- Batch SQL query for browseCards/browseNotes (N queries → 1)
+
 ## Refactor
 
 - `toolbarLeft` abstraction feels odd

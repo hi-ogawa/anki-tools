@@ -91,27 +91,14 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
 def handle_action(col: Collection, action: str, params: dict):
     """Handle API action with given collection."""
-    if action == "getModels":
-        # Build model->decks mapping via SQL (much faster than iterating cards)
-        model_decks: dict[int, set[int]] = {}
-        for mid, did in col.db.execute(
-            "SELECT DISTINCT notes.mid, cards.did FROM cards JOIN notes ON cards.nid = notes.id"
-        ):
-            if mid not in model_decks:
-                model_decks[mid] = set()
-            model_decks[mid].add(did)
-
-        # Build response with fields and decks for each model
-        models = {}
-        for model in col.models.all():
-            mid = model["id"]
-            name = model["name"]
-            deck_ids = model_decks.get(mid, set())
-            models[name] = {
-                "fields": [f["name"] for f in model["flds"]],
-                "decks": sorted(col.decks.name(did) for did in deck_ids),
-            }
-        return models
+    if action == "getSchema":
+        return {
+            "models": {
+                model["name"]: [f["name"] for f in model["flds"]]
+                for model in col.models.all()
+            },
+            "decks": sorted(d["name"] for d in col.decks.all()),
+        }
 
     elif action == "browseNotes":
         query = params["query"]

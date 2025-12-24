@@ -56,21 +56,23 @@ function App() {
   const deck = searchParams.get("deck") ?? undefined;
   const viewMode = (searchParams.get("view") ?? "cards") as ViewMode;
 
-  // Fetch schema
+  // Fetch schema (models + decks)
   const {
-    data: models,
+    data: schema,
     isLoading: schemaLoading,
     error: schemaError,
     refetch: refetchSchema,
   } = useQuery({
-    ...api.getModels.queryOptions(),
+    ...api.getSchema.queryOptions(),
     staleTime: Infinity,
     retry: false,
   });
 
+  const models = schema?.models;
+  const decks = schema?.decks ?? [];
   const modelNames = useMemo(() => Object.keys(models ?? {}), [models]);
   const validModel = urlModel && models?.[urlModel];
-  const modelInfo = validModel ? models[urlModel] : undefined;
+  const fields = validModel ? models[urlModel] : undefined;
 
   // Persist last selected model
   const [lastModel, setLastModel] = useLocalStorage<string | null>(
@@ -149,8 +151,8 @@ function App() {
       <NotesView
         key={`${urlModel}-${viewMode}`}
         model={urlModel}
-        fields={modelInfo!.fields}
-        decks={modelInfo!.decks}
+        fields={fields!}
+        decks={decks}
         page={pageIndex}
         pageSize={pageSize}
         search={search}
