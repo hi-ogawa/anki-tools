@@ -274,20 +274,18 @@ function NotesView({
     return parts.join(" ") || undefined;
   }, [search, flag, deck]);
 
-  const {
-    data: items = [],
-    isLoading,
-    isFetching,
-    error,
-    refetch,
-  } = useQuery({
+  const { data, isLoading, isFetching, error, refetch } = useQuery({
     ...api.fetchItems.queryOptions({
       modelName: model,
       search: fullSearch,
       viewMode,
+      limit: pageSize,
+      offset: page * pageSize,
     }),
     placeholderData: keepPreviousData,
   });
+  const items = data?.items ?? [];
+  const total = data?.total ?? 0;
 
   // TODO: optimistic updates
   const setFlagMutation = useMutation({
@@ -458,6 +456,7 @@ function NotesView({
       >
         <BrowseTable
           data={items}
+          total={total}
           viewMode={viewMode}
           model={model}
           fields={fields}

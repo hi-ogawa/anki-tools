@@ -52,6 +52,19 @@ type RawCard = {
   interval: number;
 };
 
+// Timing stats from API
+export type ApiTiming = {
+  find_ms: number;
+  fetch_ms: number;
+  count: number;
+};
+
+type BrowseResponse<T> = {
+  items: T[];
+  total: number;
+  timing: ApiTiming;
+};
+
 function toNote(raw: RawNote): Note {
   return {
     type: "note",
@@ -94,18 +107,39 @@ const implementations = {
   },
 
   // search: optional Anki search syntax (e.g., "field:value", "deck:name", "tag:name")
+  // limit/offset: server-side pagination (optional, fetches all if not provided)
   fetchItems: async (input: {
     modelName: string;
     search?: string;
     viewMode: ViewMode;
-  }): Promise<Item[]> => {
+    limit?: number;
+    offset?: number;
+  }): Promise<{ items: Item[]; total: number; timing: ApiTiming }> => {
     const query = `note:"${input.modelName}" ${input.search || ""}`;
+    const pagination =
+      input.limit !== undefined
+        ? { limit: input.limit, offset: input.offset ?? 0 }
+        : {};
     if (input.viewMode === "notes") {
-      const raw = await invoke<RawNote[]>("browseNotes", { query });
-      return raw.map(toNote);
+      const raw = await invoke<BrowseResponse<RawNote>>("browseNotes", {
+        query,
+        ...pagination,
+      });
+      return {
+        items: raw.items.map(toNote),
+        total: raw.total,
+        timing: raw.timing,
+      };
     } else {
-      const raw = await invoke<RawCard[]>("browseCards", { query });
-      return raw.map(toCard);
+      const raw = await invoke<BrowseResponse<RawCard>>("browseCards", {
+        query,
+        ...pagination,
+      });
+      return {
+        items: raw.items.map(toCard),
+        total: raw.total,
+        timing: raw.timing,
+      };
     }
   },
 
