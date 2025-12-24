@@ -357,9 +357,7 @@ function NotesView({
           onStateChange({ flag: value === "none" ? undefined : value, page: 1 })
         }
       >
-        <SelectTrigger
-          className={flag ? "w-[140px]" : "w-9 px-0 justify-center"}
-        >
+        <SelectTrigger className={flag ? "w-[140px]" : "w-auto"}>
           {flag ? <SelectValue /> : <Flag className="size-4" />}
         </SelectTrigger>
         <SelectContent>
@@ -384,7 +382,7 @@ function NotesView({
         }
       >
         <SelectTrigger
-          className={deck ? "w-[180px]" : "w-9 px-0 justify-center"}
+          className={deck ? "w-[180px]" : "w-auto"}
           data-testid="deck-filter"
         >
           {deck ? <SelectValue /> : <Library className="size-4" />}
