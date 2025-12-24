@@ -5,7 +5,7 @@ import {
   useMutation,
   keepPreviousData,
 } from "@tanstack/react-query";
-import { Flag, RefreshCw, AlertCircle } from "lucide-react";
+import { Flag, RefreshCw } from "lucide-react";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router";
 import { api, type Item, type ViewMode } from "./api";
@@ -378,27 +378,25 @@ function NotesView({
         </SelectContent>
       </Select>
       <Button
-        variant="outline"
-        size="sm"
+        variant="ghost"
+        size="icon"
         onClick={() => refetch()}
         disabled={isFetching}
+        title={
+          isStale && !isFetching
+            ? "Data may be outdated - click to refresh"
+            : "Refresh"
+        }
         data-testid="refresh-button"
+        data-stale={isStale && !isFetching ? "true" : undefined}
+        className={
+          isStale && !isFetching
+            ? "text-yellow-600 hover:text-yellow-700 hover:bg-yellow-100"
+            : ""
+        }
       >
         <RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
-        Refresh
       </Button>
-      {isStale && !isFetching && (
-        <span
-          className="flex items-center gap-1 text-sm text-yellow-600"
-          data-testid="stale-indicator"
-        >
-          <AlertCircle className="size-4" />
-          Data may be outdated
-        </span>
-      )}
-      {isFetching && (
-        <span className="text-sm text-muted-foreground">Loading...</span>
-      )}
     </>
   );
 
