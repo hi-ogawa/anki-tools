@@ -236,11 +236,13 @@ function NotesView({
     320,
   );
   const isResizing = useRef(false);
+  const panelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onMouseMove = (e: MouseEvent) => {
-      if (!isResizing.current) return;
-      const newWidth = window.innerWidth - e.clientX - 24; // 16 = padding
+      if (!isResizing.current || !panelRef.current) return;
+      const panelRight = panelRef.current.getBoundingClientRect().right;
+      const newWidth = panelRight - e.clientX;
       setPanelWidth(Math.max(200, Math.min(700, newWidth)));
     };
     const onMouseUp = () => {
@@ -401,9 +403,13 @@ function NotesView({
         />
       </div>
       {selected && (
-        <div className="relative flex shrink-0" style={{ width: panelWidth }}>
+        <div
+          ref={panelRef}
+          className="relative flex shrink-0"
+          style={{ width: panelWidth }}
+        >
           <div
-            className="absolute left-0 top-0 h-full w-1 cursor-col-resize hover:bg-primary/20"
+            className="absolute left-0 top-0 h-full w-2 cursor-col-resize hover:bg-primary/20"
             onMouseDown={() => {
               isResizing.current = true;
               document.body.style.cursor = "col-resize";
