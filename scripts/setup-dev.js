@@ -1,7 +1,13 @@
 #!/usr/bin/env node
 // Setup development symlink for Anki addon
 
-import { existsSync, lstatSync, rmSync, symlinkSync } from "node:fs";
+import {
+  existsSync,
+  lstatSync,
+  rmSync,
+  symlinkSync,
+  unlinkSync,
+} from "node:fs";
 import { homedir, platform } from "node:os";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -36,9 +42,14 @@ if (!existsSync(addonsDir)) {
 }
 
 // Remove existing addon (folder or symlink)
-if (existsSync(addonDest) || lstatSync(addonDest, { throwIfNoEntry: false })) {
+const stat = lstatSync(addonDest, { throwIfNoEntry: false });
+if (stat) {
   console.log(`Removing existing: ${addonDest}`);
-  rmSync(addonDest, { recursive: true, force: true });
+  if (stat.isSymbolicLink()) {
+    unlinkSync(addonDest);
+  } else {
+    rmSync(addonDest, { recursive: true });
+  }
 }
 
 // Create symlink
