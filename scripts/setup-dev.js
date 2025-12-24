@@ -15,7 +15,7 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const ADDON_NAME = "anki-browse-web-dev";
 const REPO_ROOT = dirname(__dirname);
-const ADDON_SRC = join(REPO_ROOT, "anki_browse_web");
+const ADDON_SRC = join(REPO_ROOT, "addon");
 
 // Detect Anki addons directory
 function getAddonsDir() {

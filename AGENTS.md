@@ -17,7 +17,7 @@ Instructions for AI coding agents working on this project.
 3. Confirm changes with the user before committing
 4. Commit each logical change separately
 
-**Note**: Restart Anki after changing Python code in `anki_browse_web/`.
+**Note**: Restart Anki after changing Python code in `addon/`.
 
 ## Documentation Workflow
 
