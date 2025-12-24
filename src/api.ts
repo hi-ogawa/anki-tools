@@ -99,6 +99,7 @@ function toCard(raw: RawCard): Card {
 export type Schema = {
   models: Record<string, string[]>;
   decks: string[];
+  tags: string[];
 };
 
 const implementations = {

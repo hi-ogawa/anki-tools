@@ -36,8 +36,13 @@ def main():
         note = col.new_note(model)
         note["Front"] = f"Question {i + 1}"
         note["Back"] = f"Answer {i + 1}"
+        # Assign tags: important (every 3rd), review (every 4th)
+        tags = []
         if i % 3 == 0:
-            note.tags = ["tagged"]
+            tags.append("important")
+        if i % 4 == 0:
+            tags.append("review")
+        note.tags = tags
         # Distribute notes: 10 Default, 6 Japanese, 4 Science
         if i < 10:
             deck_id = deck_default

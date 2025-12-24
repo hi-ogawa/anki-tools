@@ -239,6 +239,32 @@ test("stale indicator and refresh button", async ({ page }) => {
   await expect(firstRow).toContainText("Stale Test Question");
 });
 
+test("tag filter filters by tags", async ({ page }) => {
+  // Navigate directly with tags param to test the filter works
+  await page.goto("/?model=Basic&tags=important");
+
+  // Should show only notes with "important" tag (6 notes after previous tests modify note 1)
+  await expect(page.getByText(/Showing 1-\d+ of \d+/)).toBeVisible();
+  const filteredText = await page
+    .getByText(/Showing 1-\d+ of (\d+)/)
+    .textContent();
+  const filteredCount = parseInt(filteredText?.match(/of (\d+)/)?.[1] ?? "0");
+  expect(filteredCount).toBeLessThan(20);
+  expect(filteredCount).toBeGreaterThan(0);
+
+  // Navigate back to all notes
+  await page.goto("/?model=Basic");
+  await expect(page.getByText("Showing 1-20 of 20")).toBeVisible();
+
+  // Test the tag dropdown UI
+  await page.getByTestId("tag-filter").click();
+  await page.getByRole("menuitemcheckbox", { name: "important" }).click();
+
+  // Wait for URL to update and data to reload
+  await expect(page).toHaveURL(/tags=important/);
+  await expect(page.getByText(/Showing 1-\d+ of \d+/)).toBeVisible();
+});
+
 test("panel resize - drag to change width", async ({ page }) => {
   await page.goto("/?model=Basic");
 

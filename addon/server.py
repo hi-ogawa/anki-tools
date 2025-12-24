@@ -99,6 +99,7 @@ def handle_action(col: Collection, action: str, params: dict):
                 for model in col.models.all()
             },
             "decks": sorted(d["name"] for d in col.decks.all()),
+            "tags": sorted(col.tags.all()),
         }
 
     elif action == "browseNotes":
