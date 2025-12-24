@@ -5,7 +5,7 @@ import {
   useMutation,
   keepPreviousData,
 } from "@tanstack/react-query";
-import { Flag } from "lucide-react";
+import { Flag, RefreshCw, AlertCircle } from "lucide-react";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router";
 import { api, type Item, type ViewMode } from "./api";
@@ -229,6 +229,7 @@ function NotesView({
   onStateChange,
 }: NotesViewProps) {
   const [selected, setSelected] = useState<Item | null>(null);
+  const [isStale, setIsStale] = useState(false);
 
   // Resizable panel
   const [panelWidth, setPanelWidth] = useLocalStorage(
@@ -269,6 +270,7 @@ function NotesView({
     isLoading,
     isFetching,
     error,
+    refetch,
   } = useQuery({
     ...api.fetchItems.queryOptions({
       modelName: model,
@@ -278,10 +280,18 @@ function NotesView({
     placeholderData: keepPreviousData,
   });
 
+  // Clear stale flag when data is refetched
+  useEffect(() => {
+    if (!isFetching) {
+      setIsStale(false);
+    }
+  }, [isFetching]);
+
   // TODO: optimistic updates
   const setFlagMutation = useMutation({
     ...api.setCardFlag.mutationOptions(),
     onSuccess: (_, { cardId, flag }) => {
+      setIsStale(true);
       setSelected((prev) =>
         prev?.type === "card" && prev.cardId === cardId
           ? { ...prev, flag }
@@ -293,6 +303,7 @@ function NotesView({
   const updateFieldsMutation = useMutation({
     ...api.updateNoteFields.mutationOptions(),
     onSuccess: (_, { fields }) => {
+      setIsStale(true);
       setSelected((prev) =>
         prev ? { ...prev, fields: { ...prev.fields, ...fields } } : null,
       );
@@ -302,6 +313,7 @@ function NotesView({
   const updateTagsMutation = useMutation({
     ...api.updateNoteTags.mutationOptions(),
     onSuccess: (_, { tags }) => {
+      setIsStale(true);
       setSelected((prev) => (prev ? { ...prev, tags } : null));
     },
   });
@@ -309,6 +321,7 @@ function NotesView({
   const setSuspendedMutation = useMutation({
     ...api.setSuspended.mutationOptions(),
     onSuccess: (queue, { cardId }) => {
+      setIsStale(true);
       setSelected((prev) =>
         prev?.type === "card" && prev.cardId === cardId
           ? { ...prev, queue }
@@ -370,6 +383,25 @@ function NotesView({
           ))}
         </SelectContent>
       </Select>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => refetch()}
+        disabled={isFetching}
+        data-testid="refresh-button"
+      >
+        <RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
+        Refresh
+      </Button>
+      {isStale && !isFetching && (
+        <span
+          className="flex items-center gap-1 text-sm text-yellow-600"
+          data-testid="stale-indicator"
+        >
+          <AlertCircle className="size-4" />
+          Data may be outdated
+        </span>
+      )}
       {isFetching && (
         <span className="text-sm text-muted-foreground">Loading...</span>
       )}

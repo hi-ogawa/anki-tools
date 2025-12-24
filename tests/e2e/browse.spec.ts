@@ -153,3 +153,37 @@ test("update note tags", async ({ page }) => {
   await expect(page.getByTestId("tags-section")).toContainText("updated");
   await expect(page.getByTestId("tags-section")).not.toContainText("tag1");
 });
+
+test("stale indicator and refresh button", async ({ page }) => {
+  await page.goto("/?model=Basic");
+
+  // Stale indicator should not be visible initially
+  await expect(page.getByTestId("stale-indicator")).not.toBeVisible();
+
+  // Refresh button should be visible
+  await expect(page.getByTestId("refresh-button")).toBeVisible();
+
+  // Click first data row to open detail panel
+  await page.getByRole("row").nth(1).click();
+  await expect(page.getByTestId("field-Front")).toBeVisible();
+
+  // Edit a field
+  await page.getByTestId("edit-Front").click();
+  await page
+    .getByTestId("field-Front")
+    .getByRole("textbox")
+    .fill("Stale Test Question");
+  await page.getByRole("button", { name: "Save" }).click();
+
+  // Stale indicator should appear after mutation
+  await expect(page.getByTestId("stale-indicator")).toBeVisible();
+  await expect(page.getByTestId("stale-indicator")).toContainText(
+    "Data may be outdated",
+  );
+
+  // Click refresh button
+  await page.getByTestId("refresh-button").click();
+
+  // Stale indicator should disappear after refresh
+  await expect(page.getByTestId("stale-indicator")).not.toBeVisible();
+});
