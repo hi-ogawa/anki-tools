@@ -99,9 +99,10 @@ Result: Always 1-2 queries regardless of total matches or page size.
 
 ## Decision
 
-Current performance is acceptable for typical use (< 10k cards). Consider optimization if:
+Current performance is acceptable:
 
-- Users report slow browsing with large collections
-- Want to support 100k+ card collections smoothly
+- 5k cards loads in ~200-300ms (tested)
+- SQLite handles N small queries efficiently (OS/DB cache helps)
+- Typical users have < 10k cards
 
-The server-side pagination is the bigger win and should be done first if needed.
+Only optimize if users complain about large collections (20k+, e.g., AnKing decks).
