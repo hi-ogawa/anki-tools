@@ -2,9 +2,6 @@
 
 ## Feature
 
-- Filter
-  - dedicated input for tag (multi select)
-  - Smart Search mode
 - Edit
   - bulk edit (flag/unflag, suspend/unsuspend)
 - Render HTML content safely
@@ -14,9 +11,6 @@
 ## Fix
 
 ## Performance
-
-- Server-side pagination for large collections (see `docs/2025-12-25-deck-filter-and-perf.md`)
-- Batch SQL query for browseCards/browseNotes (N queries → 1)
 
 ## Refactor
 

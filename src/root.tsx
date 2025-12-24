@@ -5,7 +5,7 @@ import {
   useMutation,
   keepPreviousData,
 } from "@tanstack/react-query";
-import { CircleHelp, Flag, Library, RefreshCw } from "lucide-react";
+import { CircleHelp, Flag, Library, RefreshCw, Tag } from "lucide-react";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router";
 import { api, type Item, type ViewMode } from "./api";
@@ -13,6 +13,12 @@ import { BrowseTable } from "./components/browse-table";
 import { NoteDetail } from "./components/note-detail";
 import { TableSkeleton } from "./components/table-skeleton";
 import { Button } from "./components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "./components/ui/dropdown-menu";
 import { Input } from "./components/ui/input";
 import {
   Select,
@@ -23,7 +29,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./components/ui/select";
-import { FLAG_FILTER_OPTIONS } from "./lib/constants";
+import { FLAG_COLORS, FLAG_FILTER_OPTIONS } from "./lib/constants";
 import { useLocalStorage } from "./lib/use-local-storage";
 import { useResize } from "./lib/use-resize";
 
@@ -54,6 +60,8 @@ function App() {
   const search = searchParams.get("search") ?? undefined;
   const flag = searchParams.get("flag") ?? undefined;
   const deck = searchParams.get("deck") ?? undefined;
+  const tagsParam = searchParams.get("tags");
+  const tags = tagsParam ? tagsParam.split(",") : undefined;
   const viewMode = (searchParams.get("view") ?? "cards") as ViewMode;
 
   // Fetch schema (models + decks)
@@ -70,6 +78,7 @@ function App() {
 
   const models = schema?.models;
   const decks = schema?.decks ?? [];
+  const allTags = schema?.tags ?? [];
   const modelNames = useMemo(() => Object.keys(models ?? {}), [models]);
   const validModel = urlModel && models?.[urlModel];
   const fields = validModel ? models[urlModel] : undefined;
@@ -109,8 +118,14 @@ function App() {
   const setUrlState = (newState: UrlState) => {
     setSearchParams((prev) => {
       for (const [key, value] of Object.entries(newState)) {
-        if (value === undefined || value === "") {
+        if (
+          value === undefined ||
+          value === "" ||
+          (Array.isArray(value) && value.length === 0)
+        ) {
           prev.delete(key);
+        } else if (Array.isArray(value)) {
+          prev.set(key, value.join(","));
         } else {
           prev.set(key, String(value));
         }
@@ -153,11 +168,13 @@ function App() {
         model={urlModel}
         fields={fields!}
         decks={decks}
+        allTags={allTags}
         page={pageIndex}
         pageSize={pageSize}
         search={search}
         flag={flag}
         deck={deck}
+        tags={tags}
         viewMode={viewMode}
         onStateChange={setUrlState}
       />
@@ -224,17 +241,20 @@ interface UrlState {
   search?: string;
   flag?: string;
   deck?: string;
+  tags?: string[] | undefined;
 }
 
 interface NotesViewProps {
   model: string;
   fields: string[];
   decks: string[];
+  allTags: string[];
   page: number;
   pageSize: number;
   search?: string;
   flag?: string;
   deck?: string;
+  tags?: string[];
   viewMode: ViewMode;
   onStateChange: (newState: UrlState) => void;
 }
@@ -243,11 +263,13 @@ function NotesView({
   model,
   fields,
   decks,
+  allTags,
   page,
   pageSize,
   search,
   flag,
   deck,
+  tags,
   viewMode,
   onStateChange,
 }: NotesViewProps) {
@@ -271,8 +293,13 @@ function NotesView({
     if (search) parts.push(search);
     if (flag) parts.push(`flag:${flag}`);
     if (deck) parts.push(`deck:"${deck}"`);
+    if (tags?.length) {
+      // Use OR logic for multiple tags: (tag:a OR tag:b)
+      const tagQuery = tags.map((t) => `tag:"${t}"`).join(" OR ");
+      parts.push(`(${tagQuery})`);
+    }
     return parts.join(" ") || undefined;
-  }, [search, flag, deck]);
+  }, [search, flag, deck, tags]);
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     ...api.fetchItems.queryOptions({
@@ -368,8 +395,23 @@ function NotesView({
           onStateChange({ flag: value === "none" ? undefined : value, page: 1 })
         }
       >
-        <SelectTrigger className={flag ? "w-[140px]" : "w-auto"}>
-          {flag ? <SelectValue /> : <Flag className="size-4" />}
+        <SelectTrigger
+          className="w-auto"
+          data-testid="flag-filter"
+          style={
+            flag
+              ? {
+                  backgroundColor: `${FLAG_COLORS[Number(flag)]}20`,
+                  borderColor: FLAG_COLORS[Number(flag)],
+                }
+              : undefined
+          }
+        >
+          <Flag
+            className="size-4"
+            style={flag ? { color: FLAG_COLORS[Number(flag)] } : undefined}
+            fill={flag ? FLAG_COLORS[Number(flag)] : "none"}
+          />
         </SelectTrigger>
         <SelectContent>
           {FLAG_FILTER_OPTIONS.map((opt) => (
@@ -393,10 +435,10 @@ function NotesView({
         }
       >
         <SelectTrigger
-          className={deck ? "w-[180px]" : "w-auto"}
+          className={`w-auto ${deck ? "bg-blue-100 border-blue-400 dark:bg-blue-950 dark:border-blue-600" : ""}`}
           data-testid="deck-filter"
         >
-          {deck ? <SelectValue /> : <Library className="size-4" />}
+          <Library className="size-4" />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all">All decks</SelectItem>
@@ -407,6 +449,40 @@ function NotesView({
           ))}
         </SelectContent>
       </Select>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            className={`px-2 ${tags?.length ? "bg-blue-100 border-blue-400 dark:bg-blue-950 dark:border-blue-600" : ""}`}
+            data-testid="tag-filter"
+          >
+            <Tag className="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="max-h-64 overflow-y-auto">
+          {allTags.length === 0 ? (
+            <div className="px-2 py-1.5 text-sm text-muted-foreground">
+              No tags
+            </div>
+          ) : (
+            allTags.map((t) => (
+              <DropdownMenuCheckboxItem
+                key={t}
+                checked={tags?.includes(t) ?? false}
+                onCheckedChange={(checked) => {
+                  const newTags = checked
+                    ? [...(tags ?? []), t]
+                    : (tags ?? []).filter((tag) => tag !== t);
+                  onStateChange({ tags: newTags, page: 1 });
+                }}
+                onSelect={(e) => e.preventDefault()}
+              >
+                {t}
+              </DropdownMenuCheckboxItem>
+            ))
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
       <Button
         variant="ghost"
         size="icon"
