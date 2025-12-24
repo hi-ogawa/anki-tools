@@ -1,12 +1,12 @@
 import {
   QueryClient,
   QueryClientProvider,
-  useQuery,
+  useSuspenseQuery,
   useMutation,
-  keepPreviousData,
 } from "@tanstack/react-query";
 import { Flag, RefreshCw } from "lucide-react";
-import { useMemo, useState, useEffect, useRef } from "react";
+import { Suspense, useMemo, useState, useEffect, useTransition } from "react";
+import { ErrorBoundary } from "react-error-boundary";
 import { Link, useSearchParams } from "react-router";
 import { api, type Item, type ViewMode } from "./api";
 import { BrowseTable } from "./components/browse-table";
@@ -36,7 +36,37 @@ const queryClient = new QueryClient({
 export function Root() {
   return (
     <QueryClientProvider client={queryClient}>
-      <App />
+      <ErrorBoundary
+        fallbackRender={({ error, resetErrorBoundary }) => (
+          <div className="flex h-screen flex-col items-center justify-center gap-4">
+            <p className="text-destructive">Something went wrong</p>
+            <p className="text-sm text-muted-foreground">{error.message}</p>
+            <Button onClick={resetErrorBoundary}>Retry</Button>
+          </div>
+        )}
+        onReset={() => queryClient.clear()}
+      >
+        <Suspense
+          fallback={
+            <div className="flex h-screen flex-col">
+              <header className="shrink-0 border-b px-4 py-3">
+                <div className="flex items-center gap-4">
+                  <span className="text-lg font-semibold">Anki Browser</span>
+                  <div className="h-8 w-[180px] rounded-md bg-muted animate-pulse" />
+                  <div className="h-8 w-[100px] rounded-md bg-muted animate-pulse" />
+                </div>
+              </header>
+              <main className="flex-1 overflow-hidden p-4">
+                <div className="space-y-3">
+                  <div className="h-4 w-48 rounded bg-muted animate-pulse" />
+                </div>
+              </main>
+            </div>
+          }
+        >
+          <App />
+        </Suspense>
+      </ErrorBoundary>
     </QueryClientProvider>
   );
 }
@@ -52,41 +82,42 @@ function App() {
   const flag = searchParams.get("flag") ?? undefined;
   const viewMode = (searchParams.get("view") ?? "cards") as ViewMode;
 
-  // Fetch schema
-  const {
-    data: models,
-    isLoading: schemaLoading,
-    error: schemaError,
-    refetch: refetchSchema,
-  } = useQuery({
+  // Fetch schema - suspends until ready, throws on error
+  const { data: models } = useSuspenseQuery({
     ...api.getModels.queryOptions(),
     staleTime: Infinity,
     retry: false,
   });
 
-  const modelNames = useMemo(() => Object.keys(models ?? {}), [models]);
-  const validModel = urlModel && models?.[urlModel];
-  const fields = validModel ? models[urlModel] : [];
+  const modelNames = useMemo(() => Object.keys(models), [models]);
 
   // Persist last selected model
   const [lastModel, setLastModel] = useLocalStorage<string | null>(
     "anki-browse-last-model",
     null,
   );
-  const hasAutoSelected = useRef(false);
 
-  // Auto-select last model when models load and no URL model
+  // Compute effective model synchronously - no flicker
+  const effectiveModel = useMemo(() => {
+    if (urlModel && models[urlModel]) return urlModel;
+    if (lastModel && models[lastModel]) return lastModel;
+    return null;
+  }, [urlModel, lastModel, models]);
+
+  const fields = effectiveModel ? models[effectiveModel] : [];
+
+  // Sync URL with effective model (non-blocking)
   useEffect(() => {
-    if (hasAutoSelected.current) return;
-    if (!models || urlModel) return;
-    if (lastModel && models[lastModel]) {
-      hasAutoSelected.current = true;
-      setSearchParams((prev) => {
-        prev.set("model", lastModel);
-        return prev;
-      });
+    if (effectiveModel && effectiveModel !== urlModel) {
+      setSearchParams(
+        (prev) => {
+          prev.set("model", effectiveModel);
+          return prev;
+        },
+        { replace: true },
+      );
     }
-  }, [models, urlModel, lastModel, setSearchParams]);
+  }, [effectiveModel, urlModel, setSearchParams]);
 
   const setUrlModel = (model: string) => {
     setLastModel(model);
@@ -115,35 +146,18 @@ function App() {
 
   // Derive main content
   let mainContent: React.ReactNode;
-  if (schemaLoading) {
-    mainContent = (
-      <p className="text-muted-foreground">Connecting to Anki...</p>
-    );
-  } else if (schemaError) {
-    mainContent = (
-      <div className="flex flex-col items-center gap-4">
-        <p className="text-destructive">Failed to connect to AnkiConnect</p>
-        <p className="text-sm text-muted-foreground">{schemaError.message}</p>
-        <Button onClick={() => refetchSchema()}>Retry</Button>
-      </div>
-    );
-  } else if (modelNames.length === 0) {
+  if (modelNames.length === 0) {
     mainContent = (
       <p className="text-muted-foreground">No note types found in Anki</p>
     );
-  } else if (!urlModel) {
+  } else if (!effectiveModel) {
     mainContent = (
       <p className="text-muted-foreground">Select a note type to browse</p>
-    );
-  } else if (!validModel) {
-    mainContent = (
-      <p className="text-destructive">Model "{urlModel}" not found</p>
     );
   } else {
     mainContent = (
       <NotesView
-        key={`${urlModel}-${viewMode}`}
-        model={urlModel}
+        model={effectiveModel}
         fields={fields}
         page={pageIndex}
         pageSize={pageSize}
@@ -162,48 +176,38 @@ function App() {
           <h1 className="text-lg font-semibold">
             <Link to="/">Anki Browser</Link>
           </h1>
-          {!schemaError && (
-            <>
-              <Select
-                value={validModel ? urlModel : undefined}
-                onValueChange={setUrlModel}
-                disabled={schemaLoading}
-              >
-                <SelectTrigger size="sm" className="w-[180px]">
-                  <SelectValue
-                    placeholder={
-                      schemaLoading ? "Loading..." : "Select model..."
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {modelNames.map((name) => (
-                    <SelectItem key={name} value={name}>
-                      {name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={viewMode}
-                onValueChange={(value) =>
-                  setSearchParams((p) => {
-                    p.set("view", value);
-                    return p;
-                  })
-                }
-                disabled={schemaLoading}
-              >
-                <SelectTrigger size="sm" className="w-[100px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="notes">Notes</SelectItem>
-                  <SelectItem value="cards">Cards</SelectItem>
-                </SelectContent>
-              </Select>
-            </>
-          )}
+          <Select
+            value={effectiveModel ?? undefined}
+            onValueChange={setUrlModel}
+          >
+            <SelectTrigger size="sm" className="w-[180px]">
+              <SelectValue placeholder="Select model..." />
+            </SelectTrigger>
+            <SelectContent>
+              {modelNames.map((name) => (
+                <SelectItem key={name} value={name}>
+                  {name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={viewMode}
+            onValueChange={(value) =>
+              setSearchParams((p) => {
+                p.set("view", value);
+                return p;
+              })
+            }
+          >
+            <SelectTrigger size="sm" className="w-[100px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="notes">Notes</SelectItem>
+              <SelectItem value="cards">Cards</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </header>
       <main className="flex-1 overflow-hidden p-4">{mainContent}</main>
@@ -241,6 +245,14 @@ function NotesView({
 }: NotesViewProps) {
   const [selected, setSelected] = useState<Item>();
   const [isStale, setIsStale] = useState(false);
+  const [isPending, startTransition] = useTransition();
+
+  // Wrap state changes in transition to avoid suspending
+  const handleStateChange = (newState: UrlState) => {
+    startTransition(() => {
+      onStateChange(newState);
+    });
+  };
 
   // Resizable panel
   const [panelWidth, setPanelWidth] = useLocalStorage(
@@ -262,18 +274,15 @@ function NotesView({
   }, [search, flag]);
 
   const {
-    data: items = [],
-    isLoading,
+    data: items,
     isFetching,
-    error,
     refetch,
-  } = useQuery({
+  } = useSuspenseQuery({
     ...api.fetchItems.queryOptions({
       modelName: model,
       search: fullSearch,
       viewMode,
     }),
-    placeholderData: keepPreviousData,
   });
 
   // TODO: optimistic updates
@@ -327,15 +336,9 @@ function NotesView({
 
   const submitSearch = () => {
     if (localSearch !== (search ?? "")) {
-      onStateChange({ search: localSearch || undefined, page: 1 });
+      handleStateChange({ search: localSearch || undefined, page: 1 });
     }
   };
-
-  if (error) {
-    return (
-      <p className="text-destructive">Error loading notes: {error.message}</p>
-    );
-  }
 
   const toolbarLeft = (
     <>
@@ -349,7 +352,10 @@ function NotesView({
       <Select
         value={flag ?? "none"}
         onValueChange={(value) =>
-          onStateChange({ flag: value === "none" ? undefined : value, page: 1 })
+          handleStateChange({
+            flag: value === "none" ? undefined : value,
+            page: 1,
+          })
         }
       >
         <SelectTrigger className="w-[140px]">
@@ -374,7 +380,7 @@ function NotesView({
         variant="ghost"
         size="icon"
         onClick={() => refetch().then(() => setIsStale(false))}
-        disabled={isFetching}
+        disabled={isPending || isFetching}
         title={isStale ? "Data may be outdated - click to refresh" : "Refresh"}
         data-testid="refresh-button"
         data-stale={isStale ? "true" : undefined}
@@ -384,23 +390,21 @@ function NotesView({
             : ""
         }
       >
-        <RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
+        <RefreshCw
+          className={`size-4 ${isPending || isFetching ? "animate-spin" : ""}`}
+        />
       </Button>
     </>
   );
 
-  if (isLoading) {
-    return <p className="text-muted-foreground">Loading {viewMode}...</p>;
-  }
-
   return (
     <div className="flex h-full gap-4">
       <div
-        className={
+        className={`${
           selected
             ? "flex-1 min-w-[400px] overflow-auto"
             : "w-full overflow-auto"
-        }
+        }`}
       >
         <BrowseTable
           data={items}
@@ -409,7 +413,7 @@ function NotesView({
           fields={fields}
           page={page}
           pageSize={pageSize}
-          onStateChange={onStateChange}
+          onStateChange={handleStateChange}
           selected={selected}
           onSelect={setSelected}
           toolbarLeft={toolbarLeft}

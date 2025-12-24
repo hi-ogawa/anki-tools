@@ -95,6 +95,9 @@ const implementations = {
     search?: string;
     viewMode: ViewMode;
   }): Promise<Item[]> => {
+    if (window.location.search.includes("__testDelay")) {
+      await new Promise((r) => setTimeout(r, 1000));
+    }
     const query = `note:"${input.modelName}" ${input.search || ""}`;
     if (input.viewMode === "notes") {
       const raw = await invoke<RawNote[]>("browseNotes", { query });
@@ -150,14 +153,15 @@ async function invoke<T>(
 // Derive helpers
 // ============================================================================
 
-import type { queryOptions, mutationOptions } from "@tanstack/react-query";
+import type { mutationOptions } from "@tanstack/react-query";
 
 type AnyFn = (...args: never[]) => Promise<unknown>;
 
 type DerivedQueryHelper<TFn extends AnyFn> = TFn & {
-  queryOptions: (
-    ...args: Parameters<TFn>
-  ) => ReturnType<typeof queryOptions<Awaited<ReturnType<TFn>>>>;
+  queryOptions: (...args: Parameters<TFn>) => {
+    queryKey: readonly unknown[];
+    queryFn: () => Promise<Awaited<ReturnType<TFn>>>;
+  };
   mutationOptions: () => ReturnType<
     typeof mutationOptions<Awaited<ReturnType<TFn>>, Error, Parameters<TFn>[0]>
   >;
