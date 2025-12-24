@@ -260,9 +260,9 @@ function NotesView({
     maxWidth: 700,
   });
 
-  // Fetch decks for filter
+  // Fetch decks for filter (filtered by current model)
   const { data: decks = [] } = useQuery({
-    ...api.getDecks.queryOptions(),
+    ...api.getDecks.queryOptions({ modelName: model }),
     staleTime: Infinity,
   });
 
