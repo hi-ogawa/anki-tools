@@ -24,7 +24,7 @@ Run `pnpm fixture` before `pnpm test-e2e` to reset test data.
 ## Visual UI Development
 
 1. User starts dev server at http://localhost:5173
-2. Agent uses `chrome-devtools-mcp` for inspection
+2. Agent uses [`chrome-devtools-mcp`](https://github.com/ChromeDevTools/chrome-devtools-mcp) for inspection
 3. User describes issue, agent investigates and proposes fix
 4. Iterate until resolved
 
