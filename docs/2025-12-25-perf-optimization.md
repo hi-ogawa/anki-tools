@@ -58,12 +58,12 @@ Response: { items: [...], total: 5000, timing: {...} }
 
 **Actual results (after implementation):**
 
-| Metric       | Before  | After   | Improvement     |
-| ------------ | ------- | ------- | --------------- |
-| `fetch_ms`   | 314ms   | **1ms** | **314x faster** |
-| `networkMs`  | 335ms   | **8ms** | **42x faster**  |
-| JSON parse   | 42ms    | 1ms     | 42x faster      |
-| Response     | 2.6MB   | ~5KB    | 500x smaller    |
+| Metric      | Before | After   | Improvement     |
+| ----------- | ------ | ------- | --------------- |
+| `fetch_ms`  | 314ms  | **1ms** | **314x faster** |
+| `networkMs` | 335ms  | **8ms** | **42x faster**  |
+| JSON parse  | 42ms   | 1ms     | 42x faster      |
+| Response    | 2.6MB  | ~5KB    | 500x smaller    |
 
 Tradeoffs:
 
