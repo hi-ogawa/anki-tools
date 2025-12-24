@@ -1,4 +1,4 @@
-import { Flag, Pencil, X } from "lucide-react";
+import { Flag, Pause, Pencil, Play, X } from "lucide-react";
 import { useState } from "react";
 import type { Item } from "@/api";
 import { Badge } from "@/components/ui/badge";
@@ -11,7 +11,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { FLAG_OPTIONS } from "@/lib/constants";
+import { FLAG_OPTIONS, QUEUE_LABELS } from "@/lib/constants";
 
 interface NoteDetailProps {
   item: Item;
@@ -19,6 +19,7 @@ interface NoteDetailProps {
   onClose: () => void;
   onFlagChange?: (flag: number) => void;
   onFieldsChange?: (fields: Record<string, string>) => void;
+  onSuspendedChange?: (suspended: boolean) => void;
 }
 
 export function NoteDetail({
@@ -27,6 +28,7 @@ export function NoteDetail({
   onClose,
   onFlagChange,
   onFieldsChange,
+  onSuspendedChange,
 }: NoteDetailProps) {
   const isCard = item.type === "card";
 
@@ -165,27 +167,39 @@ export function NoteDetail({
                 </Select>
               </div>
 
-              {/* Status - TODO: implement suspend/unsuspend */}
+              {/* Status display + suspend toggle */}
               <div className="flex items-center gap-2 text-sm">
                 <span className="text-muted-foreground">Status:</span>
-                <Select value={String(item.queue)} disabled>
-                  <SelectTrigger className="h-8 w-[120px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {[
-                      { value: -1, label: "Suspended" },
-                      { value: 0, label: "New" },
-                      { value: 1, label: "Learning" },
-                      { value: 2, label: "Review" },
-                      { value: 3, label: "Relearning" },
-                    ].map((opt) => (
-                      <SelectItem key={opt.value} value={String(opt.value)}>
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <span
+                  className={
+                    item.queue === -1
+                      ? "flex items-center gap-1 text-yellow-600"
+                      : "text-foreground"
+                  }
+                  data-testid="status-label"
+                >
+                  {item.queue === -1 && <Pause className="size-3" />}
+                  {QUEUE_LABELS[item.queue]}
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7"
+                  data-testid="suspend-button"
+                  onClick={() => onSuspendedChange?.(item.queue !== -1)}
+                >
+                  {item.queue === -1 ? (
+                    <>
+                      <Play className="size-3" />
+                      Unsuspend
+                    </>
+                  ) : (
+                    <>
+                      <Pause className="size-3" />
+                      Suspend
+                    </>
+                  )}
+                </Button>
               </div>
 
               {/* Interval / Due */}

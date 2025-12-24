@@ -44,7 +44,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FLAG_COLORS } from "@/lib/constants";
+import { FLAG_COLORS, QUEUE_LABELS } from "@/lib/constants";
 import { useLocalStorage } from "@/lib/use-local-storage";
 
 interface BrowseTableProps {
@@ -165,13 +165,7 @@ export function BrowseTable({
               </span>
             );
           }
-          const labels: Record<number, string> = {
-            0: "New",
-            1: "Learning",
-            2: "Review",
-            3: "Relearning",
-          };
-          return <span>{labels[queue] ?? queue}</span>;
+          return <span>{QUEUE_LABELS[queue] ?? queue}</span>;
         },
       });
 

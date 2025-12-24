@@ -167,4 +167,15 @@ def handle_action(col: Collection, action: str, params: dict):
         col.update_note(note)
         return True
 
+    elif action == "setSuspended":
+        card_id = params["cardId"]
+        suspended = params["suspended"]  # boolean
+        if suspended:
+            col.sched.suspend_cards([card_id])
+        else:
+            col.sched.unsuspend_cards([card_id])
+        # Return the new queue value
+        card = col.get_card(card_id)
+        return card.queue
+
     raise ValueError(f"Unknown action: {action}")

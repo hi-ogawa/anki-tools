@@ -58,6 +58,34 @@ test("set card flag", async ({ page }) => {
   await expect(page.getByTestId("flag-select")).toContainText("Blue");
 });
 
+test("suspend and unsuspend card", async ({ page }) => {
+  // Use cards view to access suspend functionality
+  await page.goto("/?model=Basic&view=cards");
+
+  // Click first data row to open detail panel
+  await page.getByRole("row").nth(1).click();
+  await expect(page.getByTestId("status-label")).toContainText("New");
+  await expect(page.getByTestId("suspend-button")).toContainText("Suspend");
+
+  // Suspend the card
+  await page.getByTestId("suspend-button").click();
+
+  // Reload and verify
+  await page.reload();
+  await page.getByRole("row").nth(1).click();
+  await expect(page.getByTestId("status-label")).toContainText("Suspended");
+  await expect(page.getByTestId("suspend-button")).toContainText("Unsuspend");
+
+  // Unsuspend the card
+  await page.getByTestId("suspend-button").click();
+
+  // Reload and verify
+  await page.reload();
+  await page.getByRole("row").nth(1).click();
+  await expect(page.getByTestId("status-label")).toContainText("New");
+  await expect(page.getByTestId("suspend-button")).toContainText("Suspend");
+});
+
 test("update note field", async ({ page }) => {
   await page.goto("/?model=Basic");
 
