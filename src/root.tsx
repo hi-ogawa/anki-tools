@@ -5,11 +5,20 @@ import {
   useMutation,
   keepPreviousData,
 } from "@tanstack/react-query";
-import { CircleHelp, Flag, Library, RefreshCw, Tag } from "lucide-react";
+import type { RowSelectionState } from "@tanstack/react-table";
+import {
+  CircleHelp,
+  Flag,
+  Library,
+  Pencil,
+  RefreshCw,
+  Tag,
+} from "lucide-react";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router";
 import { api, type Item, type ViewMode } from "./api";
 import { BrowseTable } from "./components/browse-table";
+import { BulkActions } from "./components/bulk-actions";
 import { NoteDetail } from "./components/note-detail";
 import { TableSkeleton } from "./components/table-skeleton";
 import { Button } from "./components/ui/button";
@@ -276,6 +285,11 @@ function NotesView({
   const [selected, setSelected] = useState<Item>();
   const [isStale, setIsStale] = useState(false);
 
+  // Bulk edit state
+  const [bulkEditMode, setBulkEditMode] = useState(false);
+  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
+  const [selectAllQuery, setSelectAllQuery] = useState<string | null>(null);
+
   // Resizable panel
   const [panelWidth, setPanelWidth] = useLocalStorage(
     "anki-browse-panel-width",
@@ -356,6 +370,57 @@ function NotesView({
       );
     },
   });
+
+  // Bulk mutations
+  const exitBulkMode = () => {
+    setBulkEditMode(false);
+    setRowSelection({});
+    setSelectAllQuery(null);
+  };
+
+  const bulkSetFlagMutation = useMutation({
+    ...api.bulkSetCardFlags.mutationOptions(),
+    onSuccess: () => {
+      exitBulkMode();
+      refetch();
+    },
+  });
+
+  const bulkSuspendMutation = useMutation({
+    ...api.bulkSuspendCards.mutationOptions(),
+    onSuccess: () => {
+      exitBulkMode();
+      refetch();
+    },
+  });
+
+  const isBulkPending =
+    bulkSetFlagMutation.isPending || bulkSuspendMutation.isPending;
+
+  // Build the query for bulk operations
+  const fullQuery = `note:"${model}" ${fullSearch || ""}`.trim();
+
+  const getBulkTarget = () => {
+    if (selectAllQuery) {
+      return { query: selectAllQuery };
+    }
+    const cardIds = Object.keys(rowSelection)
+      .filter((k) => rowSelection[k])
+      .map(Number);
+    return { cardIds };
+  };
+
+  const handleBulkSetFlag = (flag: number) => {
+    bulkSetFlagMutation.mutate({ ...getBulkTarget(), flag });
+  };
+
+  const handleBulkSuspend = () => {
+    bulkSuspendMutation.mutate({ ...getBulkTarget(), suspended: true });
+  };
+
+  const handleBulkUnsuspend = () => {
+    bulkSuspendMutation.mutate({ ...getBulkTarget(), suspended: false });
+  };
 
   // Local search state - synced with URL
   const [localSearch, setLocalSearch] = useState(search ?? "");
@@ -501,7 +566,40 @@ function NotesView({
           className={`size-4 ${!isLoading && isFetching ? "animate-spin" : ""}`}
         />
       </Button>
+      {viewMode === "cards" && (
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setBulkEditMode(true)}
+          data-testid="bulk-edit-button"
+        >
+          <Pencil className="size-4" />
+          Bulk Edit
+        </Button>
+      )}
     </>
+  );
+
+  const selectedCount = selectAllQuery
+    ? total
+    : Object.values(rowSelection).filter(Boolean).length;
+
+  const bulkToolbar = (
+    <BulkActions
+      selectedCount={selectedCount}
+      totalMatching={total}
+      isAllSelected={!!selectAllQuery}
+      onSelectAll={() => setSelectAllQuery(fullQuery)}
+      onClearSelection={() => {
+        setRowSelection({});
+        setSelectAllQuery(null);
+      }}
+      onExit={exitBulkMode}
+      onSetFlag={handleBulkSetFlag}
+      onSuspend={handleBulkSuspend}
+      onUnsuspend={handleBulkUnsuspend}
+      isPending={isBulkPending}
+    />
   );
 
   if (error) {
@@ -541,7 +639,10 @@ function NotesView({
           onStateChange={onStateChange}
           selected={selected}
           onSelect={setSelected}
-          toolbarLeft={toolbarLeft}
+          toolbarLeft={bulkEditMode ? bulkToolbar : toolbarLeft}
+          bulkEditMode={bulkEditMode}
+          rowSelection={rowSelection}
+          onRowSelectionChange={setRowSelection}
         />
       </div>
       {selected && (

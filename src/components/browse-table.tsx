@@ -5,6 +5,7 @@ import {
   type ColumnDef,
   type OnChangeFn,
   type PaginationState,
+  type RowSelectionState,
   type VisibilityState,
 } from "@tanstack/react-table";
 import {
@@ -20,6 +21,7 @@ import { useMemo } from "react";
 import type { Item, ViewMode } from "@/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -64,6 +66,10 @@ interface BrowseTableProps {
   selected?: Item;
   onSelect: (item: Item) => void;
   toolbarLeft?: React.ReactNode;
+  // Bulk edit mode
+  bulkEditMode?: boolean;
+  rowSelection?: RowSelectionState;
+  onRowSelectionChange?: OnChangeFn<RowSelectionState>;
 }
 
 export function BrowseTable({
@@ -78,10 +84,41 @@ export function BrowseTable({
   selected,
   onSelect,
   toolbarLeft,
+  bulkEditMode,
+  rowSelection,
+  onRowSelectionChange,
 }: BrowseTableProps) {
   // Build columns
   const columns = useMemo<ColumnDef<Item>[]>(() => {
     const cols: ColumnDef<Item>[] = [];
+
+    // Checkbox column for bulk edit mode
+    if (bulkEditMode) {
+      cols.push({
+        id: "select",
+        header: ({ table }) => (
+          <Checkbox
+            checked={
+              table.getIsAllPageRowsSelected() ||
+              (table.getIsSomePageRowsSelected() && "indeterminate")
+            }
+            onCheckedChange={(value) =>
+              table.toggleAllPageRowsSelected(!!value)
+            }
+            aria-label="Select all"
+          />
+        ),
+        cell: ({ row }) => (
+          <Checkbox
+            checked={row.getIsSelected()}
+            onCheckedChange={(value) => row.toggleSelected(!!value)}
+            aria-label="Select row"
+            onClick={(e) => e.stopPropagation()}
+          />
+        ),
+        enableHiding: false,
+      });
+    }
 
     // Field columns
     for (const field of fields) {
@@ -189,7 +226,7 @@ export function BrowseTable({
     }
 
     return cols;
-  }, [fields, viewMode]);
+  }, [fields, viewMode, bulkEditMode]);
 
   // Column visibility
   const [columnVisibility, setColumnVisibility] = useLocalStorage(
@@ -223,9 +260,13 @@ export function BrowseTable({
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true, // Server-side pagination
     pageCount,
-    state: { pagination, columnVisibility },
+    state: { pagination, columnVisibility, rowSelection: rowSelection ?? {} },
     onPaginationChange,
     onColumnVisibilityChange: setColumnVisibility,
+    onRowSelectionChange,
+    getRowId: (row) =>
+      row.type === "card" ? String(row.cardId) : String(row.noteId),
+    enableRowSelection: bulkEditMode,
   });
 
   return (

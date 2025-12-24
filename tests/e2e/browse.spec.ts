@@ -291,3 +291,118 @@ test("panel resize - drag to change width", async ({ page }) => {
   const newBox = await panel.boundingBox();
   expect(newBox!.width).toBe(initialBox!.width + dragDistance);
 });
+
+test("bulk edit - select cards and set flag", async ({ page }) => {
+  await page.goto("/?model=Basic&view=cards");
+
+  // Click "Bulk Edit" button
+  await page.getByTestId("bulk-edit-button").click();
+
+  // Should see checkboxes and bulk actions toolbar
+  await expect(page.getByText("Select cards to edit")).toBeVisible();
+
+  // Select first two rows via checkboxes
+  const rows = page.getByRole("row");
+  await rows.nth(1).getByRole("checkbox").click();
+  await rows.nth(2).getByRole("checkbox").click();
+
+  // Should show "2 selected"
+  await expect(page.getByText("2 selected")).toBeVisible();
+
+  // Set flag to Purple (unique color not used by other tests)
+  await page.getByRole("button", { name: "Flag" }).click();
+  await page.getByRole("menuitem", { name: /Purple/ }).click();
+
+  // Should exit bulk edit mode and refresh
+  await expect(page.getByTestId("bulk-edit-button")).toBeVisible();
+
+  // Verify flags were set by checking the table shows purple flags
+  await page.reload();
+  // First two rows should have purple flags (rgb(168, 85, 247))
+  const flagCells = page.locator('[data-slot="table-cell"]').filter({
+    has: page.locator('svg[style*="rgb(168, 85, 247)"]'),
+  });
+  await expect(flagCells).toHaveCount(2);
+});
+
+test("bulk edit - suspend multiple cards", async ({ page }) => {
+  await page.goto("/?model=Basic&view=cards&pageSize=10");
+
+  // Enter bulk edit mode
+  await page.getByTestId("bulk-edit-button").click();
+
+  // Select cards 3 and 4
+  const rows = page.getByRole("row");
+  await rows.nth(3).getByRole("checkbox").click();
+  await rows.nth(4).getByRole("checkbox").click();
+
+  // Click Suspend (use exact match to avoid matching "Unsuspend")
+  await page.getByRole("button", { name: "Suspend", exact: true }).click();
+
+  // Verify cards are suspended (reload and check)
+  await page.reload();
+
+  // Cards 3 and 4 should show "Suspended" status
+  await expect(rows.nth(3)).toContainText("Suspended");
+  await expect(rows.nth(4)).toContainText("Suspended");
+
+  // Clean up: unsuspend them
+  await page.getByTestId("bulk-edit-button").click();
+  await rows.nth(3).getByRole("checkbox").click();
+  await rows.nth(4).getByRole("checkbox").click();
+  await page.getByRole("button", { name: "Unsuspend" }).click();
+
+  await page.reload();
+  await expect(rows.nth(3)).not.toContainText("Suspended");
+  await expect(rows.nth(4)).not.toContainText("Suspended");
+});
+
+test("bulk edit - select all on page", async ({ page }) => {
+  await page.goto("/?model=Basic&view=cards&pageSize=10");
+
+  // Enter bulk edit mode
+  await page.getByTestId("bulk-edit-button").click();
+
+  // Click header checkbox to select all on page
+  const headerCheckbox = page.getByRole("row").first().getByRole("checkbox");
+  await headerCheckbox.click();
+
+  // Should show "10 selected" and "Select all 20 matching" link
+  await expect(page.getByText("10 selected")).toBeVisible();
+  await expect(page.getByText("Select all 20 matching")).toBeVisible();
+
+  // Clear selection
+  await page.getByRole("button", { name: "Clear" }).click();
+  await expect(page.getByText("Select cards to edit")).toBeVisible();
+
+  // Exit bulk edit mode
+  await page.getByRole("button", { name: "Exit" }).click();
+  await expect(page.getByTestId("bulk-edit-button")).toBeVisible();
+});
+
+test("bulk edit - select all matching query", async ({ page }) => {
+  // Filter to Japanese deck (6 cards)
+  await page.goto("/?model=Basic&view=cards&deck=Japanese");
+  await expect(page.getByText("Showing 1-6 of 6")).toBeVisible();
+
+  // Enter bulk edit mode
+  await page.getByTestId("bulk-edit-button").click();
+
+  // Select all on page
+  const headerCheckbox = page.getByRole("row").first().getByRole("checkbox");
+  await headerCheckbox.click();
+
+  // Since all 6 are on the page, it should show "6 selected"
+  await expect(page.getByText("6 selected")).toBeVisible();
+
+  // Set flag to Orange for all
+  await page.getByRole("button", { name: "Flag" }).click();
+  await page.getByRole("menuitem", { name: /Orange/ }).click();
+
+  // Reload and verify all Japanese deck cards have orange flag
+  await page.reload();
+  const flagCells = page.locator('[data-slot="table-cell"]').filter({
+    has: page.locator('svg[style*="rgb(249, 115, 22)"]'),
+  });
+  await expect(flagCells).toHaveCount(6);
+});
