@@ -55,19 +55,3 @@ However, this browser uses **notetype-first** browsing:
 3. Deck filter shows decks containing cards of the selected notetype
 
 This design is intentional - each notetype has different fields (Basic: Front/Back, Cloze: Text/Extra, etc.), so we must know the notetype to render appropriate columns. The tradeoff is you browse one notetype at a time, not "all cards in a deck".
-
-## Common Queries
-
-```sql
--- Get all deck names for a specific notetype
-SELECT DISTINCT decks.name
-FROM cards
-JOIN notes ON cards.nid = notes.id
-JOIN decks ON cards.did = decks.id
-WHERE notes.mid = ?;
-
--- Get notetype-deck associations
-SELECT DISTINCT notes.mid, cards.did
-FROM cards
-JOIN notes ON cards.nid = notes.id;
-```
