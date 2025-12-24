@@ -239,7 +239,7 @@ function NotesView({
   viewMode,
   onStateChange,
 }: NotesViewProps) {
-  const [selected, setSelected] = useState<Item | null>(null);
+  const [selected, setSelected] = useState<Item>();
 
   // Resizable panel
   const [panelWidth, setPanelWidth] = useLocalStorage(
@@ -290,7 +290,7 @@ function NotesView({
     ...api.updateNoteFields.mutationOptions(),
     onSuccess: (_, { fields }) => {
       setSelected((prev) =>
-        prev ? { ...prev, fields: { ...prev.fields, ...fields } } : null,
+        prev ? { ...prev, fields: { ...prev.fields, ...fields } } : undefined,
       );
     },
   });
@@ -298,7 +298,7 @@ function NotesView({
   const updateTagsMutation = useMutation({
     ...api.updateNoteTags.mutationOptions(),
     onSuccess: (_, { tags }) => {
-      setSelected((prev) => (prev ? { ...prev, tags } : null));
+      setSelected((prev) => (prev ? { ...prev, tags } : undefined));
     },
   });
 
@@ -385,7 +385,7 @@ function NotesView({
           page={page}
           pageSize={pageSize}
           onStateChange={onStateChange}
-          selected={selected ?? undefined}
+          selected={selected}
           onSelect={setSelected}
           toolbarLeft={toolbarLeft}
         />
@@ -406,7 +406,7 @@ function NotesView({
             <NoteDetail
               item={selected}
               fields={fields}
-              onClose={() => setSelected(null)}
+              onClose={() => setSelected(undefined)}
               onFlagChange={
                 selected.type === "card"
                   ? (flag) =>
