@@ -344,22 +344,24 @@ function NotesView({
 
   const toolbarLeft = (
     <>
-      <Input
-        placeholder="Search (supports Anki query syntax)"
-        value={localSearch}
-        onChange={(e) => setLocalSearch(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && submitSearch()}
-        className="w-[400px]"
-      />
-      <a
-        href="https://docs.ankiweb.net/searching.html"
-        target="_blank"
-        rel="noopener noreferrer"
-        title="Search syntax help"
-        className="text-muted-foreground hover:text-foreground"
-      >
-        <CircleHelp className="size-4" />
-      </a>
+      <div className="relative">
+        <Input
+          placeholder="Search (supports Anki query syntax)"
+          value={localSearch}
+          onChange={(e) => setLocalSearch(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && submitSearch()}
+          className="w-[400px] pr-8"
+        />
+        <a
+          href="https://docs.ankiweb.net/searching.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Search syntax help"
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+        >
+          <CircleHelp className="size-4" />
+        </a>
+      </div>
       <Select
         value={flag ?? "none"}
         onValueChange={(value) =>
