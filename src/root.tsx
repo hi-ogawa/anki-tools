@@ -22,6 +22,7 @@ import {
 } from "./components/ui/select";
 import { FLAG_FILTER_OPTIONS } from "./lib/constants";
 import { useLocalStorage } from "./lib/use-local-storage";
+import { useResize } from "./lib/use-resize";
 
 // TODO: separate singleton state and component
 const queryClient = new QueryClient({
@@ -202,7 +203,7 @@ function App() {
           )}
         </div>
       </header>
-      <main className="flex-1 p-4">{mainContent}</main>
+      <main className="flex-1 overflow-x-auto p-4">{mainContent}</main>
     </div>
   );
 }
@@ -235,26 +236,11 @@ function NotesView({
     "anki-browse-panel-width",
     320,
   );
-  const isResizing = useRef(false);
-
-  useEffect(() => {
-    const onMouseMove = (e: MouseEvent) => {
-      if (!isResizing.current) return;
-      const newWidth = window.innerWidth - e.clientX - 24; // 16 = padding
-      setPanelWidth(Math.max(300, Math.min(600, newWidth)));
-    };
-    const onMouseUp = () => {
-      isResizing.current = false;
-      document.body.style.cursor = "";
-      document.body.style.userSelect = "";
-    };
-    window.addEventListener("mousemove", onMouseMove);
-    window.addEventListener("mouseup", onMouseUp);
-    return () => {
-      window.removeEventListener("mousemove", onMouseMove);
-      window.removeEventListener("mouseup", onMouseUp);
-    };
-  }, [setPanelWidth]);
+  const { panelRef, startResize } = useResize({
+    onWidthChange: setPanelWidth,
+    minWidth: 200,
+    maxWidth: 700,
+  });
 
   // Build full query with flag filter
   const fullSearch = useMemo(() => {
@@ -386,7 +372,7 @@ function NotesView({
 
   return (
     <div className="flex gap-4">
-      <div className={selected ? "flex-1" : "w-full"}>
+      <div className={selected ? "flex-1 min-w-[400px]" : "w-full"}>
         <BrowseTable
           data={items}
           viewMode={viewMode}
@@ -400,18 +386,19 @@ function NotesView({
           toolbarLeft={toolbarLeft}
         />
       </div>
-      {/* TODO: small panelWidth breaks layout. it depends on field data length. */}
       {selected && (
-        <div className="relative flex shrink-0" style={{ width: panelWidth }}>
+        <div
+          ref={panelRef}
+          data-testid="detail-panel"
+          className="relative flex shrink-0"
+          style={{ width: panelWidth }}
+        >
           <div
-            className="absolute left-0 top-0 h-full w-1 cursor-col-resize hover:bg-primary/20"
-            onMouseDown={() => {
-              isResizing.current = true;
-              document.body.style.cursor = "col-resize";
-              document.body.style.userSelect = "none";
-            }}
+            data-testid="panel-resize-handle"
+            className="absolute left-0 top-0 h-full w-2 cursor-col-resize hover:bg-primary/20"
+            onMouseDown={startResize}
           />
-          <div className="flex-1 pl-1">
+          <div className="flex-1 overflow-hidden pl-1">
             <NoteDetail
               item={selected}
               fields={fields}
