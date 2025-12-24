@@ -10,14 +10,21 @@ test("displays notes from collection", async ({ page }) => {
 test("pagination works", async ({ page }) => {
   await page.goto("/?model=Basic&pageSize=10");
 
-  // Should show 10 rows on first page
+  // Page 1: should show 10 rows
   await expect(page.getByRole("row")).toHaveCount(11); // 10 data + header
+  await expect(page.getByText("Showing 1-10 of 20")).toBeVisible();
+  await expect(page.getByText("1 / 2")).toBeVisible(); // page indicator
+  await expect(page.getByRole("row").nth(1)).toContainText("Question 1");
 
   // Click next page
   await page.getByTestId("next-page").click();
 
-  // Should still have 10 rows (20 total, page 2 of 2)
+  // Page 2: should show next 10 rows
   await expect(page.getByRole("row")).toHaveCount(11);
+  await expect(page.getByText("Showing 11-20 of 20")).toBeVisible();
+  await expect(page.getByText("2 / 2")).toBeVisible();
+  await expect(page.getByRole("row").nth(1)).toContainText("Question 11");
+  expect(page.url()).toContain("page=2");
 });
 
 test("search filters notes", async ({ page }) => {
