@@ -299,6 +299,13 @@ function NotesView({
     },
   });
 
+  const updateTagsMutation = useMutation({
+    ...api.updateNoteTags.mutationOptions(),
+    onSuccess: (_, { tags }) => {
+      setSelected((prev) => (prev ? { ...prev, tags } : null));
+    },
+  });
+
   const setSuspendedMutation = useMutation({
     ...api.setSuspended.mutationOptions(),
     onSuccess: (queue, { cardId }) => {
@@ -417,6 +424,9 @@ function NotesView({
               }
               onFieldsChange={(fields) =>
                 updateFieldsMutation.mutate({ noteId: selected.noteId, fields })
+              }
+              onTagsChange={(tags) =>
+                updateTagsMutation.mutate({ noteId: selected.noteId, tags })
               }
               onSuspendedChange={
                 selected.type === "card"
