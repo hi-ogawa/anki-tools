@@ -298,8 +298,8 @@ test("bulk edit - select cards and set flag", async ({ page }) => {
   // Click "Bulk Edit" button
   await page.getByTestId("bulk-edit-button").click();
 
-  // Should see checkboxes and bulk actions toolbar
-  await expect(page.getByText("Select cards to edit")).toBeVisible();
+  // Should see checkboxes and bulk actions toolbar with disabled actions
+  await expect(page.getByText("0 selected")).toBeVisible();
 
   // Select first two rows via checkboxes
   const rows = page.getByRole("row");
@@ -373,7 +373,7 @@ test("bulk edit - select all on page", async ({ page }) => {
 
   // Clear selection
   await page.getByRole("button", { name: "Clear" }).click();
-  await expect(page.getByText("Select cards to edit")).toBeVisible();
+  await expect(page.getByText("0 selected")).toBeVisible();
 
   // Exit bulk edit mode
   await page.getByRole("button", { name: "Exit" }).click();

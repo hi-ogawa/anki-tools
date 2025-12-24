@@ -568,8 +568,7 @@ function NotesView({
       </Button>
       {viewMode === "cards" && (
         <Button
-          variant="outline"
-          size="sm"
+          variant="ghost"
           onClick={() => setBulkEditMode(true)}
           data-testid="bulk-edit-button"
         >

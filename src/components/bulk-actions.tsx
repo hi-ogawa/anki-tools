@@ -36,6 +36,8 @@ export function BulkActions({
   const showSelectAllBanner =
     !isAllSelected && selectedCount > 0 && totalMatching > selectedCount;
 
+  const hasSelection = selectedCount > 0;
+
   return (
     <div className="flex items-center gap-2">
       <Button variant="ghost" size="sm" onClick={onExit} disabled={isPending}>
@@ -45,86 +47,86 @@ export function BulkActions({
 
       <div className="h-4 w-px bg-border" />
 
-      {selectedCount > 0 ? (
-        <>
-          <span className="text-sm text-muted-foreground">
-            {isAllSelected
-              ? `All ${totalMatching} selected`
-              : `${selectedCount} selected`}
-          </span>
+      <span className="text-sm text-muted-foreground">
+        {isAllSelected
+          ? `All ${totalMatching} selected`
+          : hasSelection
+            ? `${selectedCount} selected`
+            : "0 selected"}
+      </span>
 
-          {showSelectAllBanner && (
-            <Button
-              variant="link"
-              size="sm"
-              className="h-auto p-0 text-sm"
-              onClick={onSelectAll}
-              disabled={isPending}
-            >
-              Select all {totalMatching} matching
-            </Button>
-          )}
-
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClearSelection}
-            disabled={isPending}
-          >
-            Clear
-          </Button>
-
-          <div className="h-4 w-px bg-border" />
-
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" disabled={isPending}>
-                <Flag className="size-4" />
-                Flag
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent>
-              {FLAG_OPTIONS.map((opt) => (
-                <DropdownMenuItem
-                  key={opt.value}
-                  onClick={() => onSetFlag(opt.value)}
-                >
-                  <Flag
-                    className="size-4"
-                    style={{ color: opt.color }}
-                    fill={opt.color ?? "none"}
-                  />
-                  {opt.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onSuspend}
-            disabled={isPending}
-          >
-            <Pause className="size-4" />
-            Suspend
-          </Button>
-
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={onUnsuspend}
-            disabled={isPending}
-          >
-            <Play className="size-4" />
-            Unsuspend
-          </Button>
-        </>
-      ) : (
-        <span className="text-sm text-muted-foreground">
-          Select cards to edit
-        </span>
+      {showSelectAllBanner && (
+        <Button
+          variant="link"
+          size="sm"
+          className="h-auto p-0 text-sm"
+          onClick={onSelectAll}
+          disabled={isPending}
+        >
+          Select all {totalMatching} matching
+        </Button>
       )}
+
+      {hasSelection && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onClearSelection}
+          disabled={isPending}
+        >
+          Clear
+        </Button>
+      )}
+
+      <div className="h-4 w-px bg-border" />
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isPending || !hasSelection}
+          >
+            <Flag className="size-4" />
+            Flag
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          {FLAG_OPTIONS.map((opt) => (
+            <DropdownMenuItem
+              key={opt.value}
+              onClick={() => onSetFlag(opt.value)}
+            >
+              <Flag
+                className="size-4"
+                style={{ color: opt.color }}
+                fill={opt.color ?? "none"}
+              />
+              {opt.label}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onSuspend}
+        disabled={isPending || !hasSelection}
+      >
+        <Pause className="size-4" />
+        Suspend
+      </Button>
+
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onUnsuspend}
+        disabled={isPending || !hasSelection}
+      >
+        <Play className="size-4" />
+        Unsuspend
+      </Button>
     </div>
   );
 }
