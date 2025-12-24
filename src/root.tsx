@@ -416,7 +416,7 @@ function NotesView({
               document.body.style.userSelect = "none";
             }}
           />
-          <div className="flex-1 pl-1">
+          <div className="flex-1 overflow-hidden pl-1">
             <NoteDetail
               item={selected}
               fields={fields}
