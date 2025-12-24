@@ -178,4 +178,12 @@ def handle_action(col: Collection, action: str, params: dict):
         card = col.get_card(card_id)
         return card.queue
 
+    elif action == "updateNoteTags":
+        note_id = params["noteId"]
+        tags = params["tags"]  # list of tag strings
+        note = col.get_note(note_id)
+        note.tags = tags
+        col.update_note(note)
+        return True
+
     raise ValueError(f"Unknown action: {action}")

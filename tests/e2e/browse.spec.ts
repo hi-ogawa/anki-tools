@@ -121,3 +121,35 @@ test("update note field", async ({ page }) => {
   await page.getByRole("row").nth(1).click();
   await expect(page.getByTestId("field-Front")).toContainText("Updated Again");
 });
+
+test("update note tags", async ({ page }) => {
+  await page.goto("/?model=Basic");
+
+  // Click first data row to open detail panel
+  await page.getByRole("row").nth(1).click();
+  await expect(page.getByTestId("tags-section")).toBeVisible();
+
+  // First edit - add tags
+  await page.getByTestId("edit-tags").click();
+  await page.getByTestId("tags-input").fill("tag1 tag2 tag3");
+  await page.getByRole("button", { name: "Save" }).click();
+
+  // Reload and verify
+  await page.reload();
+  await page.getByRole("row").nth(1).click();
+  await expect(page.getByTestId("tags-section")).toContainText("tag1");
+  await expect(page.getByTestId("tags-section")).toContainText("tag2");
+  await expect(page.getByTestId("tags-section")).toContainText("tag3");
+
+  // Second edit - modify tags
+  await page.getByTestId("edit-tags").click();
+  await page.getByTestId("tags-input").fill("newtag updated");
+  await page.getByRole("button", { name: "Save" }).click();
+
+  // Reload and verify
+  await page.reload();
+  await page.getByRole("row").nth(1).click();
+  await expect(page.getByTestId("tags-section")).toContainText("newtag");
+  await expect(page.getByTestId("tags-section")).toContainText("updated");
+  await expect(page.getByTestId("tags-section")).not.toContainText("tag1");
+});

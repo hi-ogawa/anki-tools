@@ -117,6 +117,10 @@ const implementations = {
     return invoke<boolean>("updateNoteFields", input);
   },
 
+  updateNoteTags: (input: { noteId: number; tags: string[] }) => {
+    return invoke<boolean>("updateNoteTags", input);
+  },
+
   // Returns the new queue value after suspend/unsuspend
   setSuspended: (input: { cardId: number; suspended: boolean }) => {
     return invoke<number>("setSuspended", input);
