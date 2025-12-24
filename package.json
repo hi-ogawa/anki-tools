@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite dev",
+    "dev-api": "node --watch-path=addon scripts/exec.js uv run python tests/server.py",
+    "dev-fixture": "ANKI_PORT=5680 pnpm run --stream '/^dev$|^dev-api$/'",
     "build": "vite build",
     "build-addon": "vite build && cd addon && zip -r ../anki-browse-web.ankiaddon . -x '__pycache__/*'",
     "setup-dev": "node scripts/setup-dev.js",
