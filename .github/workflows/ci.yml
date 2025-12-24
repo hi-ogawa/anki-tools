@@ -32,7 +32,7 @@ jobs:
       - run: corepack enable
       - run: uv sync
       - run: pnpm i
-      - run: pnpm test-e2e-setup
+      - run: pnpm fixture
       - run: pnpm exec playwright install chromium --with-deps
       - run: pnpm test-e2e
       - uses: actions/upload-artifact@v4
