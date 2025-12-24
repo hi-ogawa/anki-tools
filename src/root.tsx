@@ -17,7 +17,9 @@ import { Input } from "./components/ui/input";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "./components/ui/select";
@@ -173,11 +175,14 @@ function App() {
               <SelectValue placeholder="Select note type..." />
             </SelectTrigger>
             <SelectContent>
-              {modelNames.map((name) => (
-                <SelectItem key={name} value={name}>
-                  {name}
-                </SelectItem>
-              ))}
+              <SelectGroup>
+                <SelectLabel>Note type</SelectLabel>
+                {modelNames.map((name) => (
+                  <SelectItem key={name} value={name}>
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
             </SelectContent>
           </Select>
           <Select
@@ -194,8 +199,11 @@ function App() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="notes">Notes</SelectItem>
-              <SelectItem value="cards">Cards</SelectItem>
+              <SelectGroup>
+                <SelectLabel>View mode</SelectLabel>
+                <SelectItem value="notes">Notes</SelectItem>
+                <SelectItem value="cards">Cards</SelectItem>
+              </SelectGroup>
             </SelectContent>
           </Select>
         </div>
