@@ -26,6 +26,7 @@
 ### Single Schema Fetch
 
 Merged `getModels` + `getDecks` into single `getSchema` call:
+
 ```
 getSchema → {
   models: { "Basic": ["Front", "Back"], ... },
