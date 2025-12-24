@@ -22,6 +22,7 @@ import {
 } from "./components/ui/select";
 import { FLAG_FILTER_OPTIONS } from "./lib/constants";
 import { useLocalStorage } from "./lib/use-local-storage";
+import { useMinLoadingTime } from "./lib/use-min-loading-time";
 import { useResize } from "./lib/use-resize";
 
 // TODO: separate singleton state and component
@@ -55,7 +56,7 @@ function App() {
   // Fetch schema
   const {
     data: models,
-    isLoading: schemaLoading,
+    isLoading: schemaLoadingRaw,
     error: schemaError,
     refetch: refetchSchema,
   } = useQuery({
@@ -63,6 +64,9 @@ function App() {
     staleTime: Infinity,
     retry: false,
   });
+
+  // Avoid quick skeleton flash
+  const schemaLoading = useMinLoadingTime(schemaLoadingRaw);
 
   const modelNames = useMemo(() => Object.keys(models ?? {}), [models]);
   const validModel = urlModel && models?.[urlModel];
@@ -116,9 +120,7 @@ function App() {
   // Derive main content
   let mainContent: React.ReactNode;
   if (schemaLoading) {
-    mainContent = (
-      <p className="text-muted-foreground">Connecting to Anki...</p>
-    );
+    mainContent = <div className="h-4 w-48 rounded bg-muted animate-pulse" />;
   } else if (schemaError) {
     mainContent = (
       <div className="flex flex-col items-center gap-4">
@@ -162,48 +164,40 @@ function App() {
           <h1 className="text-lg font-semibold">
             <Link to="/">Anki Browser</Link>
           </h1>
-          {!schemaError && (
-            <>
-              <Select
-                value={validModel ? urlModel : undefined}
-                onValueChange={setUrlModel}
-                disabled={schemaLoading}
-              >
-                <SelectTrigger size="sm" className="w-[180px]">
-                  <SelectValue
-                    placeholder={
-                      schemaLoading ? "Loading..." : "Select model..."
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {modelNames.map((name) => (
-                    <SelectItem key={name} value={name}>
-                      {name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={viewMode}
-                onValueChange={(value) =>
-                  setSearchParams((p) => {
-                    p.set("view", value);
-                    return p;
-                  })
-                }
-                disabled={schemaLoading}
-              >
-                <SelectTrigger size="sm" className="w-[100px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="notes">Notes</SelectItem>
-                  <SelectItem value="cards">Cards</SelectItem>
-                </SelectContent>
-              </Select>
-            </>
-          )}
+          <Select
+            value={validModel ? urlModel : undefined}
+            onValueChange={setUrlModel}
+            disabled={schemaLoading || !!schemaError}
+          >
+            <SelectTrigger size="sm" className="w-[180px]">
+              <SelectValue placeholder="Select model..." />
+            </SelectTrigger>
+            <SelectContent>
+              {modelNames.map((name) => (
+                <SelectItem key={name} value={name}>
+                  {name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select
+            value={viewMode}
+            onValueChange={(value) =>
+              setSearchParams((p) => {
+                p.set("view", value);
+                return p;
+              })
+            }
+            disabled={schemaLoading || !!schemaError}
+          >
+            <SelectTrigger size="sm" className="w-[100px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="notes">Notes</SelectItem>
+              <SelectItem value="cards">Cards</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </header>
       <main className="flex-1 overflow-hidden p-4">{mainContent}</main>
