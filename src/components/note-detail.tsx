@@ -51,7 +51,7 @@ export function NoteDetail({
       <div className="flex-1 overflow-y-auto p-4">
         <div className="space-y-4">
           {fields.map((field) => (
-            <div key={field}>
+            <div key={field} data-testid={`field-${field}`}>
               <div className="flex items-center justify-between">
                 <label className="text-sm font-medium text-muted-foreground">
                   {field}
@@ -61,6 +61,7 @@ export function NoteDetail({
                     variant="ghost"
                     size="icon"
                     className="size-6"
+                    data-testid={`edit-${field}`}
                     onClick={() => {
                       setEditingField(field);
                       setEditValue(item.fields[field] ?? "");
@@ -141,7 +142,10 @@ export function NoteDetail({
                   value={String(item.flag)}
                   onValueChange={(v) => onFlagChange?.(Number(v))}
                 >
-                  <SelectTrigger className="h-8 w-[120px]">
+                  <SelectTrigger
+                    className="h-8 w-[120px]"
+                    data-testid="flag-select"
+                  >
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
