@@ -56,6 +56,15 @@ Response: { items: [...], total: 5000, timing: {...} }
 
 **Expected improvement:** 20 items × 0.06ms/item ≈ 1.2ms (vs 314ms for 5239 items)
 
+**Actual results (after implementation):**
+
+| Metric       | Before  | After   | Improvement     |
+| ------------ | ------- | ------- | --------------- |
+| `fetch_ms`   | 314ms   | **1ms** | **314x faster** |
+| `networkMs`  | 335ms   | **8ms** | **42x faster**  |
+| JSON parse   | 42ms    | 1ms     | 42x faster      |
+| Response     | 2.6MB   | ~5KB    | 500x smaller    |
+
 Tradeoffs:
 
 - Page changes require server roundtrip (currently instant client-side)
@@ -72,6 +81,6 @@ If needed later, could replace N `get_card()` calls with single SQL query.
 
 - [x] Add timing instrumentation to API
 - [x] Test with large collection, analyze breakdown
-- [ ] Implement server-side pagination in backend
-- [ ] Update frontend to pass limit/offset params
-- [ ] Update table component for server-driven pagination
+- [x] Implement server-side pagination in backend
+- [x] Update frontend to pass limit/offset params
+- [x] Update table component for server-driven pagination

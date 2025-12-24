@@ -61,6 +61,7 @@ export type ApiTiming = {
 
 type BrowseResponse<T> = {
   items: T[];
+  total: number;
   timing: ApiTiming;
 };
 
@@ -106,22 +107,39 @@ const implementations = {
   },
 
   // search: optional Anki search syntax (e.g., "field:value", "deck:name", "tag:name")
+  // limit/offset: server-side pagination (optional, fetches all if not provided)
   fetchItems: async (input: {
     modelName: string;
     search?: string;
     viewMode: ViewMode;
-  }): Promise<{ items: Item[]; timing: ApiTiming }> => {
+    limit?: number;
+    offset?: number;
+  }): Promise<{ items: Item[]; total: number; timing: ApiTiming }> => {
     const query = `note:"${input.modelName}" ${input.search || ""}`;
+    const pagination =
+      input.limit !== undefined
+        ? { limit: input.limit, offset: input.offset ?? 0 }
+        : {};
     if (input.viewMode === "notes") {
       const raw = await invoke<BrowseResponse<RawNote>>("browseNotes", {
         query,
+        ...pagination,
       });
-      return { items: raw.items.map(toNote), timing: raw.timing };
+      return {
+        items: raw.items.map(toNote),
+        total: raw.total,
+        timing: raw.timing,
+      };
     } else {
       const raw = await invoke<BrowseResponse<RawCard>>("browseCards", {
         query,
+        ...pagination,
       });
-      return { items: raw.items.map(toCard), timing: raw.timing };
+      return {
+        items: raw.items.map(toCard),
+        total: raw.total,
+        timing: raw.timing,
+      };
     }
   },
 

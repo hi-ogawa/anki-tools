@@ -1,7 +1,6 @@
 import {
   useReactTable,
   getCoreRowModel,
-  getPaginationRowModel,
   flexRender,
   type ColumnDef,
   type OnChangeFn,
@@ -55,6 +54,7 @@ import { useLocalStorage } from "@/lib/use-local-storage";
 
 interface BrowseTableProps {
   data: Item[];
+  total: number; // Server-side total count for pagination
   viewMode: ViewMode;
   model: string;
   fields: string[];
@@ -68,6 +68,7 @@ interface BrowseTableProps {
 
 export function BrowseTable({
   data,
+  total,
   viewMode,
   model,
   fields,
@@ -213,11 +214,15 @@ export function BrowseTable({
     });
   };
 
+  // Server-side pagination: calculate page count from total
+  const pageCount = Math.ceil(total / pageSize);
+
   const table = useReactTable({
     data,
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    manualPagination: true, // Server-side pagination
+    pageCount,
     state: { pagination, columnVisibility },
     onPaginationChange,
     onColumnVisibilityChange: setColumnVisibility,
@@ -347,13 +352,9 @@ export function BrowseTable({
       <div className="flex items-center justify-between">
         <div className="text-sm text-muted-foreground">
           Showing{" "}
-          {data.length > 0 ? pagination.pageIndex * pagination.pageSize + 1 : 0}
-          -
-          {Math.min(
-            (pagination.pageIndex + 1) * pagination.pageSize,
-            data.length,
-          )}{" "}
-          of {data.length}
+          {total > 0 ? pagination.pageIndex * pagination.pageSize + 1 : 0}-
+          {Math.min((pagination.pageIndex + 1) * pagination.pageSize, total)} of{" "}
+          {total}
         </div>
 
         <div className="flex items-center gap-2">

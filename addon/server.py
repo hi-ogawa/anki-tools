@@ -103,11 +103,18 @@ def handle_action(col: Collection, action: str, params: dict):
 
     elif action == "browseNotes":
         query = params["query"]
+        limit = params.get("limit")
+        offset = params.get("offset", 0)
         timing = {}
 
         t0 = time.perf_counter()
         note_ids = col.find_notes(query)
         timing["find_ms"] = int((time.perf_counter() - t0) * 1000)
+        total = len(note_ids)
+
+        # Server-side pagination: slice IDs before fetch
+        if limit is not None:
+            note_ids = note_ids[offset : offset + limit]
 
         t0 = time.perf_counter()
         notes = []
@@ -131,15 +138,22 @@ def handle_action(col: Collection, action: str, params: dict):
         timing["fetch_ms"] = int((time.perf_counter() - t0) * 1000)
         timing["count"] = len(notes)
 
-        return {"items": notes, "timing": timing}
+        return {"items": notes, "total": total, "timing": timing}
 
     elif action == "browseCards":
         query = params["query"]
+        limit = params.get("limit")
+        offset = params.get("offset", 0)
         timing = {}
 
         t0 = time.perf_counter()
         card_ids = col.find_cards(query)
         timing["find_ms"] = int((time.perf_counter() - t0) * 1000)
+        total = len(card_ids)
+
+        # Server-side pagination: slice IDs before fetch
+        if limit is not None:
+            card_ids = card_ids[offset : offset + limit]
 
         t0 = time.perf_counter()
         cards = []
@@ -168,7 +182,7 @@ def handle_action(col: Collection, action: str, params: dict):
         timing["fetch_ms"] = int((time.perf_counter() - t0) * 1000)
         timing["count"] = len(cards)
 
-        return {"items": cards, "timing": timing}
+        return {"items": cards, "total": total, "timing": timing}
 
     elif action == "setCardFlag":
         card_id = params["cardId"]
