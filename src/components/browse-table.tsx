@@ -404,6 +404,7 @@ export function BrowseTable({
               size="icon"
               onClick={() => onStateChange({ page: page + 2 })}
               disabled={!table.getCanNextPage()}
+              data-testid="next-page"
             >
               <ChevronRight className="size-4" />
             </Button>

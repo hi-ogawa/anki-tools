@@ -19,6 +19,17 @@ Instructions for AI coding agents working on this project.
 
 **Note**: Restart Anki after changing Python code in `addon/`.
 
+## E2E Testing
+
+Run `pnpm fixture` before `pnpm test-e2e` to reset test data (mutations modify the fixture).
+
+**Writing tests:**
+
+- Use `getByRole`, `getByPlaceholder`, `getByTestId` - avoid fragile `locator()` selectors
+- Add `data-testid` to components when needed for testability
+- For mutations: reload after each change to verify persistence
+- Use short timeouts (`--timeout 3000`) during development - tests should be fast
+
 ## Documentation Workflow
 
 1. **Check `docs/inbox.md`** at session start for new items
