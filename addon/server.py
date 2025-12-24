@@ -97,6 +97,9 @@ def handle_action(col: Collection, action: str, params: dict):
             models[model["name"]] = [f["name"] for f in model["flds"]]
         return models
 
+    elif action == "getDecks":
+        return [d.name for d in col.decks.all_names_and_ids()]
+
     elif action == "browseNotes":
         query = params["query"]
         note_ids = col.find_notes(query)

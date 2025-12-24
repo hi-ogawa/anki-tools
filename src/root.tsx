@@ -53,6 +53,7 @@ function App() {
   const pageSize = parseInt(searchParams.get("pageSize") ?? "20", 10);
   const search = searchParams.get("search") ?? undefined;
   const flag = searchParams.get("flag") ?? undefined;
+  const deck = searchParams.get("deck") ?? undefined;
   const viewMode = (searchParams.get("view") ?? "cards") as ViewMode;
 
   // Fetch schema
@@ -153,6 +154,7 @@ function App() {
         pageSize={pageSize}
         search={search}
         flag={flag}
+        deck={deck}
         viewMode={viewMode}
         onStateChange={setUrlState}
       />
@@ -218,6 +220,7 @@ interface UrlState {
   pageSize?: number;
   search?: string;
   flag?: string;
+  deck?: string;
 }
 
 interface NotesViewProps {
@@ -227,6 +230,7 @@ interface NotesViewProps {
   pageSize: number;
   search?: string;
   flag?: string;
+  deck?: string;
   viewMode: ViewMode;
   onStateChange: (newState: UrlState) => void;
 }
@@ -238,6 +242,7 @@ function NotesView({
   pageSize,
   search,
   flag,
+  deck,
   viewMode,
   onStateChange,
 }: NotesViewProps) {
@@ -255,13 +260,20 @@ function NotesView({
     maxWidth: 700,
   });
 
-  // Build full query with flag filter
+  // Fetch decks for filter
+  const { data: decks = [] } = useQuery({
+    ...api.getDecks.queryOptions(),
+    staleTime: Infinity,
+  });
+
+  // Build full query with filters
   const fullSearch = useMemo(() => {
     const parts: string[] = [];
     if (search) parts.push(search);
     if (flag) parts.push(`flag:${flag}`);
+    if (deck) parts.push(`deck:"${deck}"`);
     return parts.join(" ") || undefined;
-  }, [search, flag]);
+  }, [search, flag, deck]);
 
   const {
     data: items = [],
@@ -362,6 +374,24 @@ function NotesView({
                 />
                 {opt.label}
               </span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select
+        value={deck ?? "all"}
+        onValueChange={(value) =>
+          onStateChange({ deck: value === "all" ? undefined : value, page: 1 })
+        }
+      >
+        <SelectTrigger className="w-[180px]" data-testid="deck-filter">
+          <SelectValue placeholder="Deck" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All decks</SelectItem>
+          {decks.map((d) => (
+            <SelectItem key={d} value={d}>
+              {d}
             </SelectItem>
           ))}
         </SelectContent>

@@ -88,6 +88,10 @@ const implementations = {
     return invoke<Record<string, string[]>>("getModels");
   },
 
+  getDecks: () => {
+    return invoke<string[]>("getDecks");
+  },
+
   // search: optional Anki search syntax (e.g., "field:value", "deck:name", "tag:name")
   fetchItems: async (input: {
     modelName: string;
