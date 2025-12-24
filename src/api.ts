@@ -116,6 +116,11 @@ const implementations = {
   }) => {
     return invoke<boolean>("updateNoteFields", input);
   },
+
+  // Returns the new queue value after suspend/unsuspend
+  setSuspended: (input: { cardId: number; suspended: boolean }) => {
+    return invoke<number>("setSuspended", input);
+  },
 };
 
 export const api = deriveQueryHelpers(implementations);

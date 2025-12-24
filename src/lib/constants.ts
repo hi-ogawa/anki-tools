@@ -25,3 +25,12 @@ export const FLAG_FILTER_OPTIONS = [
   { value: "none", label: "All", color: undefined },
   ...FLAGS.map((f) => ({ ...f, value: String(f.value) })),
 ] as const;
+
+// Card queue labels (used in note-detail)
+export const QUEUE_LABELS: Record<number, string> = {
+  [-1]: "Suspended",
+  [0]: "New",
+  [1]: "Learning",
+  [2]: "Review",
+  [3]: "Relearning",
+};

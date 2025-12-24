@@ -299,6 +299,17 @@ function NotesView({
     },
   });
 
+  const setSuspendedMutation = useMutation({
+    ...api.setSuspended.mutationOptions(),
+    onSuccess: (queue, { cardId }) => {
+      setSelected((prev) =>
+        prev?.type === "card" && prev.cardId === cardId
+          ? { ...prev, queue }
+          : prev,
+      );
+    },
+  });
+
   // Local search state - synced with URL
   const [localSearch, setLocalSearch] = useState(search);
   useEffect(() => {
@@ -406,6 +417,15 @@ function NotesView({
               }
               onFieldsChange={(fields) =>
                 updateFieldsMutation.mutate({ noteId: selected.noteId, fields })
+              }
+              onSuspendedChange={
+                selected.type === "card"
+                  ? (suspended) =>
+                      setSuspendedMutation.mutate({
+                        cardId: selected.cardId,
+                        suspended,
+                      })
+                  : undefined
               }
             />
           </div>
