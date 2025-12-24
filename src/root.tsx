@@ -156,8 +156,8 @@ function App() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="border-b px-4 py-3">
+    <div className="flex h-screen flex-col">
+      <header className="shrink-0 border-b px-4 py-3">
         <div className="flex items-center gap-4">
           <h1 className="text-lg font-semibold">
             <Link to="/">Anki Browser</Link>
@@ -206,7 +206,7 @@ function App() {
           )}
         </div>
       </header>
-      <main className="flex-1 overflow-x-auto p-4">{mainContent}</main>
+      <main className="flex-1 overflow-hidden p-4">{mainContent}</main>
     </div>
   );
 }
@@ -394,8 +394,14 @@ function NotesView({
   }
 
   return (
-    <div className="flex gap-4">
-      <div className={selected ? "flex-1 min-w-[400px]" : "w-full"}>
+    <div className="flex h-full gap-4">
+      <div
+        className={
+          selected
+            ? "flex-1 min-w-[400px] overflow-auto"
+            : "w-full overflow-auto"
+        }
+      >
         <BrowseTable
           data={items}
           viewMode={viewMode}
