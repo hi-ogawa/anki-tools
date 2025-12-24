@@ -109,8 +109,20 @@ function TableSkeleton({
 }
 ```
 
-## Open Questions
+## Principle
 
-1. Should toolbar be interactive during notes loading? (Yes makes sense - user can type search while waiting)
+**Skeleton = not actionable = consistent placeholder**
+
+During loading, UI is not actionable. Therefore:
+
+- Don't show "interactive" toolbar during skeleton - user can't act on it anyway
+- Show same skeleton for all loading states (schema loading, notes loading)
+- This eliminates flicker from transitioning between different skeleton variants
+
+This means: remove `toolbarLeft` prop from `TableSkeleton` - always show placeholder toolbar.
+
+## Open Questions (Resolved)
+
+1. ~~Should toolbar be interactive during notes loading?~~ → No, skeleton means not actionable
 2. Add `useMinLoadingTime` to notes loading? (Probably yes for consistency)
 3. Column count - hardcode ~7 is fine since it's just visual placeholder

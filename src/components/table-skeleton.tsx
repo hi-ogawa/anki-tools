@@ -8,26 +8,20 @@ import {
 } from "@/components/ui/table";
 
 interface TableSkeletonProps {
-  toolbarLeft?: React.ReactNode;
   columnCount?: number;
 }
 
-export function TableSkeleton({
-  toolbarLeft,
-  columnCount = 7,
-}: TableSkeletonProps) {
+// Skeleton = not actionable = consistent placeholder
+// Always show same skeleton for all loading states to avoid flicker
+export function TableSkeleton({ columnCount = 7 }: TableSkeletonProps) {
   return (
     <div className="space-y-4">
-      {/* Toolbar */}
+      {/* Toolbar placeholder */}
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          {toolbarLeft ?? (
-            <>
-              <div className="h-9 w-[400px] rounded bg-muted animate-pulse" />
-              <div className="h-9 w-[140px] rounded bg-muted animate-pulse" />
-              <div className="h-9 w-9 rounded bg-muted animate-pulse" />
-            </>
-          )}
+          <div className="h-9 w-[400px] rounded bg-muted animate-pulse" />
+          <div className="h-9 w-[140px] rounded bg-muted animate-pulse" />
+          <div className="h-9 w-9 rounded bg-muted animate-pulse" />
         </div>
         <div className="h-8 w-24 rounded bg-muted animate-pulse" />
       </div>

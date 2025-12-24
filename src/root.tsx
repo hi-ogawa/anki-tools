@@ -373,7 +373,9 @@ function NotesView({
             : ""
         }
       >
-        <RefreshCw className={`size-4 ${!isLoading && isFetching ? "animate-spin" : ""}`} />
+        <RefreshCw
+          className={`size-4 ${!isLoading && isFetching ? "animate-spin" : ""}`}
+        />
       </Button>
     </>
   );
@@ -385,7 +387,7 @@ function NotesView({
   }
 
   if (isLoading) {
-    return <TableSkeleton toolbarLeft={toolbarLeft} />;
+    return <TableSkeleton />;
   }
 
   return (
