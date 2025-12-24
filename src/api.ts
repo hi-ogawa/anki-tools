@@ -1,5 +1,4 @@
-// API served by Anki addon on same origin (no CORS issues).
-// Uses AnkiConnect-style JSON-RPC but with custom actions optimized for browsing.
+// API served by Anki addon on same origin.
 const API_URL = "/api";
 
 // ============================================================================

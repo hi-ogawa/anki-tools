@@ -11,12 +11,15 @@ import { Link, useSearchParams } from "react-router";
 import { api, type Item, type ViewMode } from "./api";
 import { BrowseTable } from "./components/browse-table";
 import { NoteDetail } from "./components/note-detail";
+import { TableSkeleton } from "./components/table-skeleton";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "./components/ui/select";
@@ -116,14 +119,15 @@ function App() {
   // Derive main content
   let mainContent: React.ReactNode;
   if (schemaLoading) {
-    mainContent = (
-      <p className="text-muted-foreground">Connecting to Anki...</p>
-    );
+    mainContent = <TableSkeleton />;
   } else if (schemaError) {
     mainContent = (
       <div className="flex flex-col items-center gap-4">
-        <p className="text-destructive">Failed to connect to AnkiConnect</p>
-        <p className="text-sm text-muted-foreground">{schemaError.message}</p>
+        <p className="text-destructive">Failed to load Anki data</p>
+        <p className="text-sm text-muted-foreground">
+          Make sure Anki is running with the addon installed.
+        </p>
+        <p className="text-xs text-muted-foreground">{schemaError.message}</p>
         <Button onClick={() => refetchSchema()}>Retry</Button>
       </div>
     );
@@ -137,7 +141,7 @@ function App() {
     );
   } else if (!validModel) {
     mainContent = (
-      <p className="text-destructive">Model "{urlModel}" not found</p>
+      <p className="text-destructive">Note type "{urlModel}" not found</p>
     );
   } else {
     mainContent = (
@@ -162,48 +166,46 @@ function App() {
           <h1 className="text-lg font-semibold">
             <Link to="/">Anki Browser</Link>
           </h1>
-          {!schemaError && (
-            <>
-              <Select
-                value={validModel ? urlModel : undefined}
-                onValueChange={setUrlModel}
-                disabled={schemaLoading}
-              >
-                <SelectTrigger size="sm" className="w-[180px]">
-                  <SelectValue
-                    placeholder={
-                      schemaLoading ? "Loading..." : "Select model..."
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {modelNames.map((name) => (
-                    <SelectItem key={name} value={name}>
-                      {name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Select
-                value={viewMode}
-                onValueChange={(value) =>
-                  setSearchParams((p) => {
-                    p.set("view", value);
-                    return p;
-                  })
-                }
-                disabled={schemaLoading}
-              >
-                <SelectTrigger size="sm" className="w-[100px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="notes">Notes</SelectItem>
-                  <SelectItem value="cards">Cards</SelectItem>
-                </SelectContent>
-              </Select>
-            </>
-          )}
+          <Select
+            value={validModel ? urlModel : undefined}
+            onValueChange={setUrlModel}
+            disabled={schemaLoading || !!schemaError}
+          >
+            <SelectTrigger size="sm" className="w-[180px]">
+              <SelectValue placeholder="Select note type..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>Note type</SelectLabel>
+                {modelNames.map((name) => (
+                  <SelectItem key={name} value={name}>
+                    {name}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+          <Select
+            value={viewMode}
+            onValueChange={(value) =>
+              setSearchParams((p) => {
+                p.set("view", value);
+                return p;
+              })
+            }
+            disabled={schemaLoading || !!schemaError}
+          >
+            <SelectTrigger size="sm" className="w-[100px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>View mode</SelectLabel>
+                <SelectItem value="notes">Notes</SelectItem>
+                <SelectItem value="cards">Cards</SelectItem>
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         </div>
       </header>
       <main className="flex-1 overflow-hidden p-4">{mainContent}</main>
@@ -331,12 +333,6 @@ function NotesView({
     }
   };
 
-  if (error) {
-    return (
-      <p className="text-destructive">Error loading notes: {error.message}</p>
-    );
-  }
-
   const toolbarLeft = (
     <>
       <Input
@@ -384,13 +380,28 @@ function NotesView({
             : ""
         }
       >
-        <RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
+        <RefreshCw
+          className={`size-4 ${!isLoading && isFetching ? "animate-spin" : ""}`}
+        />
       </Button>
     </>
   );
 
+  if (error) {
+    return (
+      <div className="flex flex-col items-center gap-4">
+        <p className="text-destructive">Failed to load {viewMode}</p>
+        <p className="text-sm text-muted-foreground">
+          Make sure Anki is running with the addon installed.
+        </p>
+        <p className="text-xs text-muted-foreground">{error.message}</p>
+        <Button onClick={() => refetch()}>Retry</Button>
+      </div>
+    );
+  }
+
   if (isLoading) {
-    return <p className="text-muted-foreground">Loading {viewMode}...</p>;
+    return <TableSkeleton />;
   }
 
   return (
