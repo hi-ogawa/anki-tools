@@ -11,6 +11,7 @@ import { Link, useSearchParams } from "react-router";
 import { api, type Item, type ViewMode } from "./api";
 import { BrowseTable } from "./components/browse-table";
 import { NoteDetail } from "./components/note-detail";
+import { TableSkeleton } from "./components/table-skeleton";
 import { Button } from "./components/ui/button";
 import { Input } from "./components/ui/input";
 import {
@@ -120,7 +121,7 @@ function App() {
   // Derive main content
   let mainContent: React.ReactNode;
   if (schemaLoading) {
-    mainContent = <div className="h-4 w-48 rounded bg-muted animate-pulse" />;
+    mainContent = <TableSkeleton />;
   } else if (schemaError) {
     mainContent = (
       <div className="flex flex-col items-center gap-4">
@@ -325,12 +326,6 @@ function NotesView({
     }
   };
 
-  if (error) {
-    return (
-      <p className="text-destructive">Error loading notes: {error.message}</p>
-    );
-  }
-
   const toolbarLeft = (
     <>
       <Input
@@ -378,13 +373,19 @@ function NotesView({
             : ""
         }
       >
-        <RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
+        <RefreshCw className={`size-4 ${!isLoading && isFetching ? "animate-spin" : ""}`} />
       </Button>
     </>
   );
 
+  if (error) {
+    return (
+      <p className="text-destructive">Error loading notes: {error.message}</p>
+    );
+  }
+
   if (isLoading) {
-    return <p className="text-muted-foreground">Loading {viewMode}...</p>;
+    return <TableSkeleton toolbarLeft={toolbarLeft} />;
   }
 
   return (
