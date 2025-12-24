@@ -4,7 +4,6 @@
 
 - Filter
   - dedicated input for tag (multi select)
-  - deck
   - Smart Search mode
 - Edit
   - bulk edit (flag/unflag, suspend/unsuspend)
