@@ -642,6 +642,7 @@ function NotesView({
           bulkEditMode={bulkEditMode}
           rowSelection={rowSelection}
           onRowSelectionChange={setRowSelection}
+          isAllSelected={!!selectAllQuery}
         />
       </div>
       {selected && (

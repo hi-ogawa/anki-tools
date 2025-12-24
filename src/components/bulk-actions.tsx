@@ -33,10 +33,9 @@ export function BulkActions({
   onUnsuspend,
   isPending,
 }: BulkActionsProps) {
-  const showSelectAllBanner =
-    !isAllSelected && selectedCount > 0 && totalMatching > selectedCount;
-
   const hasSelection = selectedCount > 0;
+  // Show "Select all N matching" when not already in "all selected" mode
+  const showSelectAllBanner = !isAllSelected && totalMatching > 0;
 
   return (
     <div className="flex items-center gap-2">

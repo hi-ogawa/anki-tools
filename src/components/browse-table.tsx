@@ -70,6 +70,7 @@ interface BrowseTableProps {
   bulkEditMode?: boolean;
   rowSelection?: RowSelectionState;
   onRowSelectionChange?: OnChangeFn<RowSelectionState>;
+  isAllSelected?: boolean; // When true, all checkboxes show as checked
 }
 
 export function BrowseTable({
@@ -87,6 +88,7 @@ export function BrowseTable({
   bulkEditMode,
   rowSelection,
   onRowSelectionChange,
+  isAllSelected,
 }: BrowseTableProps) {
   // Build columns
   const columns = useMemo<ColumnDef<Item>[]>(() => {
@@ -99,6 +101,7 @@ export function BrowseTable({
         header: ({ table }) => (
           <Checkbox
             checked={
+              isAllSelected ||
               table.getIsAllPageRowsSelected() ||
               (table.getIsSomePageRowsSelected() && "indeterminate")
             }
@@ -106,14 +109,16 @@ export function BrowseTable({
               table.toggleAllPageRowsSelected(!!value)
             }
             aria-label="Select all"
+            disabled={isAllSelected}
           />
         ),
         cell: ({ row }) => (
           <Checkbox
-            checked={row.getIsSelected()}
+            checked={isAllSelected || row.getIsSelected()}
             onCheckedChange={(value) => row.toggleSelected(!!value)}
             aria-label="Select row"
             onClick={(e) => e.stopPropagation()}
+            disabled={isAllSelected}
           />
         ),
         enableHiding: false,
@@ -226,7 +231,7 @@ export function BrowseTable({
     }
 
     return cols;
-  }, [fields, viewMode, bulkEditMode]);
+  }, [fields, viewMode, bulkEditMode, isAllSelected]);
 
   // Column visibility
   const [columnVisibility, setColumnVisibility] = useLocalStorage(
