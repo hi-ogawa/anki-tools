@@ -31,6 +31,34 @@ test("search filters notes", async ({ page }) => {
   await expect(page.getByRole("row").first()).toBeVisible();
 });
 
+test("deck filter filters by deck", async ({ page }) => {
+  await page.goto("/?model=Basic");
+
+  // Should show all 20 notes initially
+  await expect(page.getByRole("row")).toHaveCount(21); // 20 data + header
+
+  // Filter by Japanese deck
+  await page.getByTestId("deck-filter").click();
+  await page.getByRole("option", { name: "Japanese" }).click();
+
+  // Should show only 6 Japanese deck notes
+  await expect(page.getByRole("row")).toHaveCount(7); // 6 data + header
+
+  // Filter by Science deck
+  await page.getByTestId("deck-filter").click();
+  await page.getByRole("option", { name: "Science" }).click();
+
+  // Should show only 4 Science deck notes
+  await expect(page.getByRole("row")).toHaveCount(5); // 4 data + header
+
+  // Reset to all decks
+  await page.getByTestId("deck-filter").click();
+  await page.getByRole("option", { name: "All decks" }).click();
+
+  // Should show all 20 notes again
+  await expect(page.getByRole("row")).toHaveCount(21);
+});
+
 test("set card flag", async ({ page }) => {
   // Use cards view to access flag functionality
   await page.goto("/?model=Basic&view=cards");

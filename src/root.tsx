@@ -5,7 +5,7 @@ import {
   useMutation,
   keepPreviousData,
 } from "@tanstack/react-query";
-import { Flag, RefreshCw } from "lucide-react";
+import { CircleHelp, Flag, Library, RefreshCw } from "lucide-react";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router";
 import { api, type Item, type ViewMode } from "./api";
@@ -53,23 +53,26 @@ function App() {
   const pageSize = parseInt(searchParams.get("pageSize") ?? "20", 10);
   const search = searchParams.get("search") ?? undefined;
   const flag = searchParams.get("flag") ?? undefined;
+  const deck = searchParams.get("deck") ?? undefined;
   const viewMode = (searchParams.get("view") ?? "cards") as ViewMode;
 
-  // Fetch schema
+  // Fetch schema (models + decks)
   const {
-    data: models,
+    data: schema,
     isLoading: schemaLoading,
     error: schemaError,
     refetch: refetchSchema,
   } = useQuery({
-    ...api.getModels.queryOptions(),
+    ...api.getSchema.queryOptions(),
     staleTime: Infinity,
     retry: false,
   });
 
+  const models = schema?.models;
+  const decks = schema?.decks ?? [];
   const modelNames = useMemo(() => Object.keys(models ?? {}), [models]);
   const validModel = urlModel && models?.[urlModel];
-  const fields = validModel ? models[urlModel] : [];
+  const fields = validModel ? models[urlModel] : undefined;
 
   // Persist last selected model
   const [lastModel, setLastModel] = useLocalStorage<string | null>(
@@ -148,11 +151,13 @@ function App() {
       <NotesView
         key={`${urlModel}-${viewMode}`}
         model={urlModel}
-        fields={fields}
+        fields={fields!}
+        decks={decks}
         page={pageIndex}
         pageSize={pageSize}
         search={search}
         flag={flag}
+        deck={deck}
         viewMode={viewMode}
         onStateChange={setUrlState}
       />
@@ -218,15 +223,18 @@ interface UrlState {
   pageSize?: number;
   search?: string;
   flag?: string;
+  deck?: string;
 }
 
 interface NotesViewProps {
   model: string;
   fields: string[];
+  decks: string[];
   page: number;
   pageSize: number;
   search?: string;
   flag?: string;
+  deck?: string;
   viewMode: ViewMode;
   onStateChange: (newState: UrlState) => void;
 }
@@ -234,10 +242,12 @@ interface NotesViewProps {
 function NotesView({
   model,
   fields,
+  decks,
   page,
   pageSize,
   search,
   flag,
+  deck,
   viewMode,
   onStateChange,
 }: NotesViewProps) {
@@ -255,13 +265,14 @@ function NotesView({
     maxWidth: 700,
   });
 
-  // Build full query with flag filter
+  // Build full query with filters
   const fullSearch = useMemo(() => {
     const parts: string[] = [];
     if (search) parts.push(search);
     if (flag) parts.push(`flag:${flag}`);
+    if (deck) parts.push(`deck:"${deck}"`);
     return parts.join(" ") || undefined;
-  }, [search, flag]);
+  }, [search, flag, deck]);
 
   const {
     data: items = [],
@@ -335,21 +346,32 @@ function NotesView({
 
   const toolbarLeft = (
     <>
-      <Input
-        placeholder="Search by: deck:name, tag:name, field:value, *wild*, ..."
-        value={localSearch}
-        onChange={(e) => setLocalSearch(e.target.value)}
-        onKeyDown={(e) => e.key === "Enter" && submitSearch()}
-        className="w-[400px]"
-      />
+      <div className="relative">
+        <Input
+          placeholder="Search (supports Anki query syntax)"
+          value={localSearch}
+          onChange={(e) => setLocalSearch(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && submitSearch()}
+          className="w-[400px] pr-8"
+        />
+        <a
+          href="https://docs.ankiweb.net/searching.html"
+          target="_blank"
+          rel="noopener noreferrer"
+          title="Search syntax help"
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+        >
+          <CircleHelp className="size-4" />
+        </a>
+      </div>
       <Select
         value={flag ?? "none"}
         onValueChange={(value) =>
           onStateChange({ flag: value === "none" ? undefined : value, page: 1 })
         }
       >
-        <SelectTrigger className="w-[140px]">
-          <SelectValue placeholder="Flag" />
+        <SelectTrigger className={flag ? "w-[140px]" : "w-auto"}>
+          {flag ? <SelectValue /> : <Flag className="size-4" />}
         </SelectTrigger>
         <SelectContent>
           {FLAG_FILTER_OPTIONS.map((opt) => (
@@ -362,6 +384,27 @@ function NotesView({
                 />
                 {opt.label}
               </span>
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <Select
+        value={deck ?? "all"}
+        onValueChange={(value) =>
+          onStateChange({ deck: value === "all" ? undefined : value, page: 1 })
+        }
+      >
+        <SelectTrigger
+          className={deck ? "w-[180px]" : "w-auto"}
+          data-testid="deck-filter"
+        >
+          {deck ? <SelectValue /> : <Library className="size-4" />}
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All decks</SelectItem>
+          {decks.map((d) => (
+            <SelectItem key={d} value={d}>
+              {d}
             </SelectItem>
           ))}
         </SelectContent>

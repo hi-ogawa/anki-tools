@@ -26,14 +26,26 @@ def main():
     # Use the default "Basic" model (Front/Back fields)
     model = col.models.by_name("Basic")
 
-    # Create some test notes
+    # Create decks for testing
+    deck_default = col.decks.id("Default")
+    deck_japanese = col.decks.id("Japanese")
+    deck_science = col.decks.id("Science")
+
+    # Create some test notes in different decks
     for i in range(20):
         note = col.new_note(model)
         note["Front"] = f"Question {i + 1}"
         note["Back"] = f"Answer {i + 1}"
         if i % 3 == 0:
             note.tags = ["tagged"]
-        col.add_note(note, col.decks.id("Default"))
+        # Distribute notes: 10 Default, 6 Japanese, 4 Science
+        if i < 10:
+            deck_id = deck_default
+        elif i < 16:
+            deck_id = deck_japanese
+        else:
+            deck_id = deck_science
+        col.add_note(note, deck_id)
 
     # Set some flags on cards for testing
     cards = col.find_cards("deck:Default")
@@ -45,7 +57,7 @@ def main():
     col.close()
 
     print(f"Created: {DATA_PATH}")
-    print(f"  Notes: 20")
+    print(f"  Notes: 20 (Default: 10, Japanese: 6, Science: 4)")
     print(f"  Cards: {len(cards)}")
 
 

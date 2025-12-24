@@ -91,11 +91,14 @@ class RequestHandler(SimpleHTTPRequestHandler):
 
 def handle_action(col: Collection, action: str, params: dict):
     """Handle API action with given collection."""
-    if action == "getModels":
-        models = {}
-        for model in col.models.all():
-            models[model["name"]] = [f["name"] for f in model["flds"]]
-        return models
+    if action == "getSchema":
+        return {
+            "models": {
+                model["name"]: [f["name"] for f in model["flds"]]
+                for model in col.models.all()
+            },
+            "decks": sorted(d["name"] for d in col.decks.all()),
+        }
 
     elif action == "browseNotes":
         query = params["query"]
