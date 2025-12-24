@@ -63,7 +63,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
         action = request.get("action")
         params = request.get("params", {})
 
-        result = {"result": None, "error": None}
+        result: dict[str, object] = {"result": None, "error": None}
 
         def do_action():
             try:
@@ -80,7 +80,7 @@ class RequestHandler(SimpleHTTPRequestHandler):
             body = json.dumps(data).encode("utf-8")
             self.send_response(200)
             self.send_header("Content-Type", "application/json")
-            self.send_header("Content-Length", len(body))
+            self.send_header("Content-Length", str(len(body)))
             self.end_headers()
             self.wfile.write(body)
         except BrokenPipeError:
@@ -122,6 +122,7 @@ def handle_action(col: Collection, action: str, params: dict):
         for nid in note_ids:
             note = col.get_note(nid)
             model = note.note_type()
+            assert model is not None
             cards = note.cards()
             deck_name = col.decks.name(cards[0].did) if cards else ""
             notes.append(
@@ -157,12 +158,13 @@ def handle_action(col: Collection, action: str, params: dict):
             card_ids = card_ids[offset : offset + limit]
 
         t0 = time.perf_counter()
-        cards = []
+        card_data = []
         for cid in card_ids:
             card = col.get_card(cid)
             note = card.note()
             model = note.note_type()
-            cards.append(
+            assert model is not None
+            card_data.append(
                 {
                     "id": cid,
                     "noteId": card.nid,
@@ -181,9 +183,9 @@ def handle_action(col: Collection, action: str, params: dict):
                 }
             )
         timing["fetch_ms"] = int((time.perf_counter() - t0) * 1000)
-        timing["count"] = len(cards)
+        timing["count"] = len(card_data)
 
-        return {"items": cards, "total": total, "timing": timing}
+        return {"items": card_data, "total": total, "timing": timing}
 
     elif action == "setCardFlag":
         card_id = params["cardId"]
@@ -196,6 +198,7 @@ def handle_action(col: Collection, action: str, params: dict):
         fields = params["fields"]  # dict of field name -> value
         note = col.get_note(note_id)
         model = note.note_type()
+        assert model is not None
         field_names = [f["name"] for f in model["flds"]]
         for name, value in fields.items():
             if name in field_names:

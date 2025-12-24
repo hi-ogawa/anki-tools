@@ -9,7 +9,7 @@ from pathlib import Path
 # Import server module directly to avoid loading __init__.py (which imports aqt)
 sys.path.insert(0, str(Path(__file__).parent.parent / "addon"))
 from anki.collection import Collection
-from server import RequestHandler  # noqa: E402
+from server import RequestHandler  # type: ignore  # noqa: E402
 
 PORT = int(os.environ.get("ANKI_PORT", "6679"))
 DATA_PATH = Path(__file__).parent / "data" / "test.anki2"

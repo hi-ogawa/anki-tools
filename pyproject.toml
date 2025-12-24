@@ -5,7 +5,7 @@ requires-python = ">=3.11"
 dependencies = ["anki"]
 
 [dependency-groups]
-dev = ["ruff"]
+dev = ["ruff", "mypy"]
 
 [tool.ruff]
 line-length = 80
@@ -15,3 +15,19 @@ select = ["I"]  # isort for import sorting
 
 [tool.ruff.format]
 quote-style = "double"
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = false
+warn_unused_configs = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+
+# Ignore missing imports for third-party libraries
+[[tool.mypy.overrides]]
+module = ["aqt", "aqt.*"]
+ignore_missing_imports = true
+
+
