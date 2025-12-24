@@ -9,7 +9,6 @@
 - Edit
   - bulk edit (flag/unflag, suspend/unsuspend)
 - Render HTML content safely
-- indicate stale after edit and explicit refresh/refetch table button
 - full scroll mode without pagination https://github.com/hi-ogawa/anki-tools/pull/12
 - poll health endpoint for server status
 
