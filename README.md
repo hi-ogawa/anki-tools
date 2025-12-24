@@ -2,14 +2,14 @@
 
 Web-based browser for Anki notes, served via Anki add-on.
 
+![Demo](./docs/screenshots/demo.png)
+
 ## Install
 
 1. Download `anki-browse-web.ankiaddon` from [Releases](https://github.com/hi-ogawa/anki-tools/releases)
 2. In Anki: Tools → Add-ons → Install from file
 3. Restart Anki
 4. Tools → Browse Web
-
-TODO: share the package on https://ankiweb.net/shared/addons
 
 ## Development
 
