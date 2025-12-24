@@ -405,10 +405,12 @@ function NotesView({
       {selected && (
         <div
           ref={panelRef}
+          data-testid="detail-panel"
           className="relative flex shrink-0"
           style={{ width: panelWidth }}
         >
           <div
+            data-testid="panel-resize-handle"
             className="absolute left-0 top-0 h-full w-2 cursor-col-resize hover:bg-primary/20"
             onMouseDown={() => {
               isResizing.current = true;
