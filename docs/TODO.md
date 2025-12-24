@@ -7,7 +7,6 @@
   - deck
   - Smart Search mode
 - Edit
-  - tags
   - bulk edit (flag/unflag, suspend/unsuspend)
 - Render HTML content safely
 - indicate stale after edit and explicit refresh/refetch table button
