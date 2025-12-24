@@ -5,7 +5,7 @@ import {
   useMutation,
   keepPreviousData,
 } from "@tanstack/react-query";
-import { Flag, Library, RefreshCw } from "lucide-react";
+import { CircleHelp, Flag, Library, RefreshCw } from "lucide-react";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router";
 import { api, type Item, type ViewMode } from "./api";
@@ -345,12 +345,21 @@ function NotesView({
   const toolbarLeft = (
     <>
       <Input
-        placeholder="Search by: deck:name, tag:name, field:value, *wild*, ..."
+        placeholder="Search (supports Anki query syntax)"
         value={localSearch}
         onChange={(e) => setLocalSearch(e.target.value)}
         onKeyDown={(e) => e.key === "Enter" && submitSearch()}
         className="w-[400px]"
       />
+      <a
+        href="https://docs.ankiweb.net/searching.html"
+        target="_blank"
+        rel="noopener noreferrer"
+        title="Search syntax help"
+        className="text-muted-foreground hover:text-foreground"
+      >
+        <CircleHelp className="size-4" />
+      </a>
       <Select
         value={flag ?? "none"}
         onValueChange={(value) =>
