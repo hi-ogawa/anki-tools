@@ -5,7 +5,7 @@ import {
   useMutation,
   keepPreviousData,
 } from "@tanstack/react-query";
-import { Flag } from "lucide-react";
+import { Flag, RefreshCw } from "lucide-react";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router";
 import { api, type Item, type ViewMode } from "./api";
@@ -240,6 +240,7 @@ function NotesView({
   onStateChange,
 }: NotesViewProps) {
   const [selected, setSelected] = useState<Item>();
+  const [isStale, setIsStale] = useState(false);
 
   // Resizable panel
   const [panelWidth, setPanelWidth] = useLocalStorage(
@@ -265,6 +266,7 @@ function NotesView({
     isLoading,
     isFetching,
     error,
+    refetch,
   } = useQuery({
     ...api.fetchItems.queryOptions({
       modelName: model,
@@ -278,6 +280,7 @@ function NotesView({
   const setFlagMutation = useMutation({
     ...api.setCardFlag.mutationOptions(),
     onSuccess: (_, { cardId, flag }) => {
+      setIsStale(true);
       setSelected((prev) =>
         prev?.type === "card" && prev.cardId === cardId
           ? { ...prev, flag }
@@ -289,6 +292,7 @@ function NotesView({
   const updateFieldsMutation = useMutation({
     ...api.updateNoteFields.mutationOptions(),
     onSuccess: (_, { fields }) => {
+      setIsStale(true);
       setSelected((prev) =>
         prev ? { ...prev, fields: { ...prev.fields, ...fields } } : undefined,
       );
@@ -298,6 +302,7 @@ function NotesView({
   const updateTagsMutation = useMutation({
     ...api.updateNoteTags.mutationOptions(),
     onSuccess: (_, { tags }) => {
+      setIsStale(true);
       setSelected((prev) => (prev ? { ...prev, tags } : undefined));
     },
   });
@@ -305,6 +310,7 @@ function NotesView({
   const setSuspendedMutation = useMutation({
     ...api.setSuspended.mutationOptions(),
     onSuccess: (queue, { cardId }) => {
+      setIsStale(true);
       setSelected((prev) =>
         prev?.type === "card" && prev.cardId === cardId
           ? { ...prev, queue }
@@ -364,9 +370,22 @@ function NotesView({
           ))}
         </SelectContent>
       </Select>
-      {isFetching && (
-        <span className="text-sm text-muted-foreground">Loading...</span>
-      )}
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={() => refetch().then(() => setIsStale(false))}
+        disabled={isFetching}
+        title={isStale ? "Data may be outdated - click to refresh" : "Refresh"}
+        data-testid="refresh-button"
+        data-stale={isStale ? "true" : undefined}
+        className={
+          isStale
+            ? "text-yellow-600 hover:text-yellow-700 hover:bg-yellow-100"
+            : ""
+        }
+      >
+        <RefreshCw className={`size-4 ${isFetching ? "animate-spin" : ""}`} />
+      </Button>
     </>
   );
 
