@@ -5,6 +5,9 @@ test("displays notes from collection", async ({ page }) => {
 
   // Should display 20 notes (fixture has 20 notes)
   await expect(page.getByRole("row")).toHaveCount(21); // 20 data rows + 1 header
+  await expect(page.getByText("Showing 1-20 of 20")).toBeVisible();
+  await expect(page.getByRole("row").nth(1)).toContainText("Question 1");
+  await expect(page.getByRole("row").nth(1)).toContainText("Answer 1");
 });
 
 test("pagination works", async ({ page }) => {
@@ -31,11 +34,14 @@ test("search filters notes", async ({ page }) => {
   await page.goto("/?model=Basic");
 
   // Search for specific question
-  await page.getByPlaceholder("Search").fill("Question 1");
+  await page.getByPlaceholder("Search").fill("Question 15");
   await page.getByPlaceholder("Search").press("Enter");
 
-  // Should filter to notes containing "Question 1" (1, 10-19)
-  await expect(page.getByRole("row").first()).toBeVisible();
+  // Should filter to single note containing "Question 15"
+  await expect(page.getByRole("row")).toHaveCount(2); // 1 data + header
+  await expect(page.getByText("Showing 1-1 of 1")).toBeVisible();
+  await expect(page.getByRole("row").nth(1)).toContainText("Question 15");
+  expect(page.url()).toContain("search=Question+15");
 });
 
 test("deck filter filters by deck", async ({ page }) => {
@@ -43,6 +49,7 @@ test("deck filter filters by deck", async ({ page }) => {
 
   // Should show all 20 notes initially
   await expect(page.getByRole("row")).toHaveCount(21); // 20 data + header
+  await expect(page.getByText("Showing 1-20 of 20")).toBeVisible();
 
   // Filter by Japanese deck
   await page.getByTestId("deck-filter").click();
@@ -50,6 +57,8 @@ test("deck filter filters by deck", async ({ page }) => {
 
   // Should show only 6 Japanese deck notes
   await expect(page.getByRole("row")).toHaveCount(7); // 6 data + header
+  await expect(page.getByText("Showing 1-6 of 6")).toBeVisible();
+  expect(page.url()).toContain("deck=Japanese");
 
   // Filter by Science deck
   await page.getByTestId("deck-filter").click();
@@ -57,6 +66,8 @@ test("deck filter filters by deck", async ({ page }) => {
 
   // Should show only 4 Science deck notes
   await expect(page.getByRole("row")).toHaveCount(5); // 4 data + header
+  await expect(page.getByText("Showing 1-4 of 4")).toBeVisible();
+  expect(page.url()).toContain("deck=Science");
 
   // Reset to all decks
   await page.getByTestId("deck-filter").click();
@@ -64,6 +75,7 @@ test("deck filter filters by deck", async ({ page }) => {
 
   // Should show all 20 notes again
   await expect(page.getByRole("row")).toHaveCount(21);
+  await expect(page.getByText("Showing 1-20 of 20")).toBeVisible();
 });
 
 test("set card flag", async ({ page }) => {
