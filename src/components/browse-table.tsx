@@ -262,7 +262,7 @@ export function BrowseTable({
                   onCheckedChange={(value) => column.toggleVisibility(!!value)}
                   onSelect={(e) => e.preventDefault()}
                 >
-                  {column.columnDef.header as string}
+                  {column.id}
                 </DropdownMenuCheckboxItem>
               ))}
             {viewMode === "cards" && (
@@ -281,7 +281,7 @@ export function BrowseTable({
                       }
                       onSelect={(e) => e.preventDefault()}
                     >
-                      {column.columnDef.header as string}
+                      {column.id}
                     </DropdownMenuCheckboxItem>
                   ))}
               </>
