@@ -31,7 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./components/ui/select";
-import { FLAG_COLORS, FLAG_FILTER_OPTIONS } from "./lib/constants";
+import { FLAG_COLORS, FLAG_FILTER_OPTIONS, CARD_ROW_ID_PREFIX } from "./lib/constants";
 import { useLocalStorage } from "./lib/use-local-storage";
 import { useResize } from "./lib/use-resize";
 
@@ -383,7 +383,11 @@ function NotesView({
     if (viewMode !== "cards") return [];
     return Object.keys(rowSelection)
       .filter((key) => rowSelection[key])
-      .map((key) => Number(key.replace("card-", "")));
+      .map((key) => {
+        const id = key.replace(CARD_ROW_ID_PREFIX, "");
+        return parseInt(id, 10);
+      })
+      .filter((id) => !isNaN(id));
   }, [rowSelection, viewMode]);
 
   const handleBulkSetFlag = (flag: number) => {

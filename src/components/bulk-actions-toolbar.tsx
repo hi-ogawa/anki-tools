@@ -6,7 +6,7 @@ import {
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
-import { FLAG_COLORS } from "@/lib/constants";
+import { FLAG_OPTIONS } from "@/lib/constants";
 
 interface BulkActionsToolbarProps {
   selectedCount: number;
@@ -27,13 +27,20 @@ export function BulkActionsToolbar({
 }: BulkActionsToolbarProps) {
   if (selectedCount === 0) return null;
 
+  const handleFlagChange = (value: string) => {
+    const flag = parseInt(value, 10);
+    if (!isNaN(flag) && flag >= 0 && flag <= 7) {
+      onSetFlag(flag);
+    }
+  };
+
   return (
     <div className="flex items-center gap-2 rounded-md bg-primary/10 px-4 py-2 border border-primary/20">
       <span className="text-sm font-medium">
         {selectedCount} card{selectedCount === 1 ? "" : "s"} selected
       </span>
       <div className="h-4 w-px bg-border" />
-      <Select onValueChange={(value) => onSetFlag(Number(value))}>
+      <Select onValueChange={handleFlagChange}>
         <SelectTrigger
           className="w-auto"
           size="sm"
@@ -44,82 +51,18 @@ export function BulkActionsToolbar({
           Set Flag
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="0">
-            <span className="flex items-center gap-2">
-              <Flag className="size-4" />
-              No Flag
-            </span>
-          </SelectItem>
-          <SelectItem value="1">
-            <span className="flex items-center gap-2">
-              <Flag
-                className="size-4"
-                style={{ color: FLAG_COLORS[1] }}
-                fill={FLAG_COLORS[1]}
-              />
-              Red
-            </span>
-          </SelectItem>
-          <SelectItem value="2">
-            <span className="flex items-center gap-2">
-              <Flag
-                className="size-4"
-                style={{ color: FLAG_COLORS[2] }}
-                fill={FLAG_COLORS[2]}
-              />
-              Orange
-            </span>
-          </SelectItem>
-          <SelectItem value="3">
-            <span className="flex items-center gap-2">
-              <Flag
-                className="size-4"
-                style={{ color: FLAG_COLORS[3] }}
-                fill={FLAG_COLORS[3]}
-              />
-              Green
-            </span>
-          </SelectItem>
-          <SelectItem value="4">
-            <span className="flex items-center gap-2">
-              <Flag
-                className="size-4"
-                style={{ color: FLAG_COLORS[4] }}
-                fill={FLAG_COLORS[4]}
-              />
-              Blue
-            </span>
-          </SelectItem>
-          <SelectItem value="5">
-            <span className="flex items-center gap-2">
-              <Flag
-                className="size-4"
-                style={{ color: FLAG_COLORS[5] }}
-                fill={FLAG_COLORS[5]}
-              />
-              Pink
-            </span>
-          </SelectItem>
-          <SelectItem value="6">
-            <span className="flex items-center gap-2">
-              <Flag
-                className="size-4"
-                style={{ color: FLAG_COLORS[6] }}
-                fill={FLAG_COLORS[6]}
-              />
-              Turquoise
-            </span>
-          </SelectItem>
-          <SelectItem value="7">
-            <span className="flex items-center gap-2">
-              <Flag
-                className="size-4"
-                style={{ color: FLAG_COLORS[7] }}
-                fill={FLAG_COLORS[7]}
-              />
-              Purple
-            </span>
-          </SelectItem>
+          {FLAG_OPTIONS.map((opt) => (
+            <SelectItem key={opt.value} value={String(opt.value)}>
+              <span className="flex items-center gap-2">
+                <Flag
+                  className="size-4"
+                  style={opt.color ? { color: opt.color } : undefined}
+                  fill={opt.color ?? "none"}
+                />
+                {opt.label}
+              </span>
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
       <Button

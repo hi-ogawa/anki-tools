@@ -39,6 +39,10 @@ export const QUEUE_LABELS: Record<number, string> = {
 export const NOTE_COLUMNS = ["deck", "tags"] as const;
 export const CARD_COLUMNS = ["flag", "status", "interval"] as const;
 
+// Row ID prefix for cards (used in table row selection)
+export const CARD_ROW_ID_PREFIX = "card-";
+export const NOTE_ROW_ID_PREFIX = "note-";
+
 // Format interval as human-readable string
 export function formatInterval(days: number): string {
   if (days <= 0) return "-";

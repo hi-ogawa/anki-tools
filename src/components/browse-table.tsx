@@ -47,9 +47,11 @@ import {
 } from "@/components/ui/table";
 import {
   CARD_COLUMNS,
+  CARD_ROW_ID_PREFIX,
   FLAG_COLORS,
   formatInterval,
   NOTE_COLUMNS,
+  NOTE_ROW_ID_PREFIX,
   QUEUE_LABELS,
 } from "@/lib/constants";
 import { useLocalStorage } from "@/lib/use-local-storage";
@@ -265,7 +267,9 @@ export function BrowseTable({
     onRowSelectionChange,
     enableRowSelection: true,
     getRowId: (row) =>
-      row.type === "card" ? `card-${row.cardId}` : `note-${row.noteId}`,
+      row.type === "card"
+        ? `${CARD_ROW_ID_PREFIX}${row.cardId}`
+        : `${NOTE_ROW_ID_PREFIX}${row.noteId}`,
   });
 
   return (
