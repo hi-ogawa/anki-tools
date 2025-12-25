@@ -207,7 +207,7 @@ function App() {
           <Select
             value={validModel ? urlModel : undefined}
             onValueChange={setUrlModel}
-            disabled={schemaLoading || !!schemaError}
+            disabled={schemaLoading || !!schemaError || viewMode === "sql"}
           >
             <SelectTrigger size="sm" className="w-[180px]">
               <SelectValue placeholder="Select note type..." />

@@ -406,8 +406,7 @@ test("sql console - displays and runs queries", async ({ page }) => {
   await page.goto("/?view=sql");
 
   // Verify SQL console UI elements
-  await expect(page.getByText("Examples:")).toBeVisible();
-  await expect(page.getByRole("button", { name: "Deck stats" })).toBeVisible();
+  await expect(page.getByTestId("example-select")).toBeVisible();
   await expect(page.getByRole("button", { name: "Run" })).toBeVisible();
   await expect(page.getByPlaceholder("SELECT * FROM cards")).toBeVisible();
 
@@ -428,19 +427,23 @@ test("sql console - displays and runs queries", async ({ page }) => {
   await expect(page.getByRole("columnheader", { name: "nid" })).toBeVisible();
 });
 
-test("sql console - example query buttons", async ({ page }) => {
+test("sql console - example query dropdown", async ({ page }) => {
   await page.goto("/?view=sql");
 
-  // Click "Problem cards" example
-  await page.getByRole("button", { name: "Problem cards" }).click();
+  const textarea = page.getByPlaceholder("SELECT * FROM cards");
+  const dropdown = page.getByTestId("example-select");
+
+  // Select "Problem cards" from dropdown
+  await dropdown.click();
+  await page.getByRole("option", { name: "Problem cards" }).click();
 
   // Verify SQL textarea contains the problem cards query
-  const textarea = page.getByPlaceholder("SELECT * FROM cards");
   await expect(textarea).toContainText("factor");
   await expect(textarea).toContainText("lapses");
 
-  // Click "Retention" example
-  await page.getByRole("button", { name: "Retention" }).click();
+  // Select "Retention" from dropdown
+  await dropdown.click();
+  await page.getByRole("option", { name: "Retention" }).click();
 
   // Verify SQL textarea contains retention query
   await expect(textarea).toContainText("retention_pct");

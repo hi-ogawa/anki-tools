@@ -4,6 +4,13 @@ import { useState } from "react";
 import { api } from "@/api";
 import { Button } from "@/components/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -129,18 +136,24 @@ export function SqlConsole() {
   return (
     <div className="flex h-full flex-col gap-4">
       {/* Example queries */}
-      <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm text-muted-foreground">Examples:</span>
-        {EXAMPLE_QUERIES.map((q) => (
-          <Button
-            key={q.label}
-            variant="outline"
-            size="sm"
-            onClick={() => setSql(q.sql)}
-          >
-            {q.label}
-          </Button>
-        ))}
+      <div className="flex items-center gap-2">
+        <Select
+          onValueChange={(label) => {
+            const query = EXAMPLE_QUERIES.find((q) => q.label === label);
+            if (query) setSql(query.sql);
+          }}
+        >
+          <SelectTrigger className="w-[180px]" data-testid="example-select">
+            <SelectValue placeholder="Load example..." />
+          </SelectTrigger>
+          <SelectContent>
+            {EXAMPLE_QUERIES.map((q) => (
+              <SelectItem key={q.label} value={q.label}>
+                {q.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* SQL input */}
@@ -162,12 +175,10 @@ export function SqlConsole() {
         <Button
           onClick={handleRun}
           disabled={mutation.isPending || !sql.trim()}
+          title="Run query (Ctrl+Enter)"
         >
           <Play className="size-4" />
           Run
-          <kbd className="ml-2 rounded bg-muted px-1.5 py-0.5 text-xs">
-            Ctrl+Enter
-          </kbd>
         </Button>
 
         {result && (
