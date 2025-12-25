@@ -23,12 +23,12 @@ import { Textarea } from "@/components/ui/textarea";
 const EXAMPLE_QUERIES = [
   {
     label: "Decks",
-    sql: `SELECT id, name FROM decks ORDER BY name`,
+    sql: `SELECT id, REPLACE(name, char(31), '::') as name FROM decks ORDER BY name`,
   },
   {
     label: "Deck stats",
     sql: `SELECT
-    d.name as deck,
+    REPLACE(d.name, char(31), '::') as deck,
     COUNT(*) as cards,
     ROUND(AVG(c.factor)/10.0, 1) as avg_ease,
     SUM(c.lapses) as total_lapses
