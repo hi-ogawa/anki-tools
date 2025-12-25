@@ -69,7 +69,7 @@ interface BrowseTableProps {
   // Bulk edit mode
   bulkEditMode?: boolean;
   rowSelection?: RowSelectionState;
-  onRowSelectionChange?: OnChangeFn<RowSelectionState>;
+  onRowSelectionChange?: (selection: RowSelectionState) => void;
   isAllSelected?: boolean; // When true, all checkboxes show as checked
 }
 
@@ -269,7 +269,11 @@ export function BrowseTable({
     state: { pagination, columnVisibility, rowSelection: rowSelection ?? {} },
     onPaginationChange,
     onColumnVisibilityChange: setColumnVisibility,
-    onRowSelectionChange,
+    onRowSelectionChange: (updater) => {
+      const newSelection =
+        typeof updater === "function" ? updater(rowSelection ?? {}) : updater;
+      onRowSelectionChange?.(newSelection);
+    },
     getRowId: (row) =>
       row.type === "card" ? String(row.cardId) : String(row.noteId),
     enableRowSelection: bulkEditMode,

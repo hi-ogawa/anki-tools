@@ -285,10 +285,11 @@ function NotesView({
   const [selected, setSelected] = useState<Item>();
   const [isStale, setIsStale] = useState(false);
 
-  // Bulk edit state
-  const [bulkEditMode, setBulkEditMode] = useState(false);
-  const [rowSelection, setRowSelection] = useState<RowSelectionState>({});
-  const [selectAllQuery, setSelectAllQuery] = useState<string | null>(null);
+  // Bulk edit state (undefined = not in bulk edit mode)
+  const [bulkEdit, setBulkEdit] = useState<{
+    rowSelection: RowSelectionState;
+    selectAllQuery?: string;
+  }>();
 
   // Resizable panel
   const [panelWidth, setPanelWidth] = useLocalStorage(
@@ -372,16 +373,10 @@ function NotesView({
   });
 
   // Bulk mutations
-  const exitBulkMode = () => {
-    setBulkEditMode(false);
-    setRowSelection({});
-    setSelectAllQuery(null);
-  };
-
   const bulkSetFlagMutation = useMutation({
     ...api.bulkSetCardFlags.mutationOptions(),
     onSuccess: () => {
-      exitBulkMode();
+      setBulkEdit(undefined);
       refetch();
     },
   });
@@ -389,7 +384,7 @@ function NotesView({
   const bulkSuspendMutation = useMutation({
     ...api.bulkSuspendCards.mutationOptions(),
     onSuccess: () => {
-      exitBulkMode();
+      setBulkEdit(undefined);
       refetch();
     },
   });
@@ -401,11 +396,11 @@ function NotesView({
   const fullQuery = `note:"${model}" ${fullSearch || ""}`.trim();
 
   const getBulkTarget = () => {
-    if (selectAllQuery) {
-      return { query: selectAllQuery };
+    if (bulkEdit?.selectAllQuery) {
+      return { query: bulkEdit.selectAllQuery };
     }
-    const cardIds = Object.keys(rowSelection)
-      .filter((k) => rowSelection[k])
+    const cardIds = Object.keys(bulkEdit?.rowSelection ?? {})
+      .filter((k) => bulkEdit?.rowSelection[k])
       .map(Number);
     return { cardIds };
   };
@@ -569,7 +564,7 @@ function NotesView({
       {viewMode === "cards" && (
         <Button
           variant="ghost"
-          onClick={() => setBulkEditMode(true)}
+          onClick={() => setBulkEdit({ rowSelection: {} })}
           data-testid="bulk-edit-button"
         >
           <Pencil className="size-4" />
@@ -579,21 +574,27 @@ function NotesView({
     </>
   );
 
-  const selectedCount = selectAllQuery
+  const selectedCount = bulkEdit?.selectAllQuery
     ? total
-    : Object.values(rowSelection).filter(Boolean).length;
+    : Object.values(bulkEdit?.rowSelection ?? {}).filter(Boolean).length;
 
   const bulkToolbar = (
     <BulkActions
       selectedCount={selectedCount}
       totalMatching={total}
-      isAllSelected={!!selectAllQuery}
-      onSelectAll={() => setSelectAllQuery(fullQuery)}
-      onClearSelection={() => {
-        setRowSelection({});
-        setSelectAllQuery(null);
-      }}
-      onExit={exitBulkMode}
+      isAllSelected={!!bulkEdit?.selectAllQuery}
+      onSelectAll={() =>
+        bulkEdit && setBulkEdit({ ...bulkEdit, selectAllQuery: fullQuery })
+      }
+      onClearSelection={() =>
+        bulkEdit &&
+        setBulkEdit({
+          ...bulkEdit,
+          rowSelection: {},
+          selectAllQuery: undefined,
+        })
+      }
+      onExit={() => setBulkEdit(undefined)}
       onSetFlag={handleBulkSetFlag}
       onSuspend={handleBulkSuspend}
       onUnsuspend={handleBulkUnsuspend}
@@ -638,11 +639,13 @@ function NotesView({
           onStateChange={onStateChange}
           selected={selected}
           onSelect={setSelected}
-          toolbarLeft={bulkEditMode ? bulkToolbar : toolbarLeft}
-          bulkEditMode={bulkEditMode}
-          rowSelection={rowSelection}
-          onRowSelectionChange={setRowSelection}
-          isAllSelected={!!selectAllQuery}
+          toolbarLeft={bulkEdit ? bulkToolbar : toolbarLeft}
+          bulkEditMode={!!bulkEdit}
+          rowSelection={bulkEdit?.rowSelection ?? {}}
+          onRowSelectionChange={(selection) =>
+            bulkEdit && setBulkEdit({ ...bulkEdit, rowSelection: selection })
+          }
+          isAllSelected={!!bulkEdit?.selectAllQuery}
         />
       </div>
       {selected && (
