@@ -421,16 +421,11 @@ function NotesView({
     bulkSetFlagMutation.mutate({ ...getBulkTarget(), flag });
   };
 
-  const handleBulkSuspend = () => {
+  const handleBulkSuspend = (suspended: boolean) => {
     const count = getSelectedCount();
-    if (!window.confirm(`Suspend ${count} cards?`)) return;
-    bulkSuspendMutation.mutate({ ...getBulkTarget(), suspended: true });
-  };
-
-  const handleBulkUnsuspend = () => {
-    const count = getSelectedCount();
-    if (!window.confirm(`Unsuspend ${count} cards?`)) return;
-    bulkSuspendMutation.mutate({ ...getBulkTarget(), suspended: false });
+    const action = suspended ? "Suspend" : "Unsuspend";
+    if (!window.confirm(`${action} ${count} cards?`)) return;
+    bulkSuspendMutation.mutate({ ...getBulkTarget(), suspended });
   };
 
   // Local search state - synced with URL
@@ -610,8 +605,8 @@ function NotesView({
       }
       onExit={() => setBulkEdit(undefined)}
       onSetFlag={handleBulkSetFlag}
-      onSuspend={handleBulkSuspend}
-      onUnsuspend={handleBulkUnsuspend}
+      onSuspend={() => handleBulkSuspend(true)}
+      onUnsuspend={() => handleBulkSuspend(false)}
       isPending={isBulkPending}
     />
   );
