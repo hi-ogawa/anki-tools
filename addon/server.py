@@ -240,7 +240,7 @@ def handle_action(col: Collection, action: str, params: dict):
 
     elif action == "executeQuery":
         sql = params["sql"]
-        query_params = params.get("params", [])
+        query_params = params.get("params")
 
         # Validate: only SELECT allowed
         normalized = sql.strip().upper()
@@ -265,14 +265,20 @@ def handle_action(col: Collection, action: str, params: dict):
                 raise ValueError(f"Query contains forbidden keyword: {kw}")
 
         t0 = time.perf_counter()
-        cursor = col.db.execute(sql, query_params)
-        columns = (
-            [desc[0] for desc in cursor.description]
-            if cursor.description
-            else []
+        # DBProxy.all() returns list of tuples, no column info available
+        # Parse column names from SQL SELECT clause as fallback
+        rows = (
+            col.db.all(sql)
+            if not query_params
+            else col.db.all(sql, *query_params)
         )
-        rows = cursor.fetchall()
         time_ms = int((time.perf_counter() - t0) * 1000)
+
+        # Extract column names from SQL
+        columns = parse_select_columns(sql)
+        # Fallback to indices if parsing fails
+        if not columns and rows:
+            columns = [f"col{i}" for i in range(len(rows[0]))]
 
         return {
             "columns": columns,
@@ -282,3 +288,46 @@ def handle_action(col: Collection, action: str, params: dict):
         }
 
     raise ValueError(f"Unknown action: {action}")
+
+
+def parse_select_columns(sql: str) -> list[str]:
+    """Extract column names/aliases from SELECT clause."""
+    import re
+
+    # Match SELECT ... FROM (case insensitive)
+    match = re.search(r"SELECT\s+(.+?)\s+FROM", sql, re.IGNORECASE | re.DOTALL)
+    if not match:
+        return []
+
+    select_part = match.group(1)
+    columns = []
+
+    # Split by comma, handling nested parentheses
+    depth = 0
+    current = ""
+    for char in select_part:
+        if char == "(":
+            depth += 1
+        elif char == ")":
+            depth -= 1
+        elif char == "," and depth == 0:
+            columns.append(current.strip())
+            current = ""
+            continue
+        current += char
+    if current.strip():
+        columns.append(current.strip())
+
+    # Extract alias or column name from each part
+    result = []
+    for col in columns:
+        # Check for "AS alias" pattern
+        as_match = re.search(r"\s+AS\s+(\w+)\s*$", col, re.IGNORECASE)
+        if as_match:
+            result.append(as_match.group(1))
+        else:
+            # Use last word (handles "table.column" -> "column")
+            words = re.findall(r"\w+", col)
+            result.append(words[-1] if words else col)
+
+    return result

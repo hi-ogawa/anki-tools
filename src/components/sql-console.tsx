@@ -79,6 +79,7 @@ export function SqlConsole() {
   const mutation = useMutation({
     ...api.executeQuery.mutationOptions(),
     onSuccess: (data) => setResult(data),
+    onError: () => {}, // Prevent global alert - errors shown inline
   });
 
   const handleRun = () => {
