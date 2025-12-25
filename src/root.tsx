@@ -306,9 +306,9 @@ function NotesView({
     maxWidth: 700,
   });
 
-  // Build full query with filters
-  const fullSearch = useMemo(() => {
-    const parts: string[] = [];
+  // Build full Anki query with model and filters
+  const query = useMemo(() => {
+    const parts: string[] = [`note:"${model}"`];
     if (search) parts.push(search);
     if (flag) parts.push(`flag:${flag}`);
     if (deck) parts.push(`deck:"${deck}"`);
@@ -317,13 +317,12 @@ function NotesView({
       const tagQuery = tags.map((t) => `tag:"${t}"`).join(" OR ");
       parts.push(`(${tagQuery})`);
     }
-    return parts.join(" ") || undefined;
-  }, [search, flag, deck, tags]);
+    return parts.join(" ");
+  }, [model, search, flag, deck, tags]);
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     ...api.fetchItems.queryOptions({
-      modelName: model,
-      search: fullSearch,
+      query,
       viewMode,
       limit: pageSize,
       offset: page * pageSize,
@@ -396,12 +395,9 @@ function NotesView({
   const isBulkPending =
     bulkSetFlagMutation.isPending || bulkSuspendMutation.isPending;
 
-  // Build the query for bulk operations
-  const fullQuery = `note:"${model}" ${fullSearch || ""}`.trim();
-
   const getBulkTarget = () => {
     if (bulkEdit?.isAllSelected) {
-      return { query: fullQuery };
+      return { query };
     }
     const cardIds = Object.keys(bulkEdit?.rowSelection ?? {})
       .filter((k) => bulkEdit?.rowSelection[k])

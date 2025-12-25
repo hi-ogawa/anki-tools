@@ -19,7 +19,7 @@
 - transition and suspense query https://github.com/hi-ogawa/anki-tools/pull/16
 - component hierarchy https://github.com/hi-ogawa/anki-tools/pull/17
 - error boundary
-- search, fullSearch, fullQuery, state is confusing. we should probably tweak fetchItems api to just expect modelName query from caller.
+- align with `PaginationState` type
 
 ## Chore
 
