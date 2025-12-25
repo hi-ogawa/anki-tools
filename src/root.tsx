@@ -137,9 +137,10 @@ function App() {
 
   const setUrlModel = (model: string) => {
     setLastModel(model);
+    // Reset pagination/search when model changes for a clean slate
+    // This matches the original behavior and makes sense UX-wise
     setUrlState({
       model,
-      // Reset pagination/search when model changes
       page: null,
       pageSize: null,
       search: null,
@@ -147,7 +148,13 @@ function App() {
   };
 
   const handleStateChange = (newState: UrlStateUpdate) => {
-    setUrlState(newState);
+    // Convert empty arrays to null to clear the query parameter
+    // (tags is the only array property in UrlStateUpdate)
+    const normalizedState = { ...newState };
+    if (Array.isArray(normalizedState.tags) && normalizedState.tags.length === 0) {
+      normalizedState.tags = null;
+    }
+    setUrlState(normalizedState);
   };
 
   // Derive main content
