@@ -396,33 +396,30 @@ function NotesView({
     bulkSetFlagMutation.isPending || bulkSuspendMutation.isPending;
 
   const getBulkTarget = () => {
-    if (bulkEdit?.isAllSelected) {
-      return { query };
+    if (!bulkEdit) {
+      return { cardIds: [], count: 0 };
     }
-    const cardIds = Object.keys(bulkEdit?.rowSelection ?? {})
-      .filter((k) => bulkEdit?.rowSelection[k])
+    if (bulkEdit.isAllSelected) {
+      return { query, count: total };
+    }
+    const cardIds = Object.keys(bulkEdit.rowSelection)
+      .filter((k) => bulkEdit.rowSelection[k])
       .map(Number);
-    return { cardIds };
-  };
-
-  const getSelectedCount = () => {
-    if (!bulkEdit) return 0;
-    if (bulkEdit.isAllSelected) return total;
-    return Object.values(bulkEdit.rowSelection).filter(Boolean).length;
+    return { cardIds, count: cardIds.length };
   };
 
   const handleBulkSetFlag = (flag: number) => {
-    const count = getSelectedCount();
+    const { count, ...target } = getBulkTarget();
     const label = FLAG_OPTIONS.find((f) => f.value === flag)?.label ?? flag;
     if (!window.confirm(`Set flag to ${label} for ${count} cards?`)) return;
-    bulkSetFlagMutation.mutate({ ...getBulkTarget(), flag });
+    bulkSetFlagMutation.mutate({ ...target, flag });
   };
 
   const handleBulkSuspend = (suspended: boolean) => {
-    const count = getSelectedCount();
+    const { count, ...target } = getBulkTarget();
     const action = suspended ? "Suspend" : "Unsuspend";
     if (!window.confirm(`${action} ${count} cards?`)) return;
-    bulkSuspendMutation.mutate({ ...getBulkTarget(), suspended });
+    bulkSuspendMutation.mutate({ ...target, suspended });
   };
 
   // Local search state - synced with URL
@@ -593,7 +590,7 @@ function NotesView({
 
   const bulkToolbar = (
     <BulkActions
-      selectedCount={getSelectedCount()}
+      selectedCount={getBulkTarget().count}
       totalMatching={total}
       isAllSelected={!!bulkEdit?.isAllSelected}
       onSelectAll={() => setBulkEdit({ rowSelection: {}, isAllSelected: true })}
