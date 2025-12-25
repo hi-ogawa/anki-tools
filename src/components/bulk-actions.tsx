@@ -1,0 +1,114 @@
+import { Flag, Pause, Play, X } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { FLAG_OPTIONS } from "@/lib/constants";
+
+interface BulkActionsProps {
+  selectedCount: number;
+  totalMatching: number;
+  isAllSelected: boolean;
+  onSelectAll: () => void;
+  onExit: () => void;
+  onSetFlag: (flag: number) => void;
+  onSuspend: () => void;
+  onUnsuspend: () => void;
+  isPending?: boolean;
+}
+
+export function BulkActions({
+  selectedCount,
+  totalMatching,
+  isAllSelected,
+  onSelectAll,
+  onExit,
+  onSetFlag,
+  onSuspend,
+  onUnsuspend,
+  isPending,
+}: BulkActionsProps) {
+  const hasSelection = selectedCount > 0;
+
+  return (
+    <div className="flex items-center gap-2">
+      <Button variant="ghost" size="sm" onClick={onExit} disabled={isPending}>
+        <X className="size-4" />
+        Exit Edit
+      </Button>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={isPending || !hasSelection}
+          >
+            <Flag className="size-4" />
+            Flag
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent>
+          {FLAG_OPTIONS.map((opt) => (
+            <DropdownMenuItem
+              key={opt.value}
+              onClick={() => onSetFlag(opt.value)}
+            >
+              <Flag
+                className="size-4"
+                style={{ color: opt.color }}
+                fill={opt.color ?? "none"}
+              />
+              {opt.label}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onSuspend}
+        disabled={isPending || !hasSelection}
+      >
+        <Pause className="size-4" />
+        Suspend
+      </Button>
+
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={onUnsuspend}
+        disabled={isPending || !hasSelection}
+      >
+        <Play className="size-4" />
+        Unsuspend
+      </Button>
+
+      <div className="h-4 w-px bg-border" />
+
+      <span className="text-sm text-muted-foreground">
+        {isAllSelected
+          ? `All ${totalMatching} selected`
+          : hasSelection
+            ? `${selectedCount} selected`
+            : "0 selected"}
+      </span>
+
+      {!isAllSelected && (
+        <Button
+          variant="link"
+          size="sm"
+          className="h-auto p-0 text-sm"
+          onClick={onSelectAll}
+          disabled={isPending}
+        >
+          Select all {totalMatching} from search
+        </Button>
+      )}
+    </div>
+  );
+}

@@ -5,11 +5,20 @@ import {
   useMutation,
   keepPreviousData,
 } from "@tanstack/react-query";
-import { CircleHelp, Flag, Library, RefreshCw, Tag } from "lucide-react";
+import type { RowSelectionState } from "@tanstack/react-table";
+import {
+  CircleHelp,
+  Flag,
+  Library,
+  Pencil,
+  RefreshCw,
+  Tag,
+} from "lucide-react";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router";
 import { api, type Item, type ViewMode } from "./api";
 import { BrowseTable } from "./components/browse-table";
+import { BulkActions } from "./components/bulk-actions";
 import { NoteDetail } from "./components/note-detail";
 import { TableSkeleton } from "./components/table-skeleton";
 import { Button } from "./components/ui/button";
@@ -29,7 +38,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./components/ui/select";
-import { FLAG_COLORS, FLAG_FILTER_OPTIONS } from "./lib/constants";
+import {
+  FLAG_COLORS,
+  FLAG_FILTER_OPTIONS,
+  FLAG_OPTIONS,
+} from "./lib/constants";
 import { useLocalStorage } from "./lib/use-local-storage";
 import { useResize } from "./lib/use-resize";
 
@@ -276,6 +289,12 @@ function NotesView({
   const [selected, setSelected] = useState<Item>();
   const [isStale, setIsStale] = useState(false);
 
+  // Bulk edit state (undefined = not in bulk edit mode)
+  const [bulkEdit, setBulkEdit] = useState<{
+    rowSelection: RowSelectionState;
+    isAllSelected: boolean;
+  }>();
+
   // Resizable panel
   const [panelWidth, setPanelWidth] = useLocalStorage(
     "anki-browse-panel-width",
@@ -287,9 +306,9 @@ function NotesView({
     maxWidth: 700,
   });
 
-  // Build full query with filters
-  const fullSearch = useMemo(() => {
-    const parts: string[] = [];
+  // Build full Anki query with model and filters
+  const query = useMemo(() => {
+    const parts: string[] = [`note:"${model}"`];
     if (search) parts.push(search);
     if (flag) parts.push(`flag:${flag}`);
     if (deck) parts.push(`deck:"${deck}"`);
@@ -298,13 +317,12 @@ function NotesView({
       const tagQuery = tags.map((t) => `tag:"${t}"`).join(" OR ");
       parts.push(`(${tagQuery})`);
     }
-    return parts.join(" ") || undefined;
-  }, [search, flag, deck, tags]);
+    return parts.join(" ");
+  }, [model, search, flag, deck, tags]);
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     ...api.fetchItems.queryOptions({
-      modelName: model,
-      search: fullSearch,
+      query,
       viewMode,
       limit: pageSize,
       offset: page * pageSize,
@@ -356,6 +374,53 @@ function NotesView({
       );
     },
   });
+
+  // Bulk mutations
+  const bulkSetFlagMutation = useMutation({
+    ...api.bulkSetCardFlags.mutationOptions(),
+    onSuccess: () => {
+      setBulkEdit(undefined);
+      refetch();
+    },
+  });
+
+  const bulkSuspendMutation = useMutation({
+    ...api.bulkSuspendCards.mutationOptions(),
+    onSuccess: () => {
+      setBulkEdit(undefined);
+      refetch();
+    },
+  });
+
+  const isBulkPending =
+    bulkSetFlagMutation.isPending || bulkSuspendMutation.isPending;
+
+  const getBulkTarget = () => {
+    if (!bulkEdit) {
+      return { cardIds: [], count: 0 };
+    }
+    if (bulkEdit.isAllSelected) {
+      return { query, count: total };
+    }
+    const cardIds = Object.keys(bulkEdit.rowSelection)
+      .filter((k) => bulkEdit.rowSelection[k])
+      .map(Number);
+    return { cardIds, count: cardIds.length };
+  };
+
+  const handleBulkSetFlag = (flag: number) => {
+    const { count, ...target } = getBulkTarget();
+    const label = FLAG_OPTIONS.find((f) => f.value === flag)?.label ?? flag;
+    if (!window.confirm(`Set flag to ${label} for ${count} cards?`)) return;
+    bulkSetFlagMutation.mutate({ ...target, flag });
+  };
+
+  const handleBulkSuspend = (suspended: boolean) => {
+    const { count, ...target } = getBulkTarget();
+    const action = suspended ? "Suspend" : "Unsuspend";
+    if (!window.confirm(`${action} ${count} cards?`)) return;
+    bulkSuspendMutation.mutate({ ...target, suspended });
+  };
 
   // Local search state - synced with URL
   const [localSearch, setLocalSearch] = useState(search ?? "");
@@ -501,7 +566,40 @@ function NotesView({
           className={`size-4 ${!isLoading && isFetching ? "animate-spin" : ""}`}
         />
       </Button>
+      <span
+        title={
+          viewMode === "notes"
+            ? "Bulk edit only available in cards view"
+            : undefined
+        }
+      >
+        <Button
+          variant="ghost"
+          onClick={() =>
+            setBulkEdit({ rowSelection: {}, isAllSelected: false })
+          }
+          disabled={viewMode === "notes"}
+          data-testid="bulk-edit-button"
+        >
+          <Pencil className="size-4" />
+          Bulk Edit
+        </Button>
+      </span>
     </>
+  );
+
+  const bulkToolbar = (
+    <BulkActions
+      selectedCount={getBulkTarget().count}
+      totalMatching={total}
+      isAllSelected={!!bulkEdit?.isAllSelected}
+      onSelectAll={() => setBulkEdit({ rowSelection: {}, isAllSelected: true })}
+      onExit={() => setBulkEdit(undefined)}
+      onSetFlag={handleBulkSetFlag}
+      onSuspend={() => handleBulkSuspend(true)}
+      onUnsuspend={() => handleBulkSuspend(false)}
+      isPending={isBulkPending}
+    />
   );
 
   if (error) {
@@ -541,7 +639,11 @@ function NotesView({
           onStateChange={onStateChange}
           selected={selected}
           onSelect={setSelected}
-          toolbarLeft={toolbarLeft}
+          toolbarLeft={bulkEdit ? bulkToolbar : toolbarLeft}
+          bulkEdit={bulkEdit}
+          onBulkEditRawSelectionChange={(selection) =>
+            bulkEdit && setBulkEdit({ ...bulkEdit, rowSelection: selection })
+          }
         />
       </div>
       {selected && (
