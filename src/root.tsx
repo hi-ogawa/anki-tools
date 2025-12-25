@@ -405,10 +405,11 @@ function NotesView({
     return { cardIds };
   };
 
-  const getSelectedCount = () =>
-    bulkEdit?.isAllSelected
-      ? total
-      : Object.values(bulkEdit?.rowSelection ?? {}).filter(Boolean).length;
+  const getSelectedCount = () => {
+    if (!bulkEdit) return 0;
+    if (bulkEdit.isAllSelected) return total;
+    return Object.values(bulkEdit.rowSelection).filter(Boolean).length;
+  };
 
   const handleBulkSetFlag = (flag: number) => {
     const count = getSelectedCount();
@@ -569,11 +570,17 @@ function NotesView({
         />
       </Button>
       <span
-        title={viewMode === "notes" ? "Bulk edit only available in cards view" : undefined}
+        title={
+          viewMode === "notes"
+            ? "Bulk edit only available in cards view"
+            : undefined
+        }
       >
         <Button
           variant="ghost"
-          onClick={() => setBulkEdit({ rowSelection: {}, isAllSelected: false })}
+          onClick={() =>
+            setBulkEdit({ rowSelection: {}, isAllSelected: false })
+          }
           disabled={viewMode === "notes"}
           data-testid="bulk-edit-button"
         >
@@ -584,11 +591,9 @@ function NotesView({
     </>
   );
 
-  const selectedCount = getSelectedCount();
-
   const bulkToolbar = (
     <BulkActions
-      selectedCount={selectedCount}
+      selectedCount={getSelectedCount()}
       totalMatching={total}
       isAllSelected={!!bulkEdit?.isAllSelected}
       onSelectAll={() => setBulkEdit({ rowSelection: {}, isAllSelected: true })}
