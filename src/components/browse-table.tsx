@@ -68,9 +68,9 @@ interface BrowseTableProps {
   toolbarLeft?: React.ReactNode;
   bulkEdit?: {
     rowSelection: RowSelectionState;
-    onRowSelectionChange: (selection: RowSelectionState) => void;
     isAllSelected: boolean;
   };
+  onBulkEditRawSelectionChange: (selection: RowSelectionState) => void;
 }
 
 export function BrowseTable({
@@ -86,6 +86,7 @@ export function BrowseTable({
   onSelect,
   toolbarLeft,
   bulkEdit,
+  onBulkEditRawSelectionChange,
 }: BrowseTableProps) {
   // Build columns
   const columns = useMemo<ColumnDef<Item>[]>(() => {
@@ -229,7 +230,7 @@ export function BrowseTable({
     }
 
     return cols;
-  }, [fields, viewMode, !!bulkEdit, bulkEdit?.isAllSelected]);
+  }, [fields, viewMode, bulkEdit]);
 
   // Column visibility
   const [columnVisibility, setColumnVisibility] = useLocalStorage(
@@ -277,7 +278,7 @@ export function BrowseTable({
         typeof updater === "function"
           ? updater(bulkEdit.rowSelection)
           : updater;
-      bulkEdit.onRowSelectionChange(newSelection);
+      onBulkEditRawSelectionChange(newSelection);
     },
     getRowId: (row) =>
       row.type === "card" ? String(row.cardId) : String(row.noteId),
