@@ -66,11 +66,11 @@ interface BrowseTableProps {
   selected?: Item;
   onSelect: (item: Item) => void;
   toolbarLeft?: React.ReactNode;
-  // Bulk edit mode
-  bulkEditMode?: boolean;
-  rowSelection?: RowSelectionState;
-  onRowSelectionChange?: (selection: RowSelectionState) => void;
-  isAllSelected?: boolean; // When true, all checkboxes show as checked
+  bulkEdit?: {
+    rowSelection: RowSelectionState;
+    onRowSelectionChange: (selection: RowSelectionState) => void;
+    isAllSelected: boolean;
+  };
 }
 
 export function BrowseTable({
@@ -85,23 +85,20 @@ export function BrowseTable({
   selected,
   onSelect,
   toolbarLeft,
-  bulkEditMode,
-  rowSelection,
-  onRowSelectionChange,
-  isAllSelected,
+  bulkEdit,
 }: BrowseTableProps) {
   // Build columns
   const columns = useMemo<ColumnDef<Item>[]>(() => {
     const cols: ColumnDef<Item>[] = [];
 
     // Checkbox column for bulk edit mode
-    if (bulkEditMode) {
+    if (bulkEdit) {
       cols.push({
         id: "select",
         header: ({ table }) => (
           <Checkbox
             checked={
-              isAllSelected ||
+              bulkEdit.isAllSelected ||
               table.getIsAllPageRowsSelected() ||
               (table.getIsSomePageRowsSelected() && "indeterminate")
             }
@@ -109,16 +106,16 @@ export function BrowseTable({
               table.toggleAllPageRowsSelected(!!value)
             }
             aria-label="Select all"
-            disabled={isAllSelected}
+            disabled={bulkEdit.isAllSelected}
           />
         ),
         cell: ({ row }) => (
           <Checkbox
-            checked={isAllSelected || row.getIsSelected()}
+            checked={bulkEdit.isAllSelected || row.getIsSelected()}
             onCheckedChange={(value) => row.toggleSelected(!!value)}
             aria-label="Select row"
             onClick={(e) => e.stopPropagation()}
-            disabled={isAllSelected}
+            disabled={bulkEdit.isAllSelected}
           />
         ),
         enableHiding: false,
@@ -232,7 +229,7 @@ export function BrowseTable({
     }
 
     return cols;
-  }, [fields, viewMode, bulkEditMode, isAllSelected]);
+  }, [fields, viewMode, !!bulkEdit, bulkEdit?.isAllSelected]);
 
   // Column visibility
   const [columnVisibility, setColumnVisibility] = useLocalStorage(
@@ -266,17 +263,24 @@ export function BrowseTable({
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true, // Server-side pagination
     pageCount,
-    state: { pagination, columnVisibility, rowSelection: rowSelection ?? {} },
+    state: {
+      pagination,
+      columnVisibility,
+      rowSelection: bulkEdit?.rowSelection,
+    },
     onPaginationChange,
     onColumnVisibilityChange: setColumnVisibility,
+    enableRowSelection: !!bulkEdit,
     onRowSelectionChange: (updater) => {
+      if (!bulkEdit) return;
       const newSelection =
-        typeof updater === "function" ? updater(rowSelection ?? {}) : updater;
-      onRowSelectionChange?.(newSelection);
+        typeof updater === "function"
+          ? updater(bulkEdit.rowSelection)
+          : updater;
+      bulkEdit.onRowSelectionChange(newSelection);
     },
     getRowId: (row) =>
       row.type === "card" ? String(row.cardId) : String(row.noteId),
-    enableRowSelection: bulkEditMode,
   });
 
   return (

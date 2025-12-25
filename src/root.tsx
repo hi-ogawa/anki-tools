@@ -640,12 +640,14 @@ function NotesView({
           selected={selected}
           onSelect={setSelected}
           toolbarLeft={bulkEdit ? bulkToolbar : toolbarLeft}
-          bulkEditMode={!!bulkEdit}
-          rowSelection={bulkEdit?.rowSelection ?? {}}
-          onRowSelectionChange={(selection) =>
-            bulkEdit && setBulkEdit({ ...bulkEdit, rowSelection: selection })
+          bulkEdit={
+            bulkEdit && {
+              rowSelection: bulkEdit.rowSelection,
+              onRowSelectionChange: (selection) =>
+                setBulkEdit({ ...bulkEdit, rowSelection: selection }),
+              isAllSelected: !!bulkEdit.selectAllQuery,
+            }
           }
-          isAllSelected={!!bulkEdit?.selectAllQuery}
         />
       </div>
       {selected && (
