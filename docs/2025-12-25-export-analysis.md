@@ -401,3 +401,9 @@ cardId,noteId,deckName,modelName,tags,Front,Back,flag,queue,due,interval,ease,la
 - **Scheduled exports** via add-on hook
 - **In-app analytics** (charts, histograms) instead of export-only
 - **Import** capability for edited data
+
+## feedback
+
+- showing models / note type selector seems odd since SQL view mode is entirely independent.
+- not sure how "run" button is designed. look weird.
+- don't need each button for examples, should be quick dropdown is enough.
