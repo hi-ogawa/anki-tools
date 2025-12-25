@@ -22,6 +22,10 @@ import { Textarea } from "@/components/ui/textarea";
 
 const EXAMPLE_QUERIES = [
   {
+    label: "Decks",
+    sql: `SELECT id, name FROM decks ORDER BY name`,
+  },
+  {
     label: "Deck stats",
     sql: `SELECT
     d.name as deck,
