@@ -11,7 +11,7 @@ dev = ["ruff"]
 line-length = 80
 
 [tool.ruff.lint]
-select = ["I"]  # isort for import sorting
+select = ["I"] # isort for import sorting
 
 [tool.ruff.format]
 quote-style = "double"
