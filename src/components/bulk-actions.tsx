@@ -13,7 +13,6 @@ interface BulkActionsProps {
   totalMatching: number;
   isAllSelected: boolean;
   onSelectAll: () => void;
-  onClearSelection: () => void;
   onExit: () => void;
   onSetFlag: (flag: number) => void;
   onSuspend: () => void;
@@ -26,7 +25,6 @@ export function BulkActions({
   totalMatching,
   isAllSelected,
   onSelectAll,
-  onClearSelection,
   onExit,
   onSetFlag,
   onSuspend,
@@ -34,50 +32,13 @@ export function BulkActions({
   isPending,
 }: BulkActionsProps) {
   const hasSelection = selectedCount > 0;
-  // Show "Select all N matching" when not already in "all selected" mode
-  const showSelectAllBanner = !isAllSelected && totalMatching > 0;
 
   return (
     <div className="flex items-center gap-2">
       <Button variant="ghost" size="sm" onClick={onExit} disabled={isPending}>
         <X className="size-4" />
-        Exit
+        Exit Edit
       </Button>
-
-      <div className="h-4 w-px bg-border" />
-
-      <span className="text-sm text-muted-foreground">
-        {isAllSelected
-          ? `All ${totalMatching} selected`
-          : hasSelection
-            ? `${selectedCount} selected`
-            : "0 selected"}
-      </span>
-
-      {showSelectAllBanner && (
-        <Button
-          variant="link"
-          size="sm"
-          className="h-auto p-0 text-sm"
-          onClick={onSelectAll}
-          disabled={isPending}
-        >
-          Select all {totalMatching} matching
-        </Button>
-      )}
-
-      {hasSelection && (
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onClearSelection}
-          disabled={isPending}
-        >
-          Clear
-        </Button>
-      )}
-
-      <div className="h-4 w-px bg-border" />
 
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -126,6 +87,28 @@ export function BulkActions({
         <Play className="size-4" />
         Unsuspend
       </Button>
+
+      <div className="h-4 w-px bg-border" />
+
+      <span className="text-sm text-muted-foreground">
+        {isAllSelected
+          ? `All ${totalMatching} selected`
+          : hasSelection
+            ? `${selectedCount} selected`
+            : "0 selected"}
+      </span>
+
+      {!isAllSelected && (
+        <Button
+          variant="link"
+          size="sm"
+          className="h-auto p-0 text-sm"
+          onClick={onSelectAll}
+          disabled={isPending}
+        >
+          Select all {totalMatching} from search
+        </Button>
+      )}
     </div>
   );
 }

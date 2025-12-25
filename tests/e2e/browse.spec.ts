@@ -366,16 +366,12 @@ test("bulk edit - select all on page", async ({ page }) => {
   const headerCheckbox = page.getByRole("row").first().getByRole("checkbox");
   await headerCheckbox.click();
 
-  // Should show "10 selected" and "Select all 20 matching" link
+  // Should show "10 selected" and "Select all 20" link
   await expect(page.getByText("10 selected")).toBeVisible();
-  await expect(page.getByText("Select all 20 matching")).toBeVisible();
-
-  // Clear selection
-  await page.getByRole("button", { name: "Clear" }).click();
-  await expect(page.getByText("0 selected")).toBeVisible();
+  await expect(page.getByText("Select all 20")).toBeVisible();
 
   // Exit bulk edit mode
-  await page.getByRole("button", { name: "Exit" }).click();
+  await page.getByRole("button", { name: "Exit Edit" }).click();
   await expect(page.getByTestId("bulk-edit-button")).toBeVisible();
 });
 

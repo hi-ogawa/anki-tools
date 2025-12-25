@@ -594,9 +594,6 @@ function NotesView({
       totalMatching={total}
       isAllSelected={!!bulkEdit?.isAllSelected}
       onSelectAll={() => setBulkEdit({ rowSelection: {}, isAllSelected: true })}
-      onClearSelection={() =>
-        setBulkEdit({ rowSelection: {}, isAllSelected: false })
-      }
       onExit={() => setBulkEdit(undefined)}
       onSetFlag={handleBulkSetFlag}
       onSuspend={() => handleBulkSuspend(true)}
