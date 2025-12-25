@@ -192,6 +192,7 @@ export function BrowseTable({
               className="size-4"
               style={{ color: FLAG_COLORS[flag] }}
               fill={FLAG_COLORS[flag]}
+              data-testid={`flag-${flag}`}
             />
           );
         },

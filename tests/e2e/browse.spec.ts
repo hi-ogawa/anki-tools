@@ -318,11 +318,8 @@ test("bulk edit - select cards and set flag", async ({ page }) => {
 
   // Verify flags were set by checking the table shows purple flags
   await page.reload();
-  // First two rows should have purple flags (rgb(168, 85, 247))
-  const flagCells = page.locator('[data-slot="table-cell"]').filter({
-    has: page.locator('svg[style*="rgb(168, 85, 247)"]'),
-  });
-  await expect(flagCells).toHaveCount(2);
+  // Purple = flag 7
+  await expect(page.getByTestId("flag-7")).toHaveCount(2);
 });
 
 test("bulk edit - suspend multiple cards", async ({ page }) => {
@@ -401,8 +398,6 @@ test("bulk edit - select all matching query", async ({ page }) => {
 
   // Reload and verify all Japanese deck cards have orange flag
   await page.reload();
-  const flagCells = page.locator('[data-slot="table-cell"]').filter({
-    has: page.locator('svg[style*="rgb(249, 115, 22)"]'),
-  });
-  await expect(flagCells).toHaveCount(6);
+  // Orange = flag 2
+  await expect(page.getByTestId("flag-2")).toHaveCount(6);
 });
