@@ -14,8 +14,15 @@ import {
   RefreshCw,
   Tag,
 } from "lucide-react";
+import {
+  useQueryStates,
+  parseAsString,
+  parseAsInteger,
+  parseAsArrayOf,
+  parseAsStringLiteral,
+} from "nuqs";
 import { useMemo, useState, useEffect, useRef } from "react";
-import { Link, useSearchParams } from "react-router";
+import { Link } from "react-router";
 import { api, type Item, type ViewMode } from "./api";
 import { BrowseTable } from "./components/browse-table";
 import { BulkActions } from "./components/bulk-actions";
@@ -64,18 +71,33 @@ export function Root() {
 }
 
 function App() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const urlModel = searchParams.get("model");
+  const [urlState, setUrlState] = useQueryStates(
+    {
+      model: parseAsString,
+      page: parseAsInteger.withDefault(1),
+      pageSize: parseAsInteger.withDefault(20),
+      search: parseAsString,
+      flag: parseAsString,
+      deck: parseAsString,
+      tags: parseAsArrayOf(parseAsString),
+      view: parseAsStringLiteral(["cards", "notes"] as const).withDefault(
+        "cards",
+      ),
+    },
+    {
+      history: "push",
+    },
+  );
+
+  const urlModel = urlState.model;
   // URL uses 1-based page, convert to 0-based for table
-  const urlPage = parseInt(searchParams.get("page") ?? "1", 10);
-  const pageIndex = Math.max(0, urlPage - 1);
-  const pageSize = parseInt(searchParams.get("pageSize") ?? "20", 10);
-  const search = searchParams.get("search") ?? undefined;
-  const flag = searchParams.get("flag") ?? undefined;
-  const deck = searchParams.get("deck") ?? undefined;
-  const tagsParam = searchParams.get("tags");
-  const tags = tagsParam ? tagsParam.split(",") : undefined;
-  const viewMode = (searchParams.get("view") ?? "cards") as ViewMode;
+  const pageIndex = Math.max(0, urlState.page - 1);
+  const pageSize = urlState.pageSize;
+  const search = urlState.search ?? undefined;
+  const flag = urlState.flag ?? undefined;
+  const deck = urlState.deck ?? undefined;
+  const tags = urlState.tags ?? undefined;
+  const viewMode = urlState.view;
 
   // Fetch schema (models + decks)
   const {
@@ -109,42 +131,23 @@ function App() {
     if (!models || urlModel) return;
     if (lastModel && models[lastModel]) {
       hasAutoSelected.current = true;
-      setSearchParams((prev) => {
-        prev.set("model", lastModel);
-        return prev;
-      });
+      setUrlState({ model: lastModel });
     }
-  }, [models, urlModel, lastModel, setSearchParams]);
+  }, [models, urlModel, lastModel, setUrlState]);
 
   const setUrlModel = (model: string) => {
     setLastModel(model);
-    setSearchParams((prev) => {
-      prev.set("model", model);
+    setUrlState({
+      model,
       // Reset pagination/search when model changes
-      prev.delete("page");
-      prev.delete("pageSize");
-      prev.delete("search");
-      return prev;
+      page: null,
+      pageSize: null,
+      search: null,
     });
   };
 
-  const setUrlState = (newState: UrlState) => {
-    setSearchParams((prev) => {
-      for (const [key, value] of Object.entries(newState)) {
-        if (
-          value === undefined ||
-          value === "" ||
-          (Array.isArray(value) && value.length === 0)
-        ) {
-          prev.delete(key);
-        } else if (Array.isArray(value)) {
-          prev.set(key, value.join(","));
-        } else {
-          prev.set(key, String(value));
-        }
-      }
-      return prev;
-    });
+  const handleStateChange = (newState: UrlStateUpdate) => {
+    setUrlState(newState);
   };
 
   // Derive main content
@@ -189,7 +192,7 @@ function App() {
         deck={deck}
         tags={tags}
         viewMode={viewMode}
-        onStateChange={setUrlState}
+        onStateChange={handleStateChange}
       />
     );
   }
@@ -222,12 +225,7 @@ function App() {
           </Select>
           <Select
             value={viewMode}
-            onValueChange={(value) =>
-              setSearchParams((p) => {
-                p.set("view", value);
-                return p;
-              })
-            }
+            onValueChange={(value) => setUrlState({ view: value as ViewMode })}
             disabled={schemaLoading || !!schemaError}
           >
             <SelectTrigger size="sm" className="w-[100px]">
@@ -248,13 +246,13 @@ function App() {
   );
 }
 
-interface UrlState {
-  page?: number;
-  pageSize?: number;
-  search?: string;
-  flag?: string;
-  deck?: string;
-  tags?: string[] | undefined;
+interface UrlStateUpdate {
+  page?: number | null;
+  pageSize?: number | null;
+  search?: string | null;
+  flag?: string | null;
+  deck?: string | null;
+  tags?: string[] | null;
 }
 
 interface NotesViewProps {
@@ -269,7 +267,7 @@ interface NotesViewProps {
   deck?: string;
   tags?: string[];
   viewMode: ViewMode;
-  onStateChange: (newState: UrlState) => void;
+  onStateChange: (newState: UrlStateUpdate) => void;
 }
 
 function NotesView({
