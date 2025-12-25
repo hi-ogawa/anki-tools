@@ -568,18 +568,19 @@ function NotesView({
           className={`size-4 ${!isLoading && isFetching ? "animate-spin" : ""}`}
         />
       </Button>
-      {viewMode === "cards" && (
+      <span
+        title={viewMode === "notes" ? "Bulk edit only available in cards view" : undefined}
+      >
         <Button
           variant="ghost"
-          onClick={() =>
-            setBulkEdit({ rowSelection: {}, isAllSelected: false })
-          }
+          onClick={() => setBulkEdit({ rowSelection: {}, isAllSelected: false })}
+          disabled={viewMode === "notes"}
           data-testid="bulk-edit-button"
         >
           <Pencil className="size-4" />
           Bulk Edit
         </Button>
-      )}
+      </span>
     </>
   );
 
