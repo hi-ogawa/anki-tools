@@ -28,7 +28,7 @@ export type Note = NoteData & { type: "note" };
 export type Card = NoteData & CardData & { type: "card" };
 export type Item = Note | Card;
 
-export type ViewMode = "notes" | "cards";
+export type ViewMode = "notes" | "cards" | "sql";
 
 // Raw API responses (before transformation)
 type RawNote = {
@@ -176,6 +176,16 @@ const implementations = {
     input: ({ cardIds: number[] } | { query: string }) & { suspended: boolean },
   ) => {
     return invoke<number>("bulkSuspendCards", input);
+  },
+
+  // Execute raw SQL query (read-only)
+  executeQuery: (input: { sql: string; params?: unknown[] }) => {
+    return invoke<{
+      columns: string[];
+      rows: unknown[][];
+      count: number;
+      time_ms: number;
+    }>("executeQuery", input);
   },
 };
 

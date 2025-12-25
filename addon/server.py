@@ -238,4 +238,47 @@ def handle_action(col: Collection, action: str, params: dict):
             col.sched.unsuspend_cards(card_ids)
         return len(card_ids)
 
+    elif action == "executeQuery":
+        sql = params["sql"]
+        query_params = params.get("params", [])
+
+        # Validate: only SELECT allowed
+        normalized = sql.strip().upper()
+        if not normalized.startswith("SELECT"):
+            raise ValueError("Only SELECT queries are allowed")
+
+        # Block dangerous keywords
+        dangerous = [
+            "INSERT",
+            "UPDATE",
+            "DELETE",
+            "DROP",
+            "ALTER",
+            "CREATE",
+            "ATTACH",
+            "DETACH",
+            "PRAGMA",
+            "VACUUM",
+        ]
+        for kw in dangerous:
+            if kw in normalized:
+                raise ValueError(f"Query contains forbidden keyword: {kw}")
+
+        t0 = time.perf_counter()
+        cursor = col.db.execute(sql, query_params)
+        columns = (
+            [desc[0] for desc in cursor.description]
+            if cursor.description
+            else []
+        )
+        rows = cursor.fetchall()
+        time_ms = int((time.perf_counter() - t0) * 1000)
+
+        return {
+            "columns": columns,
+            "rows": [list(row) for row in rows],
+            "count": len(rows),
+            "time_ms": time_ms,
+        }
+
     raise ValueError(f"Unknown action: {action}")

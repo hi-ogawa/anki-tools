@@ -20,6 +20,7 @@ import { api, type Item, type ViewMode } from "./api";
 import { BrowseTable } from "./components/browse-table";
 import { BulkActions } from "./components/bulk-actions";
 import { NoteDetail } from "./components/note-detail";
+import { SqlConsole } from "./components/sql-console";
 import { TableSkeleton } from "./components/table-skeleton";
 import { Button } from "./components/ui/button";
 import {
@@ -149,7 +150,9 @@ function App() {
 
   // Derive main content
   let mainContent: React.ReactNode;
-  if (schemaLoading) {
+  if (viewMode === "sql") {
+    mainContent = <SqlConsole />;
+  } else if (schemaLoading) {
     mainContent = <TableSkeleton />;
   } else if (schemaError) {
     mainContent = (
@@ -238,6 +241,7 @@ function App() {
                 <SelectLabel>View mode</SelectLabel>
                 <SelectItem value="notes">Notes</SelectItem>
                 <SelectItem value="cards">Cards</SelectItem>
+                <SelectItem value="sql">SQL</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
