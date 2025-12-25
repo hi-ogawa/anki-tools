@@ -223,4 +223,19 @@ def handle_action(col: Collection, action: str, params: dict):
         col.update_note(note)
         return True
 
+    elif action == "bulkSetCardFlags":
+        card_ids = params.get("cardIds") or col.find_cards(params["query"])
+        flag = params["flag"]  # 0-7
+        col.set_user_flag_for_cards(flag, card_ids)
+        return len(card_ids)
+
+    elif action == "bulkSuspendCards":
+        card_ids = params.get("cardIds") or col.find_cards(params["query"])
+        suspended = params["suspended"]  # boolean
+        if suspended:
+            col.sched.suspend_cards(card_ids)
+        else:
+            col.sched.unsuspend_cards(card_ids)
+        return len(card_ids)
+
     raise ValueError(f"Unknown action: {action}")
