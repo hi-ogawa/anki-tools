@@ -292,7 +292,7 @@ function NotesView({
   // Bulk edit state (undefined = not in bulk edit mode)
   const [bulkEdit, setBulkEdit] = useState<{
     rowSelection: RowSelectionState;
-    selectAllQuery?: string;
+    isAllSelected: boolean;
   }>();
 
   // Resizable panel
@@ -400,8 +400,8 @@ function NotesView({
   const fullQuery = `note:"${model}" ${fullSearch || ""}`.trim();
 
   const getBulkTarget = () => {
-    if (bulkEdit?.selectAllQuery) {
-      return { query: bulkEdit.selectAllQuery };
+    if (bulkEdit?.isAllSelected) {
+      return { query: fullQuery };
     }
     const cardIds = Object.keys(bulkEdit?.rowSelection ?? {})
       .filter((k) => bulkEdit?.rowSelection[k])
@@ -410,7 +410,7 @@ function NotesView({
   };
 
   const getSelectedCount = () =>
-    bulkEdit?.selectAllQuery
+    bulkEdit?.isAllSelected
       ? total
       : Object.values(bulkEdit?.rowSelection ?? {}).filter(Boolean).length;
 
@@ -575,7 +575,9 @@ function NotesView({
       {viewMode === "cards" && (
         <Button
           variant="ghost"
-          onClick={() => setBulkEdit({ rowSelection: {} })}
+          onClick={() =>
+            setBulkEdit({ rowSelection: {}, isAllSelected: false })
+          }
           data-testid="bulk-edit-button"
         >
           <Pencil className="size-4" />
@@ -591,17 +593,10 @@ function NotesView({
     <BulkActions
       selectedCount={selectedCount}
       totalMatching={total}
-      isAllSelected={!!bulkEdit?.selectAllQuery}
-      onSelectAll={() =>
-        bulkEdit && setBulkEdit({ ...bulkEdit, selectAllQuery: fullQuery })
-      }
+      isAllSelected={!!bulkEdit?.isAllSelected}
+      onSelectAll={() => setBulkEdit({ rowSelection: {}, isAllSelected: true })}
       onClearSelection={() =>
-        bulkEdit &&
-        setBulkEdit({
-          ...bulkEdit,
-          rowSelection: {},
-          selectAllQuery: undefined,
-        })
+        setBulkEdit({ rowSelection: {}, isAllSelected: false })
       }
       onExit={() => setBulkEdit(undefined)}
       onSetFlag={handleBulkSetFlag}
@@ -651,10 +646,9 @@ function NotesView({
           toolbarLeft={bulkEdit ? bulkToolbar : toolbarLeft}
           bulkEdit={
             bulkEdit && {
-              rowSelection: bulkEdit.rowSelection,
+              ...bulkEdit,
               onRowSelectionChange: (selection) =>
                 setBulkEdit({ ...bulkEdit, rowSelection: selection }),
-              isAllSelected: !!bulkEdit.selectAllQuery,
             }
           }
         />
