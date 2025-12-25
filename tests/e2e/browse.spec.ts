@@ -294,6 +294,7 @@ test("panel resize - drag to change width", async ({ page }) => {
 
 test("bulk edit - select cards and set flag", async ({ page }) => {
   await page.goto("/?model=Basic&view=cards");
+  page.on("dialog", (dialog) => dialog.accept());
 
   // Click "Bulk Edit" button
   await page.getByTestId("bulk-edit-button").click();
@@ -324,6 +325,7 @@ test("bulk edit - select cards and set flag", async ({ page }) => {
 
 test("bulk edit - suspend multiple cards", async ({ page }) => {
   await page.goto("/?model=Basic&view=cards&pageSize=10");
+  page.on("dialog", (dialog) => dialog.accept());
 
   // Enter bulk edit mode
   await page.getByTestId("bulk-edit-button").click();
@@ -380,6 +382,7 @@ test("bulk edit - select all on page", async ({ page }) => {
 test("bulk edit - select all matching query", async ({ page }) => {
   // Filter to Japanese deck (6 cards)
   await page.goto("/?model=Basic&view=cards&deck=Japanese");
+  page.on("dialog", (dialog) => dialog.accept());
   await expect(page.getByText("Showing 1-6 of 6")).toBeVisible();
 
   // Enter bulk edit mode

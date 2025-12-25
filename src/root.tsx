@@ -38,7 +38,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./components/ui/select";
-import { FLAG_COLORS, FLAG_FILTER_OPTIONS } from "./lib/constants";
+import {
+  FLAG_COLORS,
+  FLAG_FILTER_OPTIONS,
+  FLAG_OPTIONS,
+} from "./lib/constants";
 import { useLocalStorage } from "./lib/use-local-storage";
 import { useResize } from "./lib/use-resize";
 
@@ -405,15 +409,27 @@ function NotesView({
     return { cardIds };
   };
 
+  const getSelectedCount = () =>
+    bulkEdit?.selectAllQuery
+      ? total
+      : Object.values(bulkEdit?.rowSelection ?? {}).filter(Boolean).length;
+
   const handleBulkSetFlag = (flag: number) => {
+    const count = getSelectedCount();
+    const label = FLAG_OPTIONS.find((f) => f.value === flag)?.label ?? flag;
+    if (!window.confirm(`Set flag to ${label} for ${count} cards?`)) return;
     bulkSetFlagMutation.mutate({ ...getBulkTarget(), flag });
   };
 
   const handleBulkSuspend = () => {
+    const count = getSelectedCount();
+    if (!window.confirm(`Suspend ${count} cards?`)) return;
     bulkSuspendMutation.mutate({ ...getBulkTarget(), suspended: true });
   };
 
   const handleBulkUnsuspend = () => {
+    const count = getSelectedCount();
+    if (!window.confirm(`Unsuspend ${count} cards?`)) return;
     bulkSuspendMutation.mutate({ ...getBulkTarget(), suspended: false });
   };
 
@@ -574,9 +590,7 @@ function NotesView({
     </>
   );
 
-  const selectedCount = bulkEdit?.selectAllQuery
-    ? total
-    : Object.values(bulkEdit?.rowSelection ?? {}).filter(Boolean).length;
+  const selectedCount = getSelectedCount();
 
   const bulkToolbar = (
     <BulkActions
