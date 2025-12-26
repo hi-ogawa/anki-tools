@@ -270,19 +270,12 @@ export function BrowseTable({
 
   // Column visibility defaults
   const defaultVisibility = useMemo((): VisibilityState => {
-    const v: VisibilityState = {};
-    // Show first 3 fields by default
+    const v = Object.fromEntries(columns.map((c) => [c.id!, false]));
+    // pick default visible fields
     fields.forEach((field, i) => (v[field] = i < 3));
-    // Note columns
     v["deck"] = true;
-    v["tags"] = false;
-    // Card columns - hide new stats columns by default
     v["flag"] = true;
     v["status"] = true;
-    v["interval"] = true;
-    v["ease"] = false;
-    v["lapses"] = false;
-    v["reviews"] = false;
     return v;
   }, [fields]);
 
