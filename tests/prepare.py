@@ -25,6 +25,7 @@ def main():
 
     # Use the default "Basic" model (Front/Back fields)
     model = col.models.by_name("Basic")
+    assert model is not None
 
     # Create decks for testing
     deck_default = col.decks.id("Default")
@@ -50,6 +51,7 @@ def main():
             deck_id = deck_japanese
         else:
             deck_id = deck_science
+        assert deck_id is not None
         col.add_note(note, deck_id)
 
     # Set some flags on cards for testing

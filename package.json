@@ -11,8 +11,8 @@
     "fixture": "uv run python tests/prepare.py",
     "build": "vite build",
     "build-addon": "vite build && cd addon && zip -r ../anki-browse-web.ankiaddon . -x '__pycache__/*'",
-    "lint": "oxfmt && uv run ruff format . && uv run ruff check --fix .",
-    "lint-check": "oxfmt --check && uv run ruff format --check . && uv run ruff check .",
+    "lint": "oxfmt && uv run ruff format . && uv run ruff check --fix . && uv run mypy addon tests",
+    "lint-check": "oxfmt --check && uv run ruff format --check . && uv run ruff check . && uv run mypy addon tests",
     "tsc": "tsc -b",
     "test-e2e": "playwright test",
     "release": "bumpp"
