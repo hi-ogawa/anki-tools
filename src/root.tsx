@@ -628,8 +628,8 @@ function NotesView({
       <div
         className={
           selected
-            ? "flex-1 min-w-[400px] overflow-auto"
-            : "w-full overflow-auto"
+            ? "flex-1 min-w-[400px] overflow-auto p-1 -m-1"
+            : "w-full overflow-auto p-1 -m-1"
         }
       >
         <BrowseTable

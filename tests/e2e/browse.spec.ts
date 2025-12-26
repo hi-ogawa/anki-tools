@@ -84,25 +84,22 @@ test("set card flag", async ({ page }) => {
 
   // Click first data row to open detail panel
   await page.getByRole("row").nth(1).click();
-  await expect(page.getByTestId("flag-select")).toBeVisible();
 
-  // Set flag to Red
-  await page.getByTestId("flag-select").click();
-  await page.getByRole("option", { name: /Red/ }).click();
+  const flagButtons = page.getByTestId("flag-buttons");
+  const redButton = flagButtons.getByRole("button", { name: "Red" });
+  const orangeButton = flagButtons.getByRole("button", { name: "Orange" });
 
-  // Reload and verify
+  // Fixture starts with Red selected
+  await expect(redButton).toHaveAttribute("aria-pressed", "true");
+
+  // Change flag to Orange
+  await orangeButton.click();
+  await expect(orangeButton).toHaveAttribute("aria-pressed", "true");
+
+  // Reload and verify Orange is selected
   await page.reload();
   await page.getByRole("row").nth(1).click();
-  await expect(page.getByTestId("flag-select")).toContainText("Red");
-
-  // Change flag to Blue
-  await page.getByTestId("flag-select").click();
-  await page.getByRole("option", { name: /Blue/ }).click();
-
-  // Reload and verify
-  await page.reload();
-  await page.getByRole("row").nth(1).click();
-  await expect(page.getByTestId("flag-select")).toContainText("Blue");
+  await expect(orangeButton).toHaveAttribute("aria-pressed", "true");
 });
 
 test("suspend and unsuspend card", async ({ page }) => {
