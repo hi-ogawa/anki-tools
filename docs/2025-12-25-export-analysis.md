@@ -455,7 +455,7 @@ cardId,noteId,deckName,modelName,tags,Front,Back,flag,queue,due,interval,ease,la
 
 ## Status
 
-- [ ] Phase 1: Extend Card Data (next)
-- [ ] Phase 2: Export Table View (next)
+- [x] Phase 1: Extend Card Data
+- [x] Phase 2: Export Table View
 - [ ] Phase 3: SQL Query Mode (postponed - code removed)
 - [ ] Phase 4: Review Log Export (later)
