@@ -227,20 +227,66 @@ export function BrowseTable({
           return formatInterval(ivl);
         },
       });
+
+      cols.push({
+        id: "ease",
+        accessorFn: (row) => (row.type === "card" ? row.ease : undefined),
+        header: "Ease",
+        cell: ({ getValue }) => {
+          const ease = getValue() as number | undefined;
+          if (ease === undefined || ease === 0)
+            return <span className="text-muted-foreground">-</span>;
+          return `${ease}%`;
+        },
+      });
+
+      cols.push({
+        id: "lapses",
+        accessorFn: (row) => (row.type === "card" ? row.lapses : undefined),
+        header: "Lapses",
+        cell: ({ getValue }) => {
+          const lapses = getValue() as number | undefined;
+          if (lapses === undefined)
+            return <span className="text-muted-foreground">-</span>;
+          return lapses;
+        },
+      });
+
+      cols.push({
+        id: "reviews",
+        accessorFn: (row) => (row.type === "card" ? row.reviews : undefined),
+        header: "Reviews",
+        cell: ({ getValue }) => {
+          const reviews = getValue() as number | undefined;
+          if (reviews === undefined)
+            return <span className="text-muted-foreground">-</span>;
+          return reviews;
+        },
+      });
     }
 
     return cols;
   }, [fields, viewMode, bulkEdit]);
 
-  // Column visibility
-  const [columnVisibility, setColumnVisibility] = useLocalStorage(
+  // Column visibility defaults
+  const defaultVisibility = useMemo((): VisibilityState => {
+    const v = Object.fromEntries(columns.map((c) => [c.id!, false]));
+    // pick default visible fields
+    fields.forEach((field, i) => (v[field] = i < 3));
+    v["deck"] = true;
+    v["flag"] = true;
+    v["status"] = true;
+    return v;
+  }, [fields]);
+
+  // Column visibility - merge stored state with defaults for new columns
+  const [storedVisibility, setColumnVisibility] = useLocalStorage(
     `anki-browse-columns:${model}`,
-    (): VisibilityState => {
-      const v: VisibilityState = {};
-      fields.forEach((field, i) => (v[field] = i < 3));
-      v["deck"] = true;
-      return v;
-    },
+    () => defaultVisibility,
+  );
+  const columnVisibility = useMemo(
+    () => ({ ...defaultVisibility, ...storedVisibility }),
+    [defaultVisibility, storedVisibility],
   );
 
   // Table setup

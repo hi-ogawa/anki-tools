@@ -8,15 +8,18 @@ import {
 import type { RowSelectionState } from "@tanstack/react-table";
 import {
   CircleHelp,
+  Clipboard,
+  Download,
   Flag,
   Library,
+  MoreVertical,
   Pencil,
   RefreshCw,
   Tag,
 } from "lucide-react";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router";
-import { api, type Item, type ViewMode } from "./api";
+import { api, cardsToCSV, type Card, type Item, type ViewMode } from "./api";
 import { BrowseTable } from "./components/browse-table";
 import { BulkActions } from "./components/bulk-actions";
 import { NoteDetail } from "./components/note-detail";
@@ -26,6 +29,8 @@ import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./components/ui/dropdown-menu";
 import { Input } from "./components/ui/input";
@@ -236,8 +241,8 @@ function App() {
             <SelectContent>
               <SelectGroup>
                 <SelectLabel>View mode</SelectLabel>
-                <SelectItem value="notes">Notes</SelectItem>
                 <SelectItem value="cards">Cards</SelectItem>
+                <SelectItem value="notes">Notes</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
@@ -394,6 +399,42 @@ function NotesView({
 
   const isBulkPending =
     bulkSetFlagMutation.isPending || bulkSuspendMutation.isPending;
+
+  // Export mutation
+  const exportMutation = useMutation({
+    mutationFn: async ({
+      format,
+      action,
+    }: {
+      format: "csv" | "json";
+      action: "copy" | "download";
+    }) => {
+      const result = await api.fetchItems({ query, viewMode: "cards" });
+      const cards = result.items as Card[];
+      const data =
+        format === "json" ? JSON.stringify(cards, null, 2) : cardsToCSV(cards);
+
+      if (action === "copy") {
+        await navigator.clipboard.writeText(data);
+      } else {
+        const mimeType = format === "json" ? "application/json" : "text/csv";
+        const ext = format === "json" ? "json" : "csv";
+        const blob = new Blob([data], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `anki-export-${new Date().toISOString().slice(0, 19).replace(/[T:]/g, "-")}.${ext}`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+      return { count: cards.length, action };
+    },
+    onSuccess: ({ count, action }) => {
+      if (action === "copy") {
+        alert(`Copied ${count} cards to clipboard`);
+      }
+    },
+  });
 
   const getBulkTarget = () => {
     if (!bulkEdit) {
@@ -566,25 +607,54 @@ function NotesView({
           className={`size-4 ${!isLoading && isFetching ? "animate-spin" : ""}`}
         />
       </Button>
-      <span
-        title={
-          viewMode === "notes"
-            ? "Bulk edit only available in cards view"
-            : undefined
-        }
-      >
-        <Button
-          variant="ghost"
-          onClick={() =>
-            setBulkEdit({ rowSelection: {}, isAllSelected: false })
-          }
-          disabled={viewMode === "notes"}
-          data-testid="bulk-edit-button"
-        >
-          <Pencil className="size-4" />
-          Bulk Edit
-        </Button>
-      </span>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" data-testid="more-menu">
+            <MoreVertical className="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem
+            onClick={() =>
+              setBulkEdit({ rowSelection: {}, isAllSelected: false })
+            }
+            disabled={viewMode === "notes"}
+            data-testid="bulk-edit-button"
+          >
+            <Pencil className="size-4" />
+            Bulk Edit
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={() =>
+              exportMutation.mutate({ format: "csv", action: "copy" })
+            }
+            disabled={viewMode === "notes" || exportMutation.isPending}
+          >
+            <Clipboard className="size-4" />
+            Copy to Clipboard
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() =>
+              exportMutation.mutate({ format: "csv", action: "download" })
+            }
+            disabled={viewMode === "notes" || exportMutation.isPending}
+            data-testid="export-button"
+          >
+            <Download className="size-4" />
+            Download CSV
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() =>
+              exportMutation.mutate({ format: "json", action: "download" })
+            }
+            disabled={viewMode === "notes" || exportMutation.isPending}
+          >
+            <Download className="size-4" />
+            Download JSON
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </>
   );
 

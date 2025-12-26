@@ -37,7 +37,14 @@ export const QUEUE_LABELS: Record<number, string> = {
 
 // Column definitions for browse table
 export const NOTE_COLUMNS = ["deck", "tags"] as const;
-export const CARD_COLUMNS = ["flag", "status", "interval"] as const;
+export const CARD_COLUMNS = [
+  "flag",
+  "status",
+  "interval",
+  "ease",
+  "lapses",
+  "reviews",
+] as const;
 
 // Format interval as human-readable string
 export function formatInterval(days: number): string {

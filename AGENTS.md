@@ -7,6 +7,22 @@
 | `pnpm tsc && pnpm lint`         | After changes |
 | `pnpm fixture && pnpm test-e2e` | Run e2e tests |
 
+## Anki Python API
+
+For Anki Python API questions, read the source directly from `.venv`:
+
+```bash
+# Find a class/function
+find .venv -name "*.py" | xargs grep -l "class DBProxy"
+
+# Common locations
+.venv/lib/python*/site-packages/anki/       # Core Anki library
+.venv/lib/python*/site-packages/anki/collection.py
+.venv/lib/python*/site-packages/anki/dbproxy.py
+.venv/lib/python*/site-packages/anki/models.py
+.venv/lib/python*/site-packages/anki/decks.py
+```
+
 ## Git Workflow
 
 1. Create feature branch before starting work

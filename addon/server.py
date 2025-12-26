@@ -178,6 +178,9 @@ def handle_action(col: Collection, action: str, params: dict):
                     "queue": card.queue,  # -1 = suspended, 0 = new, 1 = learning, 2 = review
                     "due": card.due,
                     "interval": card.ivl,
+                    "ease": card.factor // 10,  # 2500 -> 250 (250%)
+                    "lapses": card.lapses,
+                    "reviews": card.reps,
                 }
             )
         timing["fetch_ms"] = int((time.perf_counter() - t0) * 1000)
