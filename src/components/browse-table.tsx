@@ -272,6 +272,7 @@ export function BrowseTable({
   const [columnVisibility, setColumnVisibility] = useLocalStorage(
     `anki-browse-columns:${model}`,
     (): VisibilityState => {
+      // TODO: it looks like fields without key is considered visible. ensure false for other keys.
       const v: VisibilityState = {};
       fields.forEach((field, i) => (v[field] = i < 3));
       v["deck"] = true;

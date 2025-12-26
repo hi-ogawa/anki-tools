@@ -407,6 +407,7 @@ function NotesView({
     format: "csv" | "json",
     action: "copy" | "download",
   ) => {
+    // TODO: export should respect current column visibility?
     const result = await exportMutation.mutateAsync({ query, format });
     if (action === "copy") {
       await navigator.clipboard.writeText(result.data);
@@ -595,6 +596,7 @@ function NotesView({
           className={`size-4 ${!isLoading && isFetching ? "animate-spin" : ""}`}
         />
       </Button>
+      {/* TODO: move bulk edit and export in humburger to save header spaces */}
       <span
         title={
           viewMode === "notes"
