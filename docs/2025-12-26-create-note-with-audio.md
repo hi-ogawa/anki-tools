@@ -76,11 +76,11 @@ Same for example sentences:
 
 **When to use each:**
 
-| Scenario                   | Approach                                       |
-| -------------------------- | ---------------------------------------------- |
-| Quick note creation        | Leave `_audio` fields empty → built-in TTS     |
-| High-quality audio needed  | Generate with edge-tts → fill `_audio` fields  |
-| Offline/AnkiWeb usage      | Pre-generate audio (built-in TTS may not work) |
+| Scenario                  | Approach                                       |
+| ------------------------- | ---------------------------------------------- |
+| Quick note creation       | Leave `_audio` fields empty → built-in TTS     |
+| High-quality audio needed | Generate with edge-tts → fill `_audio` fields  |
+| Offline/AnkiWeb usage     | Pre-generate audio (built-in TTS may not work) |
 
 References:
 

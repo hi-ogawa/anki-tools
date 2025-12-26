@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { api, type Schema } from "../api";
 import { Button } from "./ui/button";
 import {
@@ -38,8 +38,7 @@ export function CreateNoteDialog({
   const [open, setOpen] = useState(false);
   const [model, setModel] = useState(defaultModel ?? "");
   const [deck, setDeck] = useState(defaultDeck ?? schema.decks[0] ?? "");
-  const [fields, setFields] = useState<Record<string, string>>({});
-  const [tagsInput, setTagsInput] = useState("");
+  const formRef = useRef<HTMLFormElement>(null);
 
   const queryClient = useQueryClient();
 
@@ -51,31 +50,32 @@ export function CreateNoteDialog({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["fetchItems"] });
       setOpen(false);
-      resetForm();
+      formRef.current?.reset();
     },
   });
 
-  const resetForm = () => {
-    setFields({});
-    setTagsInput("");
-  };
-
-  const handleModelChange = (newModel: string) => {
-    setModel(newModel);
-    setFields({});
-  };
-
-  const handleFieldChange = (fieldName: string, value: string) => {
-    setFields((prev) => ({ ...prev, [fieldName]: value }));
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    const formData = new FormData(e.currentTarget);
 
-    const tags = tagsInput
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
+    // Extract fields (all form inputs except _tags)
+    const fields: Record<string, string> = {};
+    for (const fieldName of modelFields) {
+      const value = formData.get(fieldName);
+      if (typeof value === "string") {
+        fields[fieldName] = value;
+      }
+    }
+
+    // Extract tags
+    const tagsInput = formData.get("_tags");
+    const tags =
+      typeof tagsInput === "string"
+        ? tagsInput
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean)
+        : [];
 
     addNoteMutation.mutate({
       deckName: deck,
@@ -102,11 +102,16 @@ export function CreateNoteDialog({
             Create a new note in your Anki collection.
           </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form
+          ref={formRef}
+          onSubmit={handleSubmit}
+          className="space-y-4"
+          key={model}
+        >
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Note Type</label>
-              <Select value={model} onValueChange={handleModelChange}>
+              <Select value={model} onValueChange={setModel}>
                 <SelectTrigger data-testid="model-select">
                   <SelectValue placeholder="Select note type..." />
                 </SelectTrigger>
@@ -155,20 +160,14 @@ export function CreateNoteDialog({
                       {fieldName.toLowerCase().includes("example") ||
                       fieldName.toLowerCase().includes("notes") ? (
                         <Textarea
-                          value={fields[fieldName] ?? ""}
-                          onChange={(e) =>
-                            handleFieldChange(fieldName, e.target.value)
-                          }
+                          name={fieldName}
                           placeholder={fieldName}
                           rows={2}
                           data-testid={`field-${fieldName}`}
                         />
                       ) : (
                         <Input
-                          value={fields[fieldName] ?? ""}
-                          onChange={(e) =>
-                            handleFieldChange(fieldName, e.target.value)
-                          }
+                          name={fieldName}
                           placeholder={fieldName}
                           data-testid={`field-${fieldName}`}
                         />
@@ -183,8 +182,7 @@ export function CreateNoteDialog({
           <div className="space-y-2">
             <label className="text-sm font-medium">Tags</label>
             <Input
-              value={tagsInput}
-              onChange={(e) => setTagsInput(e.target.value)}
+              name="_tags"
               placeholder="tag1, tag2, tag3 (comma-separated)"
               data-testid="tags-input"
             />
