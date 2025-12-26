@@ -178,6 +178,9 @@ def handle_action(col: Collection, action: str, params: dict):
                     "queue": card.queue,  # -1 = suspended, 0 = new, 1 = learning, 2 = review
                     "due": card.due,
                     "interval": card.ivl,
+                    "ease": card.factor // 10,  # 2500 -> 250 (250%)
+                    "lapses": card.lapses,
+                    "reviews": card.reps,
                 }
             )
         timing["fetch_ms"] = int((time.perf_counter() - t0) * 1000)
@@ -238,96 +241,99 @@ def handle_action(col: Collection, action: str, params: dict):
             col.sched.unsuspend_cards(card_ids)
         return len(card_ids)
 
-    elif action == "executeQuery":
-        sql = params["sql"]
-        query_params = params.get("params")
+    elif action == "exportCards":
+        query = params["query"]
+        format_type = params["format"]  # "csv" or "json"
 
-        # Validate: only SELECT allowed
-        normalized = sql.strip().upper()
-        if not normalized.startswith("SELECT"):
-            raise ValueError("Only SELECT queries are allowed")
+        card_ids = col.find_cards(query)
+        cards = []
+        for cid in card_ids:
+            card = col.get_card(cid)
+            note = card.note()
+            model = note.note_type()
+            cards.append(
+                {
+                    "cardId": cid,
+                    "noteId": card.nid,
+                    "deckName": col.decks.name(card.did),
+                    "modelName": model["name"],
+                    "tags": list(note.tags),
+                    "fields": {
+                        f["name"]: note.fields[i]
+                        for i, f in enumerate(model["flds"])
+                    },
+                    "flag": card.flags,
+                    "queue": card.queue,
+                    "due": card.due,
+                    "interval": card.ivl,
+                    "ease": card.factor // 10,
+                    "lapses": card.lapses,
+                    "reviews": card.reps,
+                }
+            )
 
-        # Block dangerous keywords
-        dangerous = [
-            "INSERT",
-            "UPDATE",
-            "DELETE",
-            "DROP",
-            "ALTER",
-            "CREATE",
-            "ATTACH",
-            "DETACH",
-            "PRAGMA",
-            "VACUUM",
-        ]
-        for kw in dangerous:
-            if kw in normalized:
-                raise ValueError(f"Query contains forbidden keyword: {kw}")
+        if format_type == "json":
+            data = json.dumps(cards, ensure_ascii=False, indent=2)
+        else:  # csv
+            data = export_cards_csv(cards)
 
-        t0 = time.perf_counter()
-        # DBProxy.all() returns list of tuples, no column info available
-        # Parse column names from SQL SELECT clause as fallback
-        rows = (
-            col.db.all(sql)
-            if not query_params
-            else col.db.all(sql, *query_params)
-        )
-        time_ms = int((time.perf_counter() - t0) * 1000)
-
-        # Extract column names from SQL
-        columns = parse_select_columns(sql)
-        # Fallback to indices if parsing fails
-        if not columns and rows:
-            columns = [f"col{i}" for i in range(len(rows[0]))]
-
-        return {
-            "columns": columns,
-            "rows": [list(row) for row in rows],
-            "count": len(rows),
-            "time_ms": time_ms,
-        }
+        return {"data": data, "count": len(cards), "format": format_type}
 
     raise ValueError(f"Unknown action: {action}")
 
 
-def parse_select_columns(sql: str) -> list[str]:
-    """Extract column names/aliases from SELECT clause."""
-    import re
+def export_cards_csv(cards: list[dict]) -> str:
+    """Convert cards to CSV format."""
+    import csv
+    import io
 
-    # Match SELECT ... FROM (case insensitive)
-    match = re.search(r"SELECT\s+(.+?)\s+FROM", sql, re.IGNORECASE | re.DOTALL)
-    if not match:
-        return []
+    if not cards:
+        return ""
 
-    select_part = match.group(1)
-    columns = []
+    # Collect all field names across all cards
+    all_field_names: list[str] = []
+    for card in cards:
+        for name in card["fields"].keys():
+            if name not in all_field_names:
+                all_field_names.append(name)
 
-    # Split by comma, handling nested parentheses
-    depth = 0
-    current = ""
-    for char in select_part:
-        if char == "(":
-            depth += 1
-        elif char == ")":
-            depth -= 1
-        elif char == "," and depth == 0:
-            columns.append(current.strip())
-            current = ""
-            continue
-        current += char
-    if current.strip():
-        columns.append(current.strip())
+    # CSV headers: metadata + dynamic fields
+    headers = [
+        "cardId",
+        "noteId",
+        "deckName",
+        "modelName",
+        "tags",
+        *all_field_names,
+        "flag",
+        "queue",
+        "due",
+        "interval",
+        "ease",
+        "lapses",
+        "reviews",
+    ]
 
-    # Extract alias or column name from each part
-    result = []
-    for col in columns:
-        # Check for "AS alias" pattern
-        as_match = re.search(r"\s+AS\s+(\w+)\s*$", col, re.IGNORECASE)
-        if as_match:
-            result.append(as_match.group(1))
-        else:
-            # Use last word (handles "table.column" -> "column")
-            words = re.findall(r"\w+", col)
-            result.append(words[-1] if words else col)
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(headers)
 
-    return result
+    for card in cards:
+        row = [
+            card["cardId"],
+            card["noteId"],
+            card["deckName"],
+            card["modelName"],
+            " ".join(card["tags"]),
+            *[card["fields"].get(name, "") for name in all_field_names],
+            card["flag"],
+            card["queue"],
+            card["due"],
+            card["interval"],
+            card["ease"],
+            card["lapses"],
+            card["reviews"],
+        ]
+        writer.writerow(row)
+
+    return output.getvalue()

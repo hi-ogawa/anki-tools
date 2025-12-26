@@ -227,6 +227,42 @@ export function BrowseTable({
           return formatInterval(ivl);
         },
       });
+
+      cols.push({
+        id: "ease",
+        accessorFn: (row) => (row.type === "card" ? row.ease : undefined),
+        header: "Ease",
+        cell: ({ getValue }) => {
+          const ease = getValue() as number | undefined;
+          if (ease === undefined || ease === 0)
+            return <span className="text-muted-foreground">-</span>;
+          return `${ease}%`;
+        },
+      });
+
+      cols.push({
+        id: "lapses",
+        accessorFn: (row) => (row.type === "card" ? row.lapses : undefined),
+        header: "Lapses",
+        cell: ({ getValue }) => {
+          const lapses = getValue() as number | undefined;
+          if (lapses === undefined)
+            return <span className="text-muted-foreground">-</span>;
+          return lapses;
+        },
+      });
+
+      cols.push({
+        id: "reviews",
+        accessorFn: (row) => (row.type === "card" ? row.reviews : undefined),
+        header: "Reviews",
+        cell: ({ getValue }) => {
+          const reviews = getValue() as number | undefined;
+          if (reviews === undefined)
+            return <span className="text-muted-foreground">-</span>;
+          return reviews;
+        },
+      });
     }
 
     return cols;

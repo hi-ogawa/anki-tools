@@ -8,6 +8,8 @@ import {
 import type { RowSelectionState } from "@tanstack/react-table";
 import {
   CircleHelp,
+  Clipboard,
+  Download,
   Flag,
   Library,
   Pencil,
@@ -20,13 +22,13 @@ import { api, type Item, type ViewMode } from "./api";
 import { BrowseTable } from "./components/browse-table";
 import { BulkActions } from "./components/bulk-actions";
 import { NoteDetail } from "./components/note-detail";
-import { SqlConsole } from "./components/sql-console";
 import { TableSkeleton } from "./components/table-skeleton";
 import { Button } from "./components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuTrigger,
 } from "./components/ui/dropdown-menu";
 import { Input } from "./components/ui/input";
@@ -150,9 +152,7 @@ function App() {
 
   // Derive main content
   let mainContent: React.ReactNode;
-  if (viewMode === "sql") {
-    mainContent = <SqlConsole />;
-  } else if (schemaLoading) {
+  if (schemaLoading) {
     mainContent = <TableSkeleton />;
   } else if (schemaError) {
     mainContent = (
@@ -207,7 +207,7 @@ function App() {
           <Select
             value={validModel ? urlModel : undefined}
             onValueChange={setUrlModel}
-            disabled={schemaLoading || !!schemaError || viewMode === "sql"}
+            disabled={schemaLoading || !!schemaError}
           >
             <SelectTrigger size="sm" className="w-[180px]">
               <SelectValue placeholder="Select note type..." />
@@ -241,7 +241,6 @@ function App() {
                 <SelectLabel>View mode</SelectLabel>
                 <SelectItem value="notes">Notes</SelectItem>
                 <SelectItem value="cards">Cards</SelectItem>
-                <SelectItem value="sql">SQL</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
@@ -398,6 +397,32 @@ function NotesView({
 
   const isBulkPending =
     bulkSetFlagMutation.isPending || bulkSuspendMutation.isPending;
+
+  // Export mutation
+  const exportMutation = useMutation({
+    ...api.exportCards.mutationOptions(),
+  });
+
+  const handleExport = async (
+    format: "csv" | "json",
+    action: "copy" | "download",
+  ) => {
+    const result = await exportMutation.mutateAsync({ query, format });
+    if (action === "copy") {
+      await navigator.clipboard.writeText(result.data);
+      alert(`Copied ${result.count} cards to clipboard`);
+    } else {
+      const mimeType = format === "json" ? "application/json" : "text/csv";
+      const ext = format === "json" ? "json" : "csv";
+      const blob = new Blob([result.data], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `anki-export-${Date.now()}.${ext}`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  };
 
   const getBulkTarget = () => {
     if (!bulkEdit) {
@@ -589,6 +614,32 @@ function NotesView({
           Bulk Edit
         </Button>
       </span>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            disabled={exportMutation.isPending}
+            data-testid="export-button"
+          >
+            <Download className="size-4" />
+            Export
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem onClick={() => handleExport("csv", "copy")}>
+            <Clipboard className="size-4" />
+            Copy CSV
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleExport("csv", "download")}>
+            <Download className="size-4" />
+            Download CSV
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleExport("json", "download")}>
+            <Download className="size-4" />
+            Download JSON
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </>
   );
 

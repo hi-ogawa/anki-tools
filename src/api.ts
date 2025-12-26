@@ -21,6 +21,9 @@ export type CardData = {
   queue: number; // -1 = suspended, 0 = new, 1 = learning, 2 = review
   due: number;
   interval: number;
+  ease: number; // 250 = 250% ease factor
+  lapses: number; // times card went to relearning
+  reviews: number; // total review count
 };
 
 // Discriminated union for UI
@@ -28,7 +31,7 @@ export type Note = NoteData & { type: "note" };
 export type Card = NoteData & CardData & { type: "card" };
 export type Item = Note | Card;
 
-export type ViewMode = "notes" | "cards" | "sql";
+export type ViewMode = "notes" | "cards";
 
 // Raw API responses (before transformation)
 type RawNote = {
@@ -50,6 +53,9 @@ type RawCard = {
   queue: number;
   due: number;
   interval: number;
+  ease: number;
+  lapses: number;
+  reviews: number;
 };
 
 // Timing stats from API
@@ -89,6 +95,9 @@ function toCard(raw: RawCard): Card {
     queue: raw.queue,
     due: raw.due,
     interval: raw.interval,
+    ease: raw.ease,
+    lapses: raw.lapses,
+    reviews: raw.reviews,
   };
 }
 
@@ -178,14 +187,12 @@ const implementations = {
     return invoke<number>("bulkSuspendCards", input);
   },
 
-  // Execute raw SQL query (read-only)
-  executeQuery: (input: { sql: string; params?: unknown[] }) => {
-    return invoke<{
-      columns: string[];
-      rows: unknown[][];
-      count: number;
-      time_ms: number;
-    }>("executeQuery", input);
+  // Export cards matching query
+  exportCards: (input: { query: string; format: "csv" | "json" }) => {
+    return invoke<{ data: string; count: number; format: string }>(
+      "exportCards",
+      input,
+    );
   },
 };
 

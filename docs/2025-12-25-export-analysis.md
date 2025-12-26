@@ -22,20 +22,20 @@ From user's TOPIK2 vocabulary analysis needs:
 
 Anki's native browser exposes these columns:
 
-| Column          | Source                 | Priority |
-| --------------- | ---------------------- | -------- |
-| Due             | `cards.due`            | Have     |
-| Interval        | `cards.ivl`            | Have     |
-| Ease            | `cards.factor`         | Phase 1  |
-| Lapses          | `cards.lapses`         | Phase 1  |
-| Reviews         | `cards.reps`           | Phase 1  |
-| Difficulty      | `cards.data` (FSRS)    | Later    |
-| Stability       | `cards.data` (FSRS)    | Later    |
-| Retrievability  | `cards.data` (FSRS)    | Later    |
-| Card Modified   | `cards.mod`            | Later    |
-| Note Modified   | `notes.mod`            | Later    |
-| Created         | `notes.id` (timestamp) | Later    |
-| Position        | `cards.due` (new only) | Later    |
+| Column         | Source                 | Priority |
+| -------------- | ---------------------- | -------- |
+| Due            | `cards.due`            | Have     |
+| Interval       | `cards.ivl`            | Have     |
+| Ease           | `cards.factor`         | Phase 1  |
+| Lapses         | `cards.lapses`         | Phase 1  |
+| Reviews        | `cards.reps`           | Phase 1  |
+| Difficulty     | `cards.data` (FSRS)    | Later    |
+| Stability      | `cards.data` (FSRS)    | Later    |
+| Retrievability | `cards.data` (FSRS)    | Later    |
+| Card Modified  | `cards.mod`            | Later    |
+| Note Modified  | `notes.mod`            | Later    |
+| Created        | `notes.id` (timestamp) | Later    |
+| Position       | `cards.due` (new only) | Later    |
 
 ## Implementation Priority
 
@@ -166,11 +166,11 @@ export type CardData = {
 
 Add optional columns (hidden by default, matching Anki's naming):
 
-| Column  | Format         | Example |
-| ------- | -------------- | ------- |
-| Ease    | percentage     | "250%"  |
-| Lapses  | integer        | "3"     |
-| Reviews | integer        | "15"    |
+| Column  | Format     | Example |
+| ------- | ---------- | ------- |
+| Ease    | percentage | "250%"  |
+| Lapses  | integer    | "3"     |
+| Reviews | integer    | "15"    |
 
 #### Frontend (`src/lib/constants.ts`)
 
@@ -220,11 +220,11 @@ exportCards: (params: { query: string; format: "csv" | "json" }) =>
 
 Export dropdown in toolbar with 3 options:
 
-| Option       | Action                    | Use Case                  |
-| ------------ | ------------------------- | ------------------------- |
-| Copy CSV     | Copy to clipboard         | Quick LLM chat sharing    |
-| Download CSV | Download .csv file        | Excel/spreadsheet         |
-| Download JSON| Download .json file       | Python/programmatic       |
+| Option        | Action              | Use Case               |
+| ------------- | ------------------- | ---------------------- |
+| Copy CSV      | Copy to clipboard   | Quick LLM chat sharing |
+| Download CSV  | Download .csv file  | Excel/spreadsheet      |
+| Download JSON | Download .json file | Python/programmatic    |
 
 ```typescript
 // Clipboard
@@ -380,6 +380,7 @@ def getReviewLog(query: str, limit: int = None) -> dict:
 ### ~~Phase 3: SQL Query Mode~~ (postponed)
 
 Remove for now:
+
 1. `addon/server.py` - remove executeQuery endpoint
 2. `src/api.ts` - remove executeQuery API method
 3. `src/components/sql-console.tsx` - remove file
