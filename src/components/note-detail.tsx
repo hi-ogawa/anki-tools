@@ -38,7 +38,7 @@ export function NoteDetail({
   return (
     <div className="flex h-full flex-col border-l">
       {/* Header */}
-      <div className="flex items-center justify-between px-3 py-1">
+      <div className="flex items-center justify-between px-3 py-2">
         <div className="text-sm">
           <span className="text-muted-foreground">Deck:</span>{" "}
           <span className="font-medium">{item.deckName}</span>
@@ -52,48 +52,45 @@ export function NoteDetail({
           <X className="size-4" />
         </Button>
       </div>
-      {/* Flag buttons */}
-      {isCard && (
-        <div className="border-b px-4 py-2">
-          <div
-            className="flex w-fit rounded border bg-muted/50"
-            data-testid="flag-buttons"
-          >
-            {FLAG_OPTIONS.slice(1).map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() =>
-                  onFlagChange?.(item.flag === opt.value ? 0 : opt.value)
-                }
-                className={cn(
-                  "group rounded p-2",
-                  item.flag === opt.value && "ring-2",
-                )}
-                style={
-                  item.flag === opt.value
-                    ? { ["--tw-ring-color" as string]: opt.color }
-                    : undefined
-                }
-                title={item.flag === opt.value ? "Clear flag" : opt.label}
-              >
-                <Flag
-                  className={cn(
-                    "size-4.5",
-                    item.flag !== opt.value &&
-                      "opacity-50 group-hover:opacity-100",
-                  )}
-                  style={{ color: opt.color }}
-                  fill={opt.color}
-                />
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4">
         <div className="space-y-4">
+          {/* Flag buttons */}
+          {isCard && (
+            <div
+              className="flex w-fit rounded border bg-muted/50"
+              data-testid="flag-buttons"
+            >
+              {FLAG_OPTIONS.slice(1).map((opt) => (
+                <button
+                  key={opt.value}
+                  onClick={() =>
+                    onFlagChange?.(item.flag === opt.value ? 0 : opt.value)
+                  }
+                  className={cn(
+                    "group rounded p-2",
+                    item.flag === opt.value && "ring-2",
+                  )}
+                  style={
+                    item.flag === opt.value
+                      ? { ["--tw-ring-color" as string]: opt.color }
+                      : undefined
+                  }
+                  title={item.flag === opt.value ? "Clear flag" : opt.label}
+                >
+                  <Flag
+                    className={cn(
+                      "size-4.5",
+                      item.flag !== opt.value &&
+                        "opacity-50 group-hover:opacity-100",
+                    )}
+                    style={{ color: opt.color }}
+                    fill={opt.color}
+                  />
+                </button>
+              ))}
+            </div>
+          )}
           {fields.map((field) => (
             <div key={field} data-testid={`field-${field}`}>
               <div className="flex items-center justify-between">
@@ -227,8 +224,6 @@ export function NoteDetail({
           {/* Card metadata */}
           {isCard && (
             <>
-              <hr className="border-border" />
-
               {/* Status display + suspend toggle */}
               <div className="flex items-center gap-2 text-sm">
                 <span className="text-muted-foreground">Status:</span>
