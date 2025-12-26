@@ -13,4 +13,8 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${UI_PORT}`,
   },
+  workers: 1,
+  // retries: process.env.CI ? 2 : 0,
+  forbidOnly: !!process.env.CI,
+  reporter: process.env.CI ? [["list"], ["github"]] : "list",
 });
