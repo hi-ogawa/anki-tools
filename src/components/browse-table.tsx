@@ -268,16 +268,32 @@ export function BrowseTable({
     return cols;
   }, [fields, viewMode, bulkEdit]);
 
-  // Column visibility
-  const [columnVisibility, setColumnVisibility] = useLocalStorage(
+  // Column visibility defaults
+  const defaultVisibility = useMemo((): VisibilityState => {
+    const v: VisibilityState = {};
+    // Show first 3 fields by default
+    fields.forEach((field, i) => (v[field] = i < 3));
+    // Note columns
+    v["deck"] = true;
+    v["tags"] = false;
+    // Card columns - hide new stats columns by default
+    v["flag"] = true;
+    v["status"] = true;
+    v["interval"] = true;
+    v["ease"] = false;
+    v["lapses"] = false;
+    v["reviews"] = false;
+    return v;
+  }, [fields]);
+
+  // Column visibility - merge stored state with defaults for new columns
+  const [storedVisibility, setColumnVisibility] = useLocalStorage(
     `anki-browse-columns:${model}`,
-    (): VisibilityState => {
-      // TODO: it looks like fields without key is considered visible. ensure false for other keys.
-      const v: VisibilityState = {};
-      fields.forEach((field, i) => (v[field] = i < 3));
-      v["deck"] = true;
-      return v;
-    },
+    () => defaultVisibility,
+  );
+  const columnVisibility = useMemo(
+    () => ({ ...defaultVisibility, ...storedVisibility }),
+    [defaultVisibility, storedVisibility],
   );
 
   // Table setup

@@ -407,7 +407,7 @@ function NotesView({
     format: "csv" | "json",
     action: "copy" | "download",
   ) => {
-    // TODO: export should respect current column visibility?
+    // Export all fields regardless of column visibility (for analysis)
     const result = await exportMutation.mutateAsync({ query, format });
     if (action === "copy") {
       await navigator.clipboard.writeText(result.data);
