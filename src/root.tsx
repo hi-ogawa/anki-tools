@@ -55,6 +55,19 @@ const queryClient = new QueryClient({
   },
 });
 
+function updateItemInCache(updater: (item: Item) => Item | undefined) {
+  queryClient.setQueriesData<Awaited<ReturnType<typeof api.fetchItems>>>(
+    { queryKey: ["fetchItems"] },
+    (old) => {
+      if (!old) return old;
+      return {
+        ...old,
+        items: old.items.map((item) => updater(item) ?? item),
+      };
+    },
+  );
+}
+
 export function Root() {
   return (
     <QueryClientProvider client={queryClient}>
@@ -287,7 +300,6 @@ function NotesView({
   onStateChange,
 }: NotesViewProps) {
   const [selected, setSelected] = useState<Item>();
-  const [isStale, setIsStale] = useState(false);
 
   // Bulk edit state (undefined = not in bulk edit mode)
   const [bulkEdit, setBulkEdit] = useState<{
@@ -332,11 +344,14 @@ function NotesView({
   const items = data?.items ?? [];
   const total = data?.total ?? 0;
 
-  // TODO: optimistic updates
   const setFlagMutation = useMutation({
     ...api.setCardFlag.mutationOptions(),
     onSuccess: (_, { cardId, flag }) => {
-      setIsStale(true);
+      updateItemInCache((item) =>
+        item.type === "card" && item.cardId === cardId
+          ? { ...item, flag }
+          : undefined,
+      );
       setSelected((prev) =>
         prev?.type === "card" && prev.cardId === cardId
           ? { ...prev, flag }
@@ -347,8 +362,12 @@ function NotesView({
 
   const updateFieldsMutation = useMutation({
     ...api.updateNoteFields.mutationOptions(),
-    onSuccess: (_, { fields }) => {
-      setIsStale(true);
+    onSuccess: (_, { noteId, fields }) => {
+      updateItemInCache((item) =>
+        item.noteId === noteId
+          ? { ...item, fields: { ...item.fields, ...fields } }
+          : undefined,
+      );
       setSelected((prev) =>
         prev ? { ...prev, fields: { ...prev.fields, ...fields } } : undefined,
       );
@@ -357,8 +376,10 @@ function NotesView({
 
   const updateTagsMutation = useMutation({
     ...api.updateNoteTags.mutationOptions(),
-    onSuccess: (_, { tags }) => {
-      setIsStale(true);
+    onSuccess: (_, { noteId, tags }) => {
+      updateItemInCache((item) =>
+        item.noteId === noteId ? { ...item, tags } : undefined,
+      );
       setSelected((prev) => (prev ? { ...prev, tags } : undefined));
     },
   });
@@ -366,7 +387,11 @@ function NotesView({
   const setSuspendedMutation = useMutation({
     ...api.setSuspended.mutationOptions(),
     onSuccess: (queue, { cardId }) => {
-      setIsStale(true);
+      updateItemInCache((item) =>
+        item.type === "card" && item.cardId === cardId
+          ? { ...item, queue }
+          : undefined,
+      );
       setSelected((prev) =>
         prev?.type === "card" && prev.cardId === cardId
           ? { ...prev, queue }
@@ -551,16 +576,10 @@ function NotesView({
       <Button
         variant="ghost"
         size="icon"
-        onClick={() => refetch().then(() => setIsStale(false))}
+        onClick={() => refetch()}
         disabled={isFetching}
-        title={isStale ? "Data may be outdated - click to refresh" : "Refresh"}
+        title="Refresh"
         data-testid="refresh-button"
-        data-stale={isStale ? "true" : undefined}
-        className={
-          isStale
-            ? "text-yellow-600 hover:text-yellow-700 hover:bg-yellow-100"
-            : ""
-        }
       >
         <RefreshCw
           className={`size-4 ${!isLoading && isFetching ? "animate-spin" : ""}`}
