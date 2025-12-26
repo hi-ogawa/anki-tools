@@ -457,3 +457,46 @@ test("export - download JSON file", async ({ page }) => {
     /anki-export-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\.json/,
   );
 });
+
+test("create note", async ({ page }) => {
+  await page.goto("/?model=Basic");
+
+  // Initial count
+  await expect(page.getByText("Showing 1-20 of 20")).toBeVisible();
+
+  // Open create note dialog
+  await page.getByTestId("create-note-button").click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+
+  // Select model and deck
+  await page.getByTestId("model-select").click();
+  await page.getByRole("option", { name: "Basic", exact: true }).click();
+
+  await page.getByTestId("deck-select").click();
+  await page.getByRole("option", { name: "Default", exact: true }).click();
+
+  // Fill in fields
+  await page.getByTestId("field-Front").fill("Test Question from E2E");
+  await page.getByTestId("field-Back").fill("Test Answer from E2E");
+
+  // Add tags
+  await page.getByTestId("tags-input").fill("e2e-test, automated");
+
+  // Submit
+  await page.getByTestId("submit-note-button").click();
+
+  // Dialog should close
+  await expect(page.getByRole("dialog")).not.toBeVisible();
+
+  // Search for the new note to verify it was created
+  await page.getByPlaceholder("Search").fill("Test Question from E2E");
+  await page.getByPlaceholder("Search").press("Enter");
+
+  await expect(page.getByRole("row")).toHaveCount(2); // 1 data + header
+  await expect(page.getByRole("row").nth(1)).toContainText(
+    "Test Question from E2E",
+  );
+  await expect(page.getByRole("row").nth(1)).toContainText(
+    "Test Answer from E2E",
+  );
+});
