@@ -239,8 +239,8 @@ function App() {
             <SelectContent>
               <SelectGroup>
                 <SelectLabel>View mode</SelectLabel>
-                <SelectItem value="notes">Notes</SelectItem>
                 <SelectItem value="cards">Cards</SelectItem>
+                <SelectItem value="notes">Notes</SelectItem>
               </SelectGroup>
             </SelectContent>
           </Select>
