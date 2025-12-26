@@ -11,39 +11,43 @@ Anki supports runtime TTS via card templates:
 ```
 {{tts ko_KR:korean}}
 ```
+
 or
+
 ```
 [anki:tts lang=ko_KR]{{korean}}[/anki:tts]
 ```
 
 Audio is generated **during card review** using OS-level TTS engines (Windows SAPI, macOS Speech, etc.). No files stored.
 
-| Pros | Cons |
-|------|------|
-| No storage needed | Quality depends on OS TTS engine |
-| Auto-updates if text changes | Doesn't work on AnkiWeb |
-| Zero setup for note creation | Requires TTS on each device |
-| | Korean voice quality/availability varies |
+| Pros                         | Cons                                     |
+| ---------------------------- | ---------------------------------------- |
+| No storage needed            | Quality depends on OS TTS engine         |
+| Auto-updates if text changes | Doesn't work on AnkiWeb                  |
+| Zero setup for note creation | Requires TTS on each device              |
+|                              | Korean voice quality/availability varies |
 
 ### Option 2: Pre-generated audio files (chosen approach)
 
 Store `[sound:filename.mp3]` in a field, with MP3 in media folder.
 
-| Pros | Cons |
-|------|------|
-| Consistent high-quality voices | Takes storage space |
-| Works everywhere (AnkiWeb, mobile) | Manual regeneration if text changes |
-| Offline-capable | |
-| edge-tts Korean voices are excellent | |
+| Pros                                 | Cons                                |
+| ------------------------------------ | ----------------------------------- |
+| Consistent high-quality voices       | Takes storage space                 |
+| Works everywhere (AnkiWeb, mobile)   | Manual regeneration if text changes |
+| Offline-capable                      |                                     |
+| edge-tts Korean voices are excellent |                                     |
 
 ### Decision
 
 **Pre-generated audio with edge-tts** is better for Korean learning because:
+
 - `ko-KR-SunHiNeural` voice quality is superior to typical OS TTS
 - Works on AnkiWeb and mobile without extra setup
 - Consistent experience across all devices
 
 References:
+
 - [Anki Manual - Field Replacements](https://docs.ankiweb.net/templates/fields.html)
 - [AnkiMobile TTS](https://docs.ankimobile.net/tts.html)
 
@@ -63,6 +67,7 @@ References:
 ## Anki Python API
 
 ### Media Management
+
 ```python
 col.media.dir()                        # Get media directory path
 col.media.write_data(filename, bytes)  # Write bytes, returns actual filename (handles dedup)
@@ -71,6 +76,7 @@ col.media.have(fname)                  # Check if file exists
 ```
 
 ### Note Creation
+
 ```python
 model = col.models.by_name("Korean Vocabulary")
 deck = col.decks.by_name("Korean::Custom")
@@ -81,6 +87,7 @@ col.add_note(note, deck["id"])  # Returns OpChangesWithCount
 ```
 
 ### Schema (already exposed via `getSchema`)
+
 ```python
 {
   "models": {"Model Name": ["field1", "field2", ...]},
@@ -92,6 +99,7 @@ col.add_note(note, deck["id"])  # Returns OpChangesWithCount
 ## MVP Scope
 
 ### In Scope
+
 1. Schema-driven form: user selects note type + deck first, fields derived dynamically
 2. Audio field configuration: user specifies which fields should have audio generated
 3. Generate audio via edge-tts subprocess
@@ -99,6 +107,7 @@ col.add_note(note, deck["id"])  # Returns OpChangesWithCount
 5. Write audio to media folder using `col.media.write_data()`
 
 ### Out of Scope (Future)
+
 - Voice selection UI (use sensible default: `ko-KR-SunHiNeural`)
 - Audio preview before saving
 - Bulk note creation from TSV/JSON
@@ -207,6 +216,7 @@ For Korean Vocabulary, typical mapping:
 | `example_ko` | `example_ko_audio` | `example_ko_{number}.mp3` |
 
 This mapping could be:
+
 - Option A: Hardcoded convention (fields ending in `_audio` get generated from base field)
 - Option B: User configures mapping in UI
 - Option C: Stored as user preference per model
@@ -215,11 +225,11 @@ This mapping could be:
 
 **2.3 Components**
 
-| Component | Purpose |
-|-----------|---------|
-| `create-note-dialog.tsx` | Modal wrapper |
-| `model-deck-selector.tsx` | Step 1: model + deck selection |
-| `dynamic-note-form.tsx` | Step 3: renders fields based on model |
+| Component                 | Purpose                               |
+| ------------------------- | ------------------------------------- |
+| `create-note-dialog.tsx`  | Modal wrapper                         |
+| `model-deck-selector.tsx` | Step 1: model + deck selection        |
+| `dynamic-note-form.tsx`   | Step 3: renders fields based on model |
 
 ### Phase 3: API Contract
 
@@ -277,27 +287,31 @@ async function createNoteWithAudio(params: {
 
 ## File Changes
 
-| File | Change |
-|------|--------|
-| `addon/server.py` | Add `addNote`, `generateAudio` actions |
-| `src/api.ts` | Add `addNote`, `generateAudio` API functions |
-| `src/components/create-note-dialog.tsx` | New: modal for create flow |
-| `src/components/dynamic-note-form.tsx` | New: schema-driven form |
-| `src/root.tsx` | Add create note button to toolbar |
+| File                                    | Change                                       |
+| --------------------------------------- | -------------------------------------------- |
+| `addon/server.py`                       | Add `addNote`, `generateAudio` actions       |
+| `src/api.ts`                            | Add `addNote`, `generateAudio` API functions |
+| `src/components/create-note-dialog.tsx` | New: modal for create flow                   |
+| `src/components/dynamic-note-form.tsx`  | New: schema-driven form                      |
+| `src/root.tsx`                          | Add create note button to toolbar            |
 
 ## Technical Considerations
 
 ### Thread Safety
+
 - edge-tts subprocess blocks server thread (~0.5-2s per audio)
 - Acceptable for MVP, consider async if needed
 
 ### Error Handling
+
 - edge-tts not found → clear error message with install instructions
 - Empty text → skip audio generation for that field
 - Network failure (edge-tts uses Azure) → surface error to user
 
 ### ID Generation
+
 For `number` field (used in filename):
+
 - Format: `{prefix}_{timestamp}` e.g., `manual_1735200000`
 - User provides prefix, timestamp auto-appended
 - Guarantees uniqueness
