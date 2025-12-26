@@ -87,11 +87,9 @@ export function NoteDetail({
             </div>
             <Button
               variant="outline"
-              size="sm"
               className={cn(
                 "h-8.5 min-w-24 justify-center",
-                item.queue === -1 &&
-                  "text-yellow-600 hover:text-yellow-600",
+                item.queue === -1 && "text-yellow-600 hover:text-yellow-600",
               )}
               onClick={() => onSuspendedChange?.(item.queue !== -1)}
               data-testid="suspend-toggle"
