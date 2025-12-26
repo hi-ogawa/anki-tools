@@ -423,7 +423,7 @@ function NotesView({
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
-        a.download = `anki-export-${new Date().toISOString().slice(0, 10)}.${ext}`;
+        a.download = `anki-export-${new Date().toISOString().slice(0, 19).replace(/[T:]/g, "-")}.${ext}`;
         a.click();
         URL.revokeObjectURL(url);
       }

@@ -437,7 +437,7 @@ test("export - download CSV file", async ({ page }) => {
   // Verify download triggered
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(
-    /anki-export-\d{4}-\d{2}-\d{2}\.csv/,
+    /anki-export-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\.csv/,
   );
 });
 
@@ -454,6 +454,6 @@ test("export - download JSON file", async ({ page }) => {
   // Verify download triggered
   const download = await downloadPromise;
   expect(download.suggestedFilename()).toMatch(
-    /anki-export-\d{4}-\d{2}-\d{2}\.json/,
+    /anki-export-\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2}\.json/,
   );
 });
