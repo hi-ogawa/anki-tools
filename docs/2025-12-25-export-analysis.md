@@ -18,6 +18,32 @@ From user's TOPIK2 vocabulary analysis needs:
 | Interval     | `cards.ivl`    | Exposed        |
 | Queue status | `cards.queue`  | Exposed        |
 
+### Anki Built-in Browser Columns (Reference)
+
+Anki's native browser exposes these columns:
+
+| Column          | Source                 | Priority |
+| --------------- | ---------------------- | -------- |
+| Due             | `cards.due`            | Have     |
+| Interval        | `cards.ivl`            | Have     |
+| Ease            | `cards.factor`         | Phase 1  |
+| Lapses          | `cards.lapses`         | Phase 1  |
+| Reviews         | `cards.reps`           | Phase 1  |
+| Difficulty      | `cards.data` (FSRS)    | Later    |
+| Stability       | `cards.data` (FSRS)    | Later    |
+| Retrievability  | `cards.data` (FSRS)    | Later    |
+| Card Modified   | `cards.mod`            | Later    |
+| Note Modified   | `notes.mod`            | Later    |
+| Created         | `notes.id` (timestamp) | Later    |
+| Position        | `cards.due` (new only) | Later    |
+
+## Implementation Priority
+
+1. **Phase 1**: Extend CardData (ease, lapses, reviews) + new table columns
+2. **Phase 2**: Export current table view (CSV/JSON + clipboard)
+3. ~~**Phase 3**: SQL Query Mode~~ (postponed - removing code for now)
+4. **Phase 4**: Review log export (optional, later)
+
 ## Design Decisions
 
 ### Scope of Export
@@ -41,10 +67,11 @@ From user's TOPIK2 vocabulary analysis needs:
 - Universal compatibility
 - Simple to implement
 
-**Option B: CSV + JSON** (chosen)
+**Option B: CSV + JSON + Clipboard** (chosen)
 
-- CSV for spreadsheet analysis
-- JSON for programmatic processing (Python, etc.)
+- CSV for spreadsheet analysis (file download)
+- JSON for programmatic processing (file download)
+- **Clipboard copy** for quick LLM chat communication (CSV format, no file)
 - JSON preserves nested structure (fields object)
 
 ### Review Log Access
@@ -81,10 +108,10 @@ interface CardData {
   due: number;
   interval: number;
 
-  // new
+  // new (Phase 1)
   ease: number;      // factor/10, e.g., 250 for 2.5x (stored as 2500 in DB)
   lapses: number;    // times card went to relearning
-  reps: number;      // total review count
+  reviews: number;   // total review count (renamed from reps for consistency with Anki UI)
 }
 ```
 
@@ -111,27 +138,47 @@ interface ReviewLogEntry {
 
 #### Backend (`addon/server.py`)
 
-Update `fetch_card_data()` to include additional fields:
+Update `browseCards` response to include additional fields:
 
 ```python
-def fetch_card_data(card_ids: list[int]) -> list[dict]:
-    # Add to SELECT: factor, lapses, reps
-    # Transform factor: divide by 10 for percentage (2500 -> 250)
+{
+    # existing...
+    "ease": card.factor // 10,  # 2500 -> 250 (250%)
+    "lapses": card.lapses,
+    "reviews": card.reps,
+}
 ```
 
 #### Frontend (`src/api.ts`)
 
-Extend `CardData` type with new fields.
+Extend `CardData` and `RawCard` types:
+
+```typescript
+export type CardData = {
+  // existing...
+  ease: number; // 250 = 250% ease factor
+  lapses: number; // times card went to relearning
+  reviews: number; // total review count
+};
+```
 
 #### Frontend (`src/components/browse-table.tsx`)
 
-Add optional columns:
+Add optional columns (hidden by default, matching Anki's naming):
 
-- "Ease" - format as percentage (e.g., "250%")
-- "Lapses" - integer count
-- "Reps" - integer count
+| Column  | Format         | Example |
+| ------- | -------------- | ------- |
+| Ease    | percentage     | "250%"  |
+| Lapses  | integer        | "3"     |
+| Reviews | integer        | "15"    |
 
-Column visibility toggleable like existing columns.
+#### Frontend (`src/lib/constants.ts`)
+
+Update `CARD_COLUMNS`:
+
+```typescript
+export const CARD_COLUMNS = ["flag", "status", "interval", "ease", "lapses", "reviews"] as const;
+```
 
 ### Phase 2: Export Cards
 
@@ -159,7 +206,7 @@ def exportCards(query: str, format: str) -> dict:
 Export includes:
 
 - All note fields
-- All card metadata (flag, queue, due, interval, ease, lapses, reps)
+- All card metadata (flag, queue, due, interval, ease, lapses, reviews)
 - Deck name, model name, tags
 
 #### Frontend (`src/api.ts`)
@@ -169,17 +216,21 @@ exportCards: (params: { query: string; format: "csv" | "json" }) =>
   invoke<{ data: string; count: number; format: string }>("exportCards", params)
 ```
 
-#### Frontend (`src/root.tsx` or new component)
+#### Frontend (`src/root.tsx`)
 
-Export button in toolbar:
+Export dropdown in toolbar with 3 options:
 
-- Dropdown with format selection (CSV / JSON)
-- Click triggers download
-- Shows count in confirmation or toast
-
-Download implementation:
+| Option       | Action                    | Use Case                  |
+| ------------ | ------------------------- | ------------------------- |
+| Copy CSV     | Copy to clipboard         | Quick LLM chat sharing    |
+| Download CSV | Download .csv file        | Excel/spreadsheet         |
+| Download JSON| Download .json file       | Python/programmatic       |
 
 ```typescript
+// Clipboard
+await navigator.clipboard.writeText(data);
+
+// Download
 function downloadFile(data: string, filename: string, mimeType: string) {
   const blob = new Blob([data], { type: mimeType });
   const url = URL.createObjectURL(blob);
@@ -313,32 +364,31 @@ def getReviewLog(query: str, limit: int = None) -> dict:
 
 ## Files to Modify
 
-### Phase 1
+### Phase 1: Extend Card Data
 
-1. `addon/server.py` - add factor/lapses/reps to card query
-2. `src/api.ts` - extend CardData type
-3. `src/components/browse-table.tsx` - new columns (optional, hidden by default)
-4. `docs/anki-schema.md` - document additional card fields
+1. `addon/server.py` - add ease/lapses/reviews to browseCards response
+2. `src/api.ts` - extend CardData and RawCard types
+3. `src/lib/constants.ts` - add new columns to CARD_COLUMNS
+4. `src/components/browse-table.tsx` - add Ease, Lapses, Reviews columns
 
-### Phase 2
+### Phase 2: Export Table View
 
-1. `addon/server.py` - exportCards endpoint
-2. `src/api.ts` - export API method
-3. `src/root.tsx` - export button/dropdown in toolbar
-4. `src/lib/download.ts` - download utility (new file, optional)
+1. `addon/server.py` - add exportCards endpoint
+2. `src/api.ts` - add exportCards API method
+3. `src/root.tsx` - add Export dropdown (Copy CSV / Download CSV / Download JSON)
 
-### Phase 3
+### ~~Phase 3: SQL Query Mode~~ (postponed)
 
-1. `addon/server.py` - executeQuery endpoint with SQL validation
-2. `src/api.ts` - query API method
-3. `src/components/sql-console.tsx` - new SQL query UI component
-4. `src/root.tsx` - SQL tab/modal integration
-5. `docs/anki-schema.md` - document all tables for SQL users
+Remove for now:
+1. `addon/server.py` - remove executeQuery endpoint
+2. `src/api.ts` - remove executeQuery API method
+3. `src/components/sql-console.tsx` - remove file
+4. `src/root.tsx` - remove SQL view mode
 
-### Phase 4
+### Phase 4: Review Log Export (optional, later)
 
 1. `addon/server.py` - getReviewLog endpoint
-2. `src/api.ts` - review log types and API method
+2. `src/api.ts` - review log types and API
 3. `src/root.tsx` - review history export option
 
 ## CSV Format
@@ -346,13 +396,13 @@ def getReviewLog(query: str, limit: int = None) -> dict:
 Example output:
 
 ```csv
-cardId,noteId,deckName,modelName,tags,Front,Back,flag,queue,due,interval,ease,lapses,reps
+cardId,noteId,deckName,modelName,tags,Front,Back,flag,queue,due,interval,ease,lapses,reviews
 1234567,9876543,TOPIK2,Basic,"vocab korean",안녕하세요,Hello,0,2,5,30,250,0,15
 ```
 
 - Note fields are included dynamically based on model
 - Tags joined with space
-- Queue mapped to human-readable? Or keep numeric for analysis flexibility
+- Numeric values kept as-is for analysis flexibility
 
 ## JSON Format
 
@@ -374,7 +424,7 @@ cardId,noteId,deckName,modelName,tags,Front,Back,flag,queue,due,interval,ease,la
     "interval": 30,
     "ease": 250,
     "lapses": 0,
-    "reps": 15
+    "reviews": 15
   }
 ]
 ```
@@ -402,8 +452,9 @@ cardId,noteId,deckName,modelName,tags,Front,Back,flag,queue,due,interval,ease,la
 - **In-app analytics** (charts, histograms) instead of export-only
 - **Import** capability for edited data
 
-## feedback
+## Status
 
-- showing models / note type selector seems odd since SQL view mode is entirely independent.
-- not sure how "run" button is designed. look weird.
-- don't need each button for examples, should be quick dropdown is enough.
+- [ ] Phase 1: Extend Card Data (next)
+- [ ] Phase 2: Export Table View (next)
+- [ ] Phase 3: SQL Query Mode (postponed - code removed)
+- [ ] Phase 4: Review Log Export (later)
