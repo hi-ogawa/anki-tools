@@ -58,12 +58,16 @@ export function NoteDetail({
           {/* Flag buttons */}
           {isCard && (
             <div
+              role="group"
+              aria-label="Card flags"
               className="flex w-fit rounded border bg-muted/50"
               data-testid="flag-buttons"
             >
               {FLAG_OPTIONS.slice(1).map((opt) => (
                 <button
                   key={opt.value}
+                  aria-pressed={item.flag === opt.value}
+                  aria-label={opt.label}
                   onClick={() =>
                     onFlagChange?.(item.flag === opt.value ? 0 : opt.value)
                   }
@@ -76,7 +80,6 @@ export function NoteDetail({
                       ? { ["--tw-ring-color" as string]: opt.color }
                       : undefined
                   }
-                  title={item.flag === opt.value ? "Clear flag" : opt.label}
                 >
                   <Flag
                     className={cn(
