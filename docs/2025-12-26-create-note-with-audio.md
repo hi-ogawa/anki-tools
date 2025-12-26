@@ -38,13 +38,49 @@ Store `[sound:filename.mp3]` in a field, with MP3 in media folder.
 | Offline-capable                      |                                     |
 | edge-tts Korean voices are excellent |                                     |
 
-### Decision
+### Decision: Hybrid Approach
 
-**Pre-generated audio with edge-tts** is better for Korean learning because:
+Use **both** methods with card template fallback:
 
-- `ko-KR-SunHiNeural` voice quality is superior to typical OS TTS
-- Works on AnkiWeb and mobile without extra setup
-- Consistent experience across all devices
+1. **Primary**: Pre-generated audio with edge-tts (when available)
+2. **Fallback**: Built-in TTS when audio field is empty
+
+**Card template pattern:**
+
+```
+{{#korean_audio}}
+{{korean_audio}}
+{{/korean_audio}}
+{{^korean_audio}}
+{{tts ko_KR:korean}}
+{{/korean_audio}}
+```
+
+Same for example sentences:
+
+```
+{{#example_ko_audio}}
+{{example_ko_audio}}
+{{/example_ko_audio}}
+{{^example_ko_audio}}
+{{tts ko_KR:example_ko}}
+{{/example_ko_audio}}
+```
+
+**Benefits:**
+
+- New cards work immediately with built-in TTS (no audio generation needed)
+- Can upgrade to edge-tts audio later for better quality
+- Graceful degradation if audio file is missing
+- No app changes required for basic TTS - just template modification
+
+**When to use each:**
+
+| Scenario                   | Approach                                       |
+| -------------------------- | ---------------------------------------------- |
+| Quick note creation        | Leave `_audio` fields empty → built-in TTS     |
+| High-quality audio needed  | Generate with edge-tts → fill `_audio` fields  |
+| Offline/AnkiWeb usage      | Pre-generate audio (built-in TTS may not work) |
 
 References:
 
