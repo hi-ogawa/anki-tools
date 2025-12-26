@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router";
-import { api, type Item, type ViewMode } from "./api";
+import { api, cardsToCSV, type Card, type Item, type ViewMode } from "./api";
 import { BrowseTable } from "./components/browse-table";
 import { BulkActions } from "./components/bulk-actions";
 import { NoteDetail } from "./components/note-detail";
@@ -400,31 +400,39 @@ function NotesView({
 
   // Export mutation
   const exportMutation = useMutation({
-    ...api.exportCards.mutationOptions(),
-  });
+    mutationFn: async ({
+      format,
+      action,
+    }: {
+      format: "csv" | "json";
+      action: "copy" | "download";
+    }) => {
+      const result = await api.fetchItems({ query, viewMode: "cards" });
+      const cards = result.items as Card[];
+      const data =
+        format === "json" ? JSON.stringify(cards, null, 2) : cardsToCSV(cards);
 
-  const handleExport = async (
-    format: "csv" | "json",
-    action: "copy" | "download",
-  ) => {
-    // Export all fields regardless of column visibility (for analysis)
-    const result = await exportMutation.mutateAsync({ query, format });
-    if (action === "copy") {
-      await navigator.clipboard.writeText(result.data);
-      alert(`Copied ${result.count} cards to clipboard`);
-    } else {
-      // TODO: do json -> csv formating on client
-      const mimeType = format === "json" ? "application/json" : "text/csv";
-      const ext = format === "json" ? "json" : "csv";
-      const blob = new Blob([result.data], { type: mimeType });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `anki-export-${Date.now()}.${ext}`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-  };
+      if (action === "copy") {
+        await navigator.clipboard.writeText(data);
+      } else {
+        const mimeType = format === "json" ? "application/json" : "text/csv";
+        const ext = format === "json" ? "json" : "csv";
+        const blob = new Blob([data], { type: mimeType });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `anki-export-${Date.now()}.${ext}`;
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+      return { count: cards.length, action };
+    },
+    onSuccess: ({ count, action }) => {
+      if (action === "copy") {
+        alert(`Copied ${count} cards to clipboard`);
+      }
+    },
+  });
 
   const getBulkTarget = () => {
     if (!bulkEdit) {
@@ -636,15 +644,27 @@ function NotesView({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            <DropdownMenuItem onClick={() => handleExport("csv", "copy")}>
+            <DropdownMenuItem
+              onClick={() =>
+                exportMutation.mutate({ format: "csv", action: "copy" })
+              }
+            >
               <Clipboard className="size-4" />
-              Copy CSV
+              Copy to Clipboard
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleExport("csv", "download")}>
+            <DropdownMenuItem
+              onClick={() =>
+                exportMutation.mutate({ format: "csv", action: "download" })
+              }
+            >
               <Download className="size-4" />
               Download CSV
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => handleExport("json", "download")}>
+            <DropdownMenuItem
+              onClick={() =>
+                exportMutation.mutate({ format: "json", action: "download" })
+              }
+            >
               <Download className="size-4" />
               Download JSON
             </DropdownMenuItem>

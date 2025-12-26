@@ -186,15 +186,68 @@ const implementations = {
   ) => {
     return invoke<number>("bulkSuspendCards", input);
   },
-
-  // Export cards matching query
-  exportCards: (input: { query: string; format: "csv" | "json" }) => {
-    return invoke<{ data: string; count: number; format: string }>(
-      "exportCards",
-      input,
-    );
-  },
 };
+
+// Convert cards to CSV format with proper escaping
+export function cardsToCSV(cards: Card[]): string {
+  if (cards.length === 0) return "";
+
+  // Collect all unique field names across all cards
+  const fieldNames = new Set<string>();
+  for (const card of cards) {
+    for (const name of Object.keys(card.fields)) {
+      fieldNames.add(name);
+    }
+  }
+  const sortedFieldNames = [...fieldNames].sort();
+
+  // CSV escape helper
+  const escape = (value: string | number | undefined): string => {
+    if (value === undefined || value === null) return "";
+    const str = String(value);
+    // Escape quotes and wrap in quotes if contains comma, quote, or newline
+    if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+      return `"${str.replace(/"/g, '""')}"`;
+    }
+    return str;
+  };
+
+  // Build header row
+  const headers = [
+    "cardId",
+    "noteId",
+    "deckName",
+    "modelName",
+    "tags",
+    ...sortedFieldNames,
+    "flag",
+    "queue",
+    "due",
+    "interval",
+    "ease",
+    "lapses",
+    "reviews",
+  ];
+
+  // Build data rows
+  const rows = cards.map((card) => [
+    escape(card.cardId),
+    escape(card.noteId),
+    escape(card.deckName),
+    escape(card.modelName),
+    escape(card.tags.join(", ")),
+    ...sortedFieldNames.map((name) => escape(card.fields[name] ?? "")),
+    escape(card.flag),
+    escape(card.queue),
+    escape(card.due),
+    escape(card.interval),
+    escape(card.ease),
+    escape(card.lapses),
+    escape(card.reviews),
+  ]);
+
+  return [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
+}
 
 export const api = deriveQueryHelpers(implementations);
 
