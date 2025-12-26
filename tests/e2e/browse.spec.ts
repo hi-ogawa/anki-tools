@@ -78,7 +78,7 @@ test("deck filter filters by deck", async ({ page }) => {
   await expect(page.getByText("Showing 1-20 of 20")).toBeVisible();
 });
 
-test.only("set card flag", async ({ page }) => {
+test("set card flag", async ({ page }) => {
   // Use cards view to access flag functionality
   await page.goto("/?model=Basic&view=cards");
 
