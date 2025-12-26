@@ -413,6 +413,7 @@ function NotesView({
       await navigator.clipboard.writeText(result.data);
       alert(`Copied ${result.count} cards to clipboard`);
     } else {
+      // TODO: do json -> csv formating on client
       const mimeType = format === "json" ? "application/json" : "text/csv";
       const ext = format === "json" ? "json" : "csv";
       const blob = new Blob([result.data], { type: mimeType });
@@ -616,6 +617,7 @@ function NotesView({
           Bulk Edit
         </Button>
       </span>
+      {/* TODO: enable only on Cards View */}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
