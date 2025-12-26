@@ -4,15 +4,9 @@ import type { Item } from "@/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { FLAG_OPTIONS, formatInterval, QUEUE_LABELS } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
 interface NoteDetailProps {
   item: Item;
@@ -44,20 +38,62 @@ export function NoteDetail({
   return (
     <div className="flex h-full flex-col border-l">
       {/* Header */}
-      <div className="flex items-center justify-between border-b px-4 py-3">
-        <div className="text-sm font-medium">
-          <div>Note #{item.noteId}</div>
-          {isCard && <div>Card #{item.cardId}</div>}
-          <div className="text-muted-foreground">Deck - {item.deckName}</div>
+      <div className="flex items-center justify-between px-3 py-2">
+        <div className="text-sm">
+          <span className="text-muted-foreground">Deck:</span>{" "}
+          <span className="font-medium">{item.deckName}</span>
         </div>
-        <Button variant="ghost" size="icon" onClick={onClose}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7"
+          onClick={onClose}
+        >
           <X className="size-4" />
         </Button>
       </div>
-
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4">
         <div className="space-y-4">
+          {/* Flag buttons */}
+          {isCard && (
+            <div
+              role="group"
+              aria-label="Card flags"
+              className="flex w-fit rounded border bg-muted/50"
+              data-testid="flag-buttons"
+            >
+              {FLAG_OPTIONS.slice(1).map((opt) => (
+                <button
+                  key={opt.value}
+                  aria-pressed={item.flag === opt.value}
+                  aria-label={opt.label}
+                  onClick={() =>
+                    onFlagChange?.(item.flag === opt.value ? 0 : opt.value)
+                  }
+                  className={cn(
+                    "group rounded p-2",
+                    item.flag === opt.value && "ring-2",
+                  )}
+                  style={
+                    item.flag === opt.value
+                      ? { ["--tw-ring-color" as string]: opt.color }
+                      : undefined
+                  }
+                >
+                  <Flag
+                    className={cn(
+                      "size-4.5",
+                      item.flag !== opt.value &&
+                        "opacity-50 group-hover:opacity-100",
+                    )}
+                    style={{ color: opt.color }}
+                    fill={opt.color}
+                  />
+                </button>
+              ))}
+            </div>
+          )}
           {fields.map((field) => (
             <div key={field} data-testid={`field-${field}`}>
               <div className="flex items-center justify-between">
@@ -191,38 +227,6 @@ export function NoteDetail({
           {/* Card metadata */}
           {isCard && (
             <>
-              <hr className="border-border" />
-
-              {/* Flag selector */}
-              <div className="flex items-center gap-2 text-sm">
-                <span className="text-muted-foreground">Flag:</span>
-                <Select
-                  value={String(item.flag)}
-                  onValueChange={(v) => onFlagChange?.(Number(v))}
-                >
-                  <SelectTrigger
-                    className="h-8 w-[120px]"
-                    data-testid="flag-select"
-                  >
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {FLAG_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={String(opt.value)}>
-                        <span className="flex items-center gap-2">
-                          <Flag
-                            className="size-4"
-                            style={{ color: opt.color }}
-                            fill={opt.color ?? "none"}
-                          />
-                          {opt.label}
-                        </span>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
               {/* Status display + suspend toggle */}
               <div className="flex items-center gap-2 text-sm">
                 <span className="text-muted-foreground">Status:</span>
