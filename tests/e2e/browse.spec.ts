@@ -398,3 +398,53 @@ test("bulk edit - select all matching query", async ({ page }) => {
   await expect(page.getByTestId("flag-2")).toHaveCount(6);
 });
 
+test("export - copy CSV to clipboard", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+  await page.goto("/?model=Basic&view=cards");
+  page.on("dialog", (dialog) => dialog.accept());
+
+  // Click Export button and select Copy CSV
+  await page.getByTestId("export-button").click();
+  await page.getByRole("menuitem", { name: "Copy CSV" }).click();
+
+  // Verify clipboard contains CSV data
+  const clipboardText = await page.evaluate(() =>
+    navigator.clipboard.readText(),
+  );
+  expect(clipboardText).toContain("cardId");
+  expect(clipboardText).toContain("noteId");
+  expect(clipboardText).toContain("deckName");
+  expect(clipboardText).toContain("ease");
+  expect(clipboardText).toContain("lapses");
+  expect(clipboardText).toContain("reviews");
+});
+
+test("export - download CSV file", async ({ page }) => {
+  await page.goto("/?model=Basic&view=cards");
+
+  // Listen for download event
+  const downloadPromise = page.waitForEvent("download");
+
+  // Click Export button and select Download CSV
+  await page.getByTestId("export-button").click();
+  await page.getByRole("menuitem", { name: "Download CSV" }).click();
+
+  // Verify download triggered
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/anki-export-\d+\.csv/);
+});
+
+test("export - download JSON file", async ({ page }) => {
+  await page.goto("/?model=Basic&view=cards");
+
+  // Listen for download event
+  const downloadPromise = page.waitForEvent("download");
+
+  // Click Export button and select Download JSON
+  await page.getByTestId("export-button").click();
+  await page.getByRole("menuitem", { name: "Download JSON" }).click();
+
+  // Verify download triggered
+  const download = await downloadPromise;
+  expect(download.suggestedFilename()).toMatch(/anki-export-\d+\.json/);
+});
