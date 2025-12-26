@@ -241,4 +241,27 @@ def handle_action(col: Collection, action: str, params: dict):
             col.sched.unsuspend_cards(card_ids)
         return len(card_ids)
 
+    elif action == "addNote":
+        deck_name = params["deckName"]
+        model_name = params["modelName"]
+        fields = params["fields"]  # dict of field name -> value
+        tags = params.get("tags", [])
+
+        model = col.models.by_name(model_name)
+        if not model:
+            raise ValueError(f"Model not found: {model_name}")
+        deck = col.decks.by_name(deck_name)
+        if not deck:
+            raise ValueError(f"Deck not found: {deck_name}")
+
+        note = col.new_note(model)
+        field_names = [f["name"] for f in model["flds"]]
+        for name, value in fields.items():
+            if name in field_names:
+                note.fields[field_names.index(name)] = value
+        note.tags = tags
+
+        col.add_note(note, deck["id"])
+        return {"noteId": note.id}
+
     raise ValueError(f"Unknown action: {action}")

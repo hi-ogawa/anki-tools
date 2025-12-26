@@ -186,6 +186,15 @@ const implementations = {
   ) => {
     return invoke<number>("bulkSuspendCards", input);
   },
+
+  addNote: (input: {
+    deckName: string;
+    modelName: string;
+    fields: Record<string, string>;
+    tags?: string[];
+  }) => {
+    return invoke<{ noteId: number }>("addNote", input);
+  },
 };
 
 // Convert cards to CSV format with proper escaping

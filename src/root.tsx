@@ -22,6 +22,7 @@ import { Link, useSearchParams } from "react-router";
 import { api, cardsToCSV, type Card, type Item, type ViewMode } from "./api";
 import { BrowseTable } from "./components/browse-table";
 import { BulkActions } from "./components/bulk-actions";
+import { CreateNoteDialog } from "./components/create-note-dialog";
 import { NoteDetail } from "./components/note-detail";
 import { TableSkeleton } from "./components/table-skeleton";
 import { Button } from "./components/ui/button";
@@ -246,6 +247,12 @@ function App() {
               </SelectGroup>
             </SelectContent>
           </Select>
+          {schema && (
+            <CreateNoteDialog
+              schema={schema}
+              defaultModel={validModel ? urlModel : undefined}
+            />
+          )}
         </div>
       </header>
       <main className="flex-1 overflow-hidden p-4">{mainContent}</main>
