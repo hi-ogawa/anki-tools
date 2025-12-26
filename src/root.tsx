@@ -55,19 +55,14 @@ const queryClient = new QueryClient({
   },
 });
 
-function updateItemInCache(
-  predicate: (item: Item) => boolean,
-  updater: (item: Item) => Item,
-) {
+function updateItemInCache(updater: (item: Item) => Item | undefined) {
   queryClient.setQueriesData<Awaited<ReturnType<typeof api.fetchItems>>>(
     { queryKey: ["fetchItems"] },
     (old) => {
       if (!old) return old;
       return {
         ...old,
-        items: old.items.map((item) =>
-          predicate(item) ? updater(item) : item,
-        ),
+        items: old.items.map((item) => updater(item) ?? item),
       };
     },
   );
@@ -352,9 +347,10 @@ function NotesView({
   const setFlagMutation = useMutation({
     ...api.setCardFlag.mutationOptions(),
     onSuccess: (_, { cardId, flag }) => {
-      updateItemInCache(
-        (item) => item.type === "card" && item.cardId === cardId,
-        (item) => ({ ...item, flag }),
+      updateItemInCache((item) =>
+        item.type === "card" && item.cardId === cardId
+          ? { ...item, flag }
+          : undefined,
       );
       setSelected((prev) =>
         prev?.type === "card" && prev.cardId === cardId
@@ -367,9 +363,10 @@ function NotesView({
   const updateFieldsMutation = useMutation({
     ...api.updateNoteFields.mutationOptions(),
     onSuccess: (_, { noteId, fields }) => {
-      updateItemInCache(
-        (item) => item.noteId === noteId,
-        (item) => ({ ...item, fields: { ...item.fields, ...fields } }),
+      updateItemInCache((item) =>
+        item.noteId === noteId
+          ? { ...item, fields: { ...item.fields, ...fields } }
+          : undefined,
       );
       setSelected((prev) =>
         prev ? { ...prev, fields: { ...prev.fields, ...fields } } : undefined,
@@ -380,9 +377,8 @@ function NotesView({
   const updateTagsMutation = useMutation({
     ...api.updateNoteTags.mutationOptions(),
     onSuccess: (_, { noteId, tags }) => {
-      updateItemInCache(
-        (item) => item.noteId === noteId,
-        (item) => ({ ...item, tags }),
+      updateItemInCache((item) =>
+        item.noteId === noteId ? { ...item, tags } : undefined,
       );
       setSelected((prev) => (prev ? { ...prev, tags } : undefined));
     },
@@ -391,9 +387,10 @@ function NotesView({
   const setSuspendedMutation = useMutation({
     ...api.setSuspended.mutationOptions(),
     onSuccess: (queue, { cardId }) => {
-      updateItemInCache(
-        (item) => item.type === "card" && item.cardId === cardId,
-        (item) => ({ ...item, queue }),
+      updateItemInCache((item) =>
+        item.type === "card" && item.cardId === cardId
+          ? { ...item, queue }
+          : undefined,
       );
       setSelected((prev) =>
         prev?.type === "card" && prev.cardId === cardId
