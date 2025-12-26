@@ -617,33 +617,40 @@ function NotesView({
           Bulk Edit
         </Button>
       </span>
-      {/* TODO: enable only on Cards View */}
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            variant="ghost"
-            disabled={exportMutation.isPending}
-            data-testid="export-button"
-          >
-            <Download className="size-4" />
-            Export
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start">
-          <DropdownMenuItem onClick={() => handleExport("csv", "copy")}>
-            <Clipboard className="size-4" />
-            Copy CSV
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleExport("csv", "download")}>
-            <Download className="size-4" />
-            Download CSV
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleExport("json", "download")}>
-            <Download className="size-4" />
-            Download JSON
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+      <span
+        title={
+          viewMode === "notes"
+            ? "Export only available in cards view"
+            : undefined
+        }
+      >
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              disabled={viewMode === "notes" || exportMutation.isPending}
+              data-testid="export-button"
+            >
+              <Download className="size-4" />
+              Export
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start">
+            <DropdownMenuItem onClick={() => handleExport("csv", "copy")}>
+              <Clipboard className="size-4" />
+              Copy CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExport("csv", "download")}>
+              <Download className="size-4" />
+              Download CSV
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleExport("json", "download")}>
+              <Download className="size-4" />
+              Download JSON
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </span>
     </>
   );
 
