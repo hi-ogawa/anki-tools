@@ -38,72 +38,58 @@ export function NoteDetail({
   return (
     <div className="flex h-full flex-col border-l">
       {/* Header */}
-      <div className="border-b px-3 py-2">
-        <div className="flex items-center justify-between">
-          <div className="text-sm font-medium">{item.deckName}</div>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="size-7"
-            onClick={onClose}
-          >
-            <X className="size-4" />
-          </Button>
+      <div className="flex items-center justify-between px-3 py-1">
+        <div className="text-sm">
+          <span className="text-muted-foreground">Deck:</span>{" "}
+          <span className="font-medium">{item.deckName}</span>
         </div>
-        {/* Flag and suspend controls */}
-        {isCard && (
-          <div className="mt-2 flex items-center gap-2">
-            <div
-              className="flex rounded border bg-muted/50 p-0.5"
-              data-testid="flag-buttons"
-            >
-              {FLAG_OPTIONS.slice(1).map((opt) => (
-                <button
-                  key={opt.value}
-                  onClick={() =>
-                    onFlagChange?.(item.flag === opt.value ? 0 : opt.value)
-                  }
-                  className={cn(
-                    "rounded p-1.5",
-                    item.flag === opt.value && "ring-2",
-                  )}
-                  style={
-                    item.flag === opt.value
-                      ? { ["--tw-ring-color" as string]: opt.color }
-                      : undefined
-                  }
-                  title={item.flag === opt.value ? "Clear flag" : opt.label}
-                >
-                  <Flag
-                    className={cn(
-                      "size-4",
-                      item.flag !== opt.value && "opacity-50 hover:opacity-100",
-                    )}
-                    style={{ color: opt.color }}
-                    fill={opt.color}
-                  />
-                </button>
-              ))}
-            </div>
-            <Button
-              variant="outline"
-              className={cn(
-                "h-8.5 min-w-24 justify-center",
-                item.queue === -1 && "text-yellow-600 hover:text-yellow-600",
-              )}
-              onClick={() => onSuspendedChange?.(item.queue !== -1)}
-              data-testid="suspend-toggle"
-            >
-              {item.queue === -1 ? (
-                <Pause className="size-3.5" />
-              ) : (
-                <Play className="size-3.5" />
-              )}
-              {item.queue === -1 ? "Suspended" : "Suspend"}
-            </Button>
-          </div>
-        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="size-7"
+          onClick={onClose}
+        >
+          <X className="size-4" />
+        </Button>
       </div>
+      {/* Flag buttons */}
+      {isCard && (
+        <div className="border-b px-4 py-2">
+          <div
+            className="flex w-fit rounded border bg-muted/50"
+            data-testid="flag-buttons"
+          >
+            {FLAG_OPTIONS.slice(1).map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() =>
+                  onFlagChange?.(item.flag === opt.value ? 0 : opt.value)
+                }
+                className={cn(
+                  "group rounded p-2",
+                  item.flag === opt.value && "ring-2",
+                )}
+                style={
+                  item.flag === opt.value
+                    ? { ["--tw-ring-color" as string]: opt.color }
+                    : undefined
+                }
+                title={item.flag === opt.value ? "Clear flag" : opt.label}
+              >
+                <Flag
+                  className={cn(
+                    "size-4.5",
+                    item.flag !== opt.value &&
+                      "opacity-50 group-hover:opacity-100",
+                  )}
+                  style={{ color: opt.color }}
+                  fill={opt.color}
+                />
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto p-4">
@@ -240,28 +226,57 @@ export function NoteDetail({
 
           {/* Card metadata */}
           {isCard && (
-            <div className="flex gap-4 text-sm text-muted-foreground">
-              <span>
-                Status:{" "}
+            <>
+              <hr className="border-border" />
+
+              {/* Status display + suspend toggle */}
+              <div className="flex items-center gap-2 text-sm">
+                <span className="text-muted-foreground">Status:</span>
                 <span
                   className={
-                    item.queue === -1 ? "text-yellow-600" : "text-foreground"
+                    item.queue === -1
+                      ? "flex items-center gap-1 text-yellow-600"
+                      : "text-foreground"
                   }
                   data-testid="status-label"
                 >
+                  {item.queue === -1 && <Pause className="size-3" />}
                   {QUEUE_LABELS[item.queue]}
                 </span>
-              </span>
-              <span>
-                Interval:{" "}
-                <span className="text-foreground">
-                  {formatInterval(item.interval)}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-7"
+                  data-testid="suspend-button"
+                  onClick={() => onSuspendedChange?.(item.queue !== -1)}
+                >
+                  {item.queue === -1 ? (
+                    <>
+                      <Play className="size-3" />
+                      Unsuspend
+                    </>
+                  ) : (
+                    <>
+                      <Pause className="size-3" />
+                      Suspend
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {/* Interval / Due */}
+              <div className="flex gap-4 text-sm text-muted-foreground">
+                <span>
+                  Interval:{" "}
+                  <span className="text-foreground">
+                    {formatInterval(item.interval)}
+                  </span>
                 </span>
-              </span>
-              <span>
-                Due: <span className="text-foreground">{item.due}</span>
-              </span>
-            </div>
+                <span>
+                  Due: <span className="text-foreground">{item.due}</span>
+                </span>
+              </div>
+            </>
           )}
         </div>
       </div>
