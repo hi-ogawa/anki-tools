@@ -2,6 +2,8 @@
 
 ## Feature
 
+- SQL console: deck filter dropdown to simplify deck-scoped analysis queries
+- Export cards to CSV/JSON for external analysis (see `docs/2025-12-25-export-analysis.md`)
 - Render HTML content safely (XSS via `dangerouslySetInnerHTML` in `src/components/note-detail.tsx:113`)
 - Full scroll mode without pagination https://github.com/hi-ogawa/anki-tools/pull/12
 - Poll health endpoint for server status
