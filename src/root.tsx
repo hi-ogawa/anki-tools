@@ -12,6 +12,7 @@ import {
   Download,
   Flag,
   Library,
+  MoreVertical,
   Pencil,
   RefreshCw,
   Tag,
@@ -29,6 +30,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./components/ui/dropdown-menu";
 import { Input } from "./components/ui/input";
@@ -605,72 +607,54 @@ function NotesView({
           className={`size-4 ${!isLoading && isFetching ? "animate-spin" : ""}`}
         />
       </Button>
-      {/* TODO: move bulk edit and export in humburger to save header spaces */}
-      <span
-        title={
-          viewMode === "notes"
-            ? "Bulk edit only available in cards view"
-            : undefined
-        }
-      >
-        <Button
-          variant="ghost"
-          onClick={() =>
-            setBulkEdit({ rowSelection: {}, isAllSelected: false })
-          }
-          disabled={viewMode === "notes"}
-          data-testid="bulk-edit-button"
-        >
-          <Pencil className="size-4" />
-          Bulk Edit
-        </Button>
-      </span>
-      <span
-        title={
-          viewMode === "notes"
-            ? "Export only available in cards view"
-            : undefined
-        }
-      >
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              disabled={viewMode === "notes" || exportMutation.isPending}
-              data-testid="export-button"
-            >
-              <Download className="size-4" />
-              Export
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            <DropdownMenuItem
-              onClick={() =>
-                exportMutation.mutate({ format: "csv", action: "copy" })
-              }
-            >
-              <Clipboard className="size-4" />
-              Copy to Clipboard
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() =>
-                exportMutation.mutate({ format: "csv", action: "download" })
-              }
-            >
-              <Download className="size-4" />
-              Download CSV
-            </DropdownMenuItem>
-            <DropdownMenuItem
-              onClick={() =>
-                exportMutation.mutate({ format: "json", action: "download" })
-              }
-            >
-              <Download className="size-4" />
-              Download JSON
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </span>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" data-testid="more-menu">
+            <MoreVertical className="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem
+            onClick={() =>
+              setBulkEdit({ rowSelection: {}, isAllSelected: false })
+            }
+            disabled={viewMode === "notes"}
+            data-testid="bulk-edit-button"
+          >
+            <Pencil className="size-4" />
+            Bulk Edit
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onClick={() =>
+              exportMutation.mutate({ format: "csv", action: "copy" })
+            }
+            disabled={viewMode === "notes" || exportMutation.isPending}
+          >
+            <Clipboard className="size-4" />
+            Copy to Clipboard
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() =>
+              exportMutation.mutate({ format: "csv", action: "download" })
+            }
+            disabled={viewMode === "notes" || exportMutation.isPending}
+            data-testid="export-button"
+          >
+            <Download className="size-4" />
+            Download CSV
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() =>
+              exportMutation.mutate({ format: "json", action: "download" })
+            }
+            disabled={viewMode === "notes" || exportMutation.isPending}
+          >
+            <Download className="size-4" />
+            Download JSON
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
     </>
   );
 

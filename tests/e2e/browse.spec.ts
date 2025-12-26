@@ -293,7 +293,8 @@ test("bulk edit - select cards and set flag", async ({ page }) => {
   await page.goto("/?model=Basic&view=cards");
   page.on("dialog", (dialog) => dialog.accept());
 
-  // Click "Bulk Edit" button
+  // Click more menu, then "Bulk Edit"
+  await page.getByTestId("more-menu").click();
   await page.getByTestId("bulk-edit-button").click();
 
   // Should see checkboxes and bulk actions toolbar with disabled actions
@@ -312,7 +313,7 @@ test("bulk edit - select cards and set flag", async ({ page }) => {
   await page.getByRole("menuitem", { name: /Purple/ }).click();
 
   // Should exit bulk edit mode and refresh
-  await expect(page.getByTestId("bulk-edit-button")).toBeVisible();
+  await expect(page.getByTestId("more-menu")).toBeVisible();
 
   // Verify flags were set by checking the table shows purple flags
   await page.reload();
@@ -325,6 +326,7 @@ test("bulk edit - suspend multiple cards", async ({ page }) => {
   page.on("dialog", (dialog) => dialog.accept());
 
   // Enter bulk edit mode
+  await page.getByTestId("more-menu").click();
   await page.getByTestId("bulk-edit-button").click();
 
   // Select cards 3 and 4
@@ -343,6 +345,7 @@ test("bulk edit - suspend multiple cards", async ({ page }) => {
   await expect(rows.nth(4)).toContainText("Suspended");
 
   // Clean up: unsuspend them
+  await page.getByTestId("more-menu").click();
   await page.getByTestId("bulk-edit-button").click();
   await rows.nth(3).getByRole("checkbox").click();
   await rows.nth(4).getByRole("checkbox").click();
@@ -357,6 +360,7 @@ test("bulk edit - select all on page", async ({ page }) => {
   await page.goto("/?model=Basic&view=cards&pageSize=10");
 
   // Enter bulk edit mode
+  await page.getByTestId("more-menu").click();
   await page.getByTestId("bulk-edit-button").click();
 
   // Click header checkbox to select all on page
@@ -369,7 +373,7 @@ test("bulk edit - select all on page", async ({ page }) => {
 
   // Exit bulk edit mode
   await page.getByRole("button", { name: "Exit Edit" }).click();
-  await expect(page.getByTestId("bulk-edit-button")).toBeVisible();
+  await expect(page.getByTestId("more-menu")).toBeVisible();
 });
 
 test("bulk edit - select all matching query", async ({ page }) => {
@@ -379,6 +383,7 @@ test("bulk edit - select all matching query", async ({ page }) => {
   await expect(page.getByText("Showing 1-6 of 6")).toBeVisible();
 
   // Enter bulk edit mode
+  await page.getByTestId("more-menu").click();
   await page.getByTestId("bulk-edit-button").click();
 
   // Select all on page
@@ -403,9 +408,9 @@ test("export - copy CSV to clipboard", async ({ page, context }) => {
   await page.goto("/?model=Basic&view=cards");
   page.on("dialog", (dialog) => dialog.accept());
 
-  // Click Export button and select Copy CSV
-  await page.getByTestId("export-button").click();
-  await page.getByRole("menuitem", { name: "Copy CSV" }).click();
+  // Click more menu and select Copy CSV
+  await page.getByTestId("more-menu").click();
+  await page.getByRole("menuitem", { name: "Copy to Clipboard" }).click();
 
   // Verify clipboard contains CSV data
   const clipboardText = await page.evaluate(() =>
@@ -425,9 +430,9 @@ test("export - download CSV file", async ({ page }) => {
   // Listen for download event
   const downloadPromise = page.waitForEvent("download");
 
-  // Click Export button and select Download CSV
+  // Click more menu and select Download CSV
+  await page.getByTestId("more-menu").click();
   await page.getByTestId("export-button").click();
-  await page.getByRole("menuitem", { name: "Download CSV" }).click();
 
   // Verify download triggered
   const download = await downloadPromise;
@@ -440,8 +445,8 @@ test("export - download JSON file", async ({ page }) => {
   // Listen for download event
   const downloadPromise = page.waitForEvent("download");
 
-  // Click Export button and select Download JSON
-  await page.getByTestId("export-button").click();
+  // Click more menu and select Download JSON
+  await page.getByTestId("more-menu").click();
   await page.getByRole("menuitem", { name: "Download JSON" }).click();
 
   // Verify download triggered
