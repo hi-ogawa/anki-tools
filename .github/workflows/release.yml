@@ -26,6 +26,7 @@ jobs:
       - uses: actions/setup-node@v6
       - run: corepack enable
       - run: pnpm i
+      - run: pnpm build-addon
 
       - name: Bump version
         if: github.event_name == 'workflow_dispatch' && inputs.bump != 'test'
@@ -53,8 +54,6 @@ jobs:
             VERSION="v$(node -p "require('./package.json').version")"
             echo "version=$VERSION" >> $GITHUB_OUTPUT
           fi
-
-      - run: pnpm build-addon
 
       - name: Rename addon with version
         run: mv anki-browse-web.ankiaddon "anki-browse-web-${{ steps.version.outputs.version }}.ankiaddon"
