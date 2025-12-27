@@ -44,6 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./components/ui/select";
+import { AlertProvider, useAlert } from "./lib/alert-context";
 import {
   FLAG_COLORS,
   FLAG_FILTER_OPTIONS,
@@ -52,20 +53,40 @@ import {
 import { useLocalStorage } from "./lib/use-local-storage";
 import { useResize } from "./lib/use-resize";
 
+// Global reference to showAlert for use in QueryClient singleton.
+// This is a pragmatic approach since QueryClient is a module-level singleton
+// that's created before React context is available.
+let showAlertGlobal: ((options: { message: string }) => void) | null = null;
+
+function QueryClientProviderWithAlert({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { showAlert } = useAlert();
+  showAlertGlobal = showAlert;
+
+  return (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+  );
+}
+
 // TODO: separate singleton state and component
 const queryClient = new QueryClient({
   defaultOptions: {
     mutations: {
-      onError: (error) => alert(error.message),
+      onError: (error) => showAlertGlobal?.({ message: error.message }),
     },
   },
 });
 
 export function Root() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <App />
-    </QueryClientProvider>
+    <AlertProvider>
+      <QueryClientProviderWithAlert>
+        <App />
+      </QueryClientProviderWithAlert>
+    </AlertProvider>
   );
 }
 
@@ -298,6 +319,7 @@ function NotesView({
   viewMode,
   onStateChange,
 }: NotesViewProps) {
+  const { showAlert, showConfirm } = useAlert();
   const [selected, setSelected] = useState<Item>();
   const [isStale, setIsStale] = useState(false);
 
@@ -438,7 +460,7 @@ function NotesView({
     },
     onSuccess: ({ count, action }) => {
       if (action === "copy") {
-        alert(`Copied ${count} cards to clipboard`);
+        showAlert({ message: `Copied ${count} cards to clipboard` });
       }
     },
   });
@@ -456,17 +478,23 @@ function NotesView({
     return { cardIds, count: cardIds.length };
   };
 
-  const handleBulkSetFlag = (flag: number) => {
+  const handleBulkSetFlag = async (flag: number) => {
     const { count, ...target } = getBulkTarget();
     const label = FLAG_OPTIONS.find((f) => f.value === flag)?.label ?? flag;
-    if (!window.confirm(`Set flag to ${label} for ${count} cards?`)) return;
+    const confirmed = await showConfirm({
+      message: `Set flag to ${label} for ${count} cards?`,
+    });
+    if (!confirmed) return;
     bulkSetFlagMutation.mutate({ ...target, flag });
   };
 
-  const handleBulkSuspend = (suspended: boolean) => {
+  const handleBulkSuspend = async (suspended: boolean) => {
     const { count, ...target } = getBulkTarget();
     const action = suspended ? "Suspend" : "Unsuspend";
-    if (!window.confirm(`${action} ${count} cards?`)) return;
+    const confirmed = await showConfirm({
+      message: `${action} ${count} cards?`,
+    });
+    if (!confirmed) return;
     bulkSuspendMutation.mutate({ ...target, suspended });
   };
 
