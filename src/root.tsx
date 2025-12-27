@@ -12,9 +12,12 @@ import {
   Download,
   Flag,
   Library,
+  Monitor,
+  Moon,
   MoreVertical,
   Pencil,
   RefreshCw,
+  Sun,
   Tag,
 } from "lucide-react";
 import { useMemo, useState, useEffect, useRef } from "react";
@@ -51,6 +54,7 @@ import {
 } from "./lib/constants";
 import { useLocalStorage } from "./lib/use-local-storage";
 import { useResize } from "./lib/use-resize";
+import { useTheme } from "./lib/use-theme";
 
 // TODO: separate singleton state and component
 const queryClient = new QueryClient({
@@ -70,6 +74,7 @@ export function Root() {
 }
 
 function App() {
+  const { theme, setTheme } = useTheme();
   const [searchParams, setSearchParams] = useSearchParams();
   const urlModel = searchParams.get("model");
   // URL uses 1-based page, convert to 0-based for table
@@ -253,6 +258,30 @@ function App() {
               defaultModel={validModel ? urlModel : undefined}
             />
           )}
+          <div className="ml-auto">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                const newTheme =
+                  theme === "light"
+                    ? "dark"
+                    : theme === "dark"
+                      ? "system"
+                      : "light";
+                setTheme(newTheme);
+              }}
+              title={`Theme: ${theme}`}
+            >
+              {theme === "dark" ? (
+                <Moon className="size-4" />
+              ) : theme === "light" ? (
+                <Sun className="size-4" />
+              ) : (
+                <Monitor className="size-4" />
+              )}
+            </Button>
+          </div>
         </div>
       </header>
       <main className="flex-1 overflow-hidden p-4">{mainContent}</main>
