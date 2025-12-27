@@ -30,10 +30,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Run bumpp and push
-        run: |
-          pnpm bumpp --release ${{ inputs.bump }} --yes \
-            --commit "chore: release v%s" --tag "v%s"
-          git push --follow-tags
+        run: pnpm bumpp --release ${{ inputs.bump }} --yes --commit "chore: release v%s"
 
       - name: Get version
         id: version
