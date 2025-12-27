@@ -27,15 +27,12 @@ jobs:
       - run: corepack enable
       - run: pnpm i
 
-      - name: Configure Git
-        if: github.event_name == 'workflow_dispatch'
+      - name: Bump version
+        if: github.event_name == 'workflow_dispatch' && inputs.bump != 'test'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: Bump version
-        if: github.event_name == 'workflow_dispatch' && inputs.bump != 'test'
-        run: pnpm bumpp --release ${{ inputs.bump }} --yes
+          pnpm bumpp --release ${{ inputs.bump }} --yes
 
       - name: Create test tag
         if: github.event_name == 'workflow_dispatch' && inputs.bump == 'test'
