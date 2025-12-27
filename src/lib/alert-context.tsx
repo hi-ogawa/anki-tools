@@ -45,6 +45,7 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AlertState | null>(null);
 
   const showAlert = useCallback((options: AlertOptions) => {
+    // Close any existing dialog before showing new one
     setState({
       type: "alert",
       title: options.title,
@@ -54,6 +55,11 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
 
   const showConfirm = useCallback(
     (options: ConfirmOptions): Promise<boolean> => {
+      // If a dialog is already open, reject previous confirm and show new one
+      if (state?.type === "confirm" && state.resolve) {
+        state.resolve(false);
+      }
+      
       return new Promise((resolve) => {
         setState({
           type: "confirm",
@@ -63,7 +69,7 @@ export function AlertProvider({ children }: { children: React.ReactNode }) {
         });
       });
     },
-    [],
+    [state],
   );
 
   const handleClose = () => {

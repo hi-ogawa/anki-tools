@@ -53,7 +53,9 @@ import {
 import { useLocalStorage } from "./lib/use-local-storage";
 import { useResize } from "./lib/use-resize";
 
-// Wrapper to use alert context in queryClient
+// Global reference to showAlert for use in QueryClient singleton.
+// This is a pragmatic approach since QueryClient is a module-level singleton
+// that's created before React context is available.
 let showAlertGlobal: ((options: { message: string }) => void) | null = null;
 
 function QueryClientProviderWithAlert({
