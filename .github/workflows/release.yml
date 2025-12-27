@@ -2,10 +2,42 @@ name: release
 on:
   workflow_dispatch:
   push:
-    tags:
-      - "v*"
+    branches:
+      - main
+    paths:
+      - 'package.json'
+
 jobs:
+  # Check if this is a version bump commit
+  check-release:
+    runs-on: ubuntu-latest
+    outputs:
+      should-release: ${{ steps.check.outputs.should-release }}
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Check if version changed
+        id: check
+        run: |
+          if git diff HEAD^ HEAD -- package.json | grep -q '"version"'; then
+            echo "should-release=true" >> $GITHUB_OUTPUT
+          else
+            echo "should-release=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Get version
+        id: version
+        if: steps.check.outputs.should-release == 'true'
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
   release:
+    needs: check-release
+    if: needs.check-release.outputs.should-release == 'true' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -15,20 +47,35 @@ jobs:
       - run: corepack enable
       - run: pnpm i
       - run: pnpm build-addon
+
+      - name: Create and push tag
+        if: github.event_name != 'workflow_dispatch'
+        run: |
+          VERSION="v${{ needs.check-release.outputs.version }}"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag "$VERSION"
+          git push origin "$VERSION"
+          echo "TAG_NAME=$VERSION" >> $GITHUB_ENV
+
       - name: Create tag for workflow_dispatch
         if: github.event_name == 'workflow_dispatch'
         run: |
           TAG="v0.0.0-test.$(git rev-parse --short HEAD)"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag "$TAG"
           git push origin "$TAG"
           echo "TAG_NAME=$TAG" >> $GITHUB_ENV
+
       - name: Rename addon with version
         run: |
-          VERSION="${TAG_NAME:-${{ github.ref_name }}}"
+          VERSION="${TAG_NAME:-v${{ needs.check-release.outputs.version }}}"
           mv anki-browse-web.ankiaddon "anki-browse-web-${VERSION}.ankiaddon"
+
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ env.TAG_NAME || github.ref_name }}
-          draft: true
+          tag_name: ${{ env.TAG_NAME || format('v{0}', needs.check-release.outputs.version) }}
+          draft: false  # Changed from true to auto-publish
           files: |
             *.ankiaddon

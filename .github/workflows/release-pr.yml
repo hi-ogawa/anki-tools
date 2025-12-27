@@ -1,0 +1,50 @@
+name: Create Release PR
+on:
+  workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Bump type'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  create-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-node@v6
+      - run: corepack enable
+      - run: pnpm i
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run bumpp
+        run: pnpm bumpp ${{ inputs.bump }} --no-push --no-tag --yes
+
+      - name: Get new version
+        id: version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: release v${{ steps.version.outputs.version }}"
+          branch: release/v${{ steps.version.outputs.version }}
+          title: "chore: release v${{ steps.version.outputs.version }}"
+          body: |
+            Release version ${{ steps.version.outputs.version }}
+
+            Merging this PR will trigger the release workflow.
+          labels: release
