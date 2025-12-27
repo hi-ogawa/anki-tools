@@ -5,7 +5,7 @@ on:
       bump:
         description: 'Bump type (or "test" for test release)'
         required: true
-        default: 'patch'
+        default: 'test'
         type: choice
         options:
           - patch
