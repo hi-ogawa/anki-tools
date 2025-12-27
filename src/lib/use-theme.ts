@@ -11,23 +11,26 @@ export function useTheme() {
 
   useEffect(() => {
     const root = window.document.documentElement;
-    root.classList.remove("light", "dark");
+    
+    const applyTheme = (themeName: "light" | "dark") => {
+      root.classList.remove("light", "dark");
+      root.classList.add(themeName);
+    };
 
     if (theme === "system") {
       const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
       const systemTheme = mediaQuery.matches ? "dark" : "light";
-      root.classList.add(systemTheme);
+      applyTheme(systemTheme);
 
       const listener = (e: MediaQueryListEvent) => {
-        root.classList.remove("light", "dark");
-        root.classList.add(e.matches ? "dark" : "light");
+        applyTheme(e.matches ? "dark" : "light");
       };
 
       mediaQuery.addEventListener("change", listener);
       return () => mediaQuery.removeEventListener("change", listener);
     }
 
-    root.classList.add(theme);
+    applyTheme(theme);
   }, [theme]);
 
   return { theme, setTheme };
