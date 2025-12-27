@@ -1,9 +1,21 @@
 name: release
 on:
   workflow_dispatch:
+    inputs:
+      bump:
+        description: 'Bump type (or "test" for test release)'
+        required: true
+        default: 'patch'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+          - test
   push:
     tags:
       - "v*"
+
 jobs:
   release:
     runs-on: ubuntu-latest
@@ -14,21 +26,45 @@ jobs:
       - uses: actions/setup-node@v6
       - run: corepack enable
       - run: pnpm i
-      - run: pnpm build-addon
-      - name: Create tag for workflow_dispatch
+
+      - name: Configure Git
         if: github.event_name == 'workflow_dispatch'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Bump version
+        if: github.event_name == 'workflow_dispatch' && inputs.bump != 'test'
+        run: pnpm bumpp --release ${{ inputs.bump }} --yes
+
+      - name: Create test tag
+        if: github.event_name == 'workflow_dispatch' && inputs.bump == 'test'
         run: |
           TAG="v0.0.0-test.$(git rev-parse --short HEAD)"
           git tag "$TAG"
           git push origin "$TAG"
           echo "TAG_NAME=$TAG" >> $GITHUB_ENV
-      - name: Rename addon with version
+
+      - name: Get version
+        id: version
         run: |
-          VERSION="${TAG_NAME:-${{ github.ref_name }}}"
-          mv anki-browse-web.ankiaddon "anki-browse-web-${VERSION}.ankiaddon"
+          if [ -n "$TAG_NAME" ]; then
+            echo "version=$TAG_NAME" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            echo "version=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          else
+            VERSION="v$(node -p "require('./package.json').version")"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+          fi
+
+      - run: pnpm build-addon
+
+      - name: Rename addon with version
+        run: mv anki-browse-web.ankiaddon "anki-browse-web-${{ steps.version.outputs.version }}.ankiaddon"
+
       - uses: softprops/action-gh-release@v2
         with:
-          tag_name: ${{ env.TAG_NAME || github.ref_name }}
+          tag_name: ${{ steps.version.outputs.version }}
           draft: true
           files: |
             *.ankiaddon
