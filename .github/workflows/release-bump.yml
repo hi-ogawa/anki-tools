@@ -31,7 +31,7 @@ jobs:
 
       - name: Run bumpp and push
         run: |
-          pnpm bumpp ${{ inputs.bump }} --yes \
+          pnpm bumpp --release ${{ inputs.bump }} --yes \
             --commit "chore: release v%s" --tag "v%s"
           git push --follow-tags
 
