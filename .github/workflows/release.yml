@@ -1,3 +1,6 @@
+# Tags pushed by this workflow won't trigger `push.tags` because
+# GITHUB_TOKEN events don't trigger new workflow runs (prevents infinite loops).
+# https://docs.github.com/en/actions/security-guides/automatic-token-authentication#using-the-github_token-in-a-workflow
 name: release
 on:
   workflow_dispatch:
