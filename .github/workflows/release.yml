@@ -1,6 +1,12 @@
-# Tags pushed by this workflow won't trigger `push.tags` because
-# GITHUB_TOKEN events don't trigger new workflow runs (prevents infinite loops).
-# https://docs.github.com/en/actions/security-guides/automatic-token-authentication#using-the-github_token-in-a-workflow
+# Release Workflow
+#
+# Two ways to release:
+#   1. Local: `pnpm bumpp` - bumps version, commits, tags, and pushes (triggers via push.tags)
+#   2. GitHub UI: Actions -> Run workflow -> select bump type (triggers via workflow_dispatch)
+#      - patch/minor/major: same as local bumpp
+#      - test: creates temporary tag (v0.0.0-test.<sha>) without version bump
+#      Note: Tags pushed here won't re-trigger push.tags (GITHUB_TOKEN doesn't trigger workflows)
+#      https://docs.github.com/en/actions/security-guides/automatic-token-authentication#using-the-github_token-in-a-workflow
 name: release
 on:
   workflow_dispatch:
