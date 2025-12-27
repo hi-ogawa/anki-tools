@@ -44,11 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./components/ui/select";
-import {
-  FLAG_COLORS,
-  FLAG_FILTER_OPTIONS,
-  FLAG_OPTIONS,
-} from "./lib/constants";
+import { FLAG_FILTER_OPTIONS, FLAG_OPTIONS } from "./lib/constants";
 import { useLocalStorage } from "./lib/use-local-storage";
 import { useResize } from "./lib/use-resize";
 
@@ -77,7 +73,8 @@ function App() {
   const pageIndex = Math.max(0, urlPage - 1);
   const pageSize = parseInt(searchParams.get("pageSize") ?? "20", 10);
   const search = searchParams.get("search") ?? undefined;
-  const flag = searchParams.get("flag") ?? undefined;
+  const flagsParam = searchParams.get("flags");
+  const flags = flagsParam ? flagsParam.split(",") : undefined;
   const deck = searchParams.get("deck") ?? undefined;
   const tagsParam = searchParams.get("tags");
   const tags = tagsParam ? tagsParam.split(",") : undefined;
@@ -191,7 +188,7 @@ function App() {
         page={pageIndex}
         pageSize={pageSize}
         search={search}
-        flag={flag}
+        flags={flags}
         deck={deck}
         tags={tags}
         viewMode={viewMode}
@@ -264,7 +261,7 @@ interface UrlState {
   page?: number;
   pageSize?: number;
   search?: string;
-  flag?: string;
+  flags?: string[] | undefined;
   deck?: string;
   tags?: string[] | undefined;
 }
@@ -277,7 +274,7 @@ interface NotesViewProps {
   page: number;
   pageSize: number;
   search?: string;
-  flag?: string;
+  flags?: string[];
   deck?: string;
   tags?: string[];
   viewMode: ViewMode;
@@ -292,7 +289,7 @@ function NotesView({
   page,
   pageSize,
   search,
-  flag,
+  flags,
   deck,
   tags,
   viewMode,
@@ -322,7 +319,11 @@ function NotesView({
   const query = useMemo(() => {
     const parts: string[] = [`note:"${model}"`];
     if (search) parts.push(search);
-    if (flag) parts.push(`flag:${flag}`);
+    if (flags?.length) {
+      // Use OR logic for multiple flags: (flag:1 OR flag:2)
+      const flagQuery = flags.map((f) => `flag:${f}`).join(" OR ");
+      parts.push(`(${flagQuery})`);
+    }
     if (deck) parts.push(`deck:"${deck}"`);
     if (tags?.length) {
       // Use OR logic for multiple tags: (tag:a OR tag:b)
@@ -330,7 +331,7 @@ function NotesView({
       parts.push(`(${tagQuery})`);
     }
     return parts.join(" ");
-  }, [model, search, flag, deck, tags]);
+  }, [model, search, flags, deck, tags]);
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     ...api.fetchItems.queryOptions({
@@ -502,45 +503,43 @@ function NotesView({
           <CircleHelp className="size-4" />
         </a>
       </div>
-      <Select
-        value={flag ?? "none"}
-        onValueChange={(value) =>
-          onStateChange({ flag: value === "none" ? undefined : value, page: 1 })
-        }
-      >
-        <SelectTrigger
-          className="w-auto"
-          data-testid="flag-filter"
-          style={
-            flag
-              ? {
-                  backgroundColor: `${FLAG_COLORS[Number(flag)]}20`,
-                  borderColor: FLAG_COLORS[Number(flag)],
-                }
-              : undefined
-          }
-        >
-          <Flag
-            className="size-4"
-            style={flag ? { color: FLAG_COLORS[Number(flag)] } : undefined}
-            fill={flag ? FLAG_COLORS[Number(flag)] : "none"}
-          />
-        </SelectTrigger>
-        <SelectContent>
-          {FLAG_FILTER_OPTIONS.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value}>
-              <span className="flex items-center gap-2">
-                <Flag
-                  className="size-4"
-                  style={{ color: opt.color }}
-                  fill={opt.color ?? "none"}
-                />
-                {opt.label}
-              </span>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            className={`px-2 ${flags?.length ? "bg-blue-100 border-blue-400 dark:bg-blue-950 dark:border-blue-600" : ""}`}
+            data-testid="flag-filter"
+          >
+            <Flag className="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="max-h-64 overflow-y-auto">
+          {FLAG_FILTER_OPTIONS.filter((opt) => opt.value !== "none").map(
+            (opt) => (
+              <DropdownMenuCheckboxItem
+                key={opt.value}
+                checked={flags?.includes(opt.value) ?? false}
+                onCheckedChange={(checked) => {
+                  const newFlags = checked
+                    ? [...(flags ?? []), opt.value]
+                    : (flags ?? []).filter((f) => f !== opt.value);
+                  onStateChange({ flags: newFlags, page: 1 });
+                }}
+                onSelect={(e) => e.preventDefault()}
+              >
+                <span className="flex items-center gap-2">
+                  <Flag
+                    className="size-4"
+                    style={{ color: opt.color }}
+                    fill={opt.color ?? "none"}
+                  />
+                  {opt.label}
+                </span>
+              </DropdownMenuCheckboxItem>
+            ),
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
       <Select
         value={deck ?? "all"}
         onValueChange={(value) =>
