@@ -500,3 +500,51 @@ test("create note", async ({ page }) => {
     "Test Answer from E2E",
   );
 });
+
+test("custom confirm dialog for bulk operations", async ({ page }) => {
+  await page.goto("/?model=Basic");
+
+  // Enter bulk edit mode
+  await page.getByTestId("more-menu").click();
+  await page.getByTestId("bulk-edit-button").click();
+
+  // Select first two rows
+  await page.getByRole("checkbox").nth(1).check(); // First data row
+  await page.getByRole("checkbox").nth(2).check(); // Second data row
+
+  // Try to suspend - should show custom confirm dialog
+  await page.getByRole("button", { name: "Suspend" }).click();
+
+  // Check that custom dialog appears instead of native confirm
+  await expect(page.getByTestId("custom-dialog")).toBeVisible();
+  await expect(page.getByText(/Suspend 2 cards\?/)).toBeVisible();
+
+  // Cancel the operation
+  await page.getByTestId("dialog-cancel").click();
+  await expect(page.getByTestId("custom-dialog")).not.toBeVisible();
+
+  // Try again and confirm
+  await page.getByRole("button", { name: "Suspend" }).click();
+  await expect(page.getByTestId("custom-dialog")).toBeVisible();
+  await page.getByTestId("dialog-confirm").click();
+
+  // Dialog should close and bulk edit mode should exit
+  await expect(page.getByTestId("custom-dialog")).not.toBeVisible();
+  await expect(page.getByRole("button", { name: "Suspend" })).not.toBeVisible();
+});
+
+test("custom alert dialog for clipboard copy", async ({ page }) => {
+  await page.goto("/?model=Basic");
+
+  // Open more menu and copy to clipboard
+  await page.getByTestId("more-menu").click();
+  await page.getByRole("menuitem", { name: /Copy to Clipboard/ }).click();
+
+  // Check that custom alert dialog appears
+  await expect(page.getByTestId("custom-dialog")).toBeVisible();
+  await expect(page.getByText(/Copied \d+ cards to clipboard/)).toBeVisible();
+
+  // Close alert
+  await page.getByTestId("dialog-ok").click();
+  await expect(page.getByTestId("custom-dialog")).not.toBeVisible();
+});
