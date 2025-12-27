@@ -500,3 +500,53 @@ test("create note", async ({ page }) => {
     "Test Answer from E2E",
   );
 });
+
+test("multiple flag filter - filter by multiple flags", async ({ page }) => {
+  // Use cards view to access flag filtering
+  await page.goto("/?model=Basic&view=cards");
+
+  // Initially show all 20 cards
+  await expect(page.getByText("Showing 1-20 of 20")).toBeVisible();
+
+  // Open flag filter dropdown
+  await page.getByTestId("flag-filter").click();
+
+  // Select Red flag (fixture has card 1 with flag 1)
+  await page.getByRole("menuitemcheckbox", { name: /Red/ }).click();
+
+  // Wait for URL to update and data to reload
+  await expect(page).toHaveURL(/flags=1/);
+  await expect(page.getByText("Showing 1-1 of 1")).toBeVisible();
+
+  // Open flag filter dropdown again
+  await page.getByTestId("flag-filter").click();
+
+  // Add Orange flag (fixture has card 2 with flag 2)
+  await page.getByRole("menuitemcheckbox", { name: /Orange/ }).click();
+
+  // Wait for URL to update - should now show both flags
+  await expect(page).toHaveURL(/flags=1%2C2/);
+  await expect(page.getByText("Showing 1-2 of 2")).toBeVisible();
+
+  // Open flag filter dropdown again
+  await page.getByTestId("flag-filter").click();
+
+  // Add Green flag (fixture has card 3 with flag 3)
+  await page.getByRole("menuitemcheckbox", { name: /Green/ }).click();
+
+  // Wait for URL to update - should now show all three flags
+  await expect(page).toHaveURL(/flags=1%2C2%2C3/);
+  await expect(page.getByText("Showing 1-3 of 3")).toBeVisible();
+
+  // Uncheck Red flag
+  await page.getByTestId("flag-filter").click();
+  await page.getByRole("menuitemcheckbox", { name: /Red/ }).click();
+
+  // Should now show only 2 cards (Orange and Green)
+  await expect(page).toHaveURL(/flags=2%2C3/);
+  await expect(page.getByText("Showing 1-2 of 2")).toBeVisible();
+
+  // Verify the flag filter button shows it's active
+  const flagButton = page.getByTestId("flag-filter");
+  await expect(flagButton).toHaveClass(/bg-blue-100/);
+});
