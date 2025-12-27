@@ -12,6 +12,7 @@ import {
   Download,
   Flag,
   Library,
+  Monitor,
   Moon,
   MoreVertical,
   Pencil,
@@ -274,8 +275,10 @@ function App() {
             >
               {theme === "dark" ? (
                 <Moon className="size-4" />
-              ) : (
+              ) : theme === "light" ? (
                 <Sun className="size-4" />
+              ) : (
+                <Monitor className="size-4" />
               )}
             </Button>
           </div>
