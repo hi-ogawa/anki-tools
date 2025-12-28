@@ -81,8 +81,8 @@ test("deck filter filters by deck", async ({ page }) => {
 });
 
 test("set card flag", async ({ page }) => {
-  // Use cards view to access flag functionality
-  await page.goto("/?model=Basic&view=cards");
+  // Use isolated test-card-flag model (1 card with Red flag)
+  await page.goto("/?model=test-card-flag&view=cards");
 
   // Click first data row to open detail panel
   await page.getByRole("row").nth(1).click();
@@ -292,7 +292,8 @@ test("panel resize - drag to change width", async ({ page }) => {
 });
 
 test("bulk edit - select cards and set flag", async ({ page }) => {
-  await page.goto("/?model=Basic&view=cards");
+  // Use isolated test-bulk-flag model (3 cards)
+  await page.goto("/?model=test-bulk-flag&view=cards");
   page.on("dialog", (dialog) => dialog.accept());
 
   // Click more menu, then "Bulk Edit"
@@ -310,7 +311,7 @@ test("bulk edit - select cards and set flag", async ({ page }) => {
   // Should show "2 selected"
   await expect(page.getByText("2 selected")).toBeVisible();
 
-  // Set flag to Purple (unique color not used by other tests)
+  // Set flag to Purple
   await page.getByRole("button", { name: "Flag" }).click();
   await page.getByRole("menuitem", { name: /Purple/ }).click();
 
@@ -461,10 +462,11 @@ test("export - download JSON file", async ({ page }) => {
 });
 
 test("create note", async ({ page }) => {
-  await page.goto("/?model=Basic");
+  // Use isolated test-create model (empty initially)
+  await page.goto("/?model=test-create");
 
-  // Initial count
-  await expect(page.getByText("Showing 1-20 of 20")).toBeVisible();
+  // Initial count - no notes
+  await expect(page.getByText("Showing 0-0 of 0")).toBeVisible();
 
   // Open create note dialog
   await page.getByTestId("create-note-button").click();
@@ -472,10 +474,10 @@ test("create note", async ({ page }) => {
 
   // Select model and deck
   await page.getByTestId("model-select").click();
-  await page.getByRole("option", { name: "Basic", exact: true }).click();
+  await page.getByRole("option", { name: "test-create" }).click();
 
   await page.getByTestId("deck-select").click();
-  await page.getByRole("option", { name: "Default", exact: true }).click();
+  await page.getByRole("option", { name: "test-create" }).click();
 
   // Fill in fields
   await page.getByTestId("field-Front").fill("Test Question from E2E");
@@ -490,9 +492,8 @@ test("create note", async ({ page }) => {
   // Dialog should close
   await expect(page.getByRole("dialog")).not.toBeVisible();
 
-  // Search for the new note to verify it was created
-  await page.getByPlaceholder("Search").fill("Test Question from E2E");
-  await page.getByPlaceholder("Search").press("Enter");
+  // Refresh to see the new note
+  await page.reload();
 
   await expect(page.getByRole("row")).toHaveCount(2); // 1 data + header
   await expect(page.getByRole("row").nth(1)).toContainText(

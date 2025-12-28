@@ -101,9 +101,48 @@ def main():
         note["Back"] = "DeckC A1"
         col.add_note(note, deck_c)
 
+    def setup_card_flag_fixture():
+        """test-card-flag: 1 card with Red flag for set card flag test."""
+        m = col.models.copy(model)
+        m["name"] = "test-card-flag"
+        m["id"] = 0
+        col.models.add(m)
+
+        deck_id = col.decks.id("test-card-flag")
+        note = col.new_note(m)
+        note["Front"] = "CardFlag Q1"
+        note["Back"] = "CardFlag A1"
+        col.add_note(note, deck_id)
+        col.set_user_flag_for_cards(1, note.card_ids())  # Red
+
+    def setup_bulk_flag_fixture():
+        """test-bulk-flag: 3 cards for bulk edit flag test."""
+        m = col.models.copy(model)
+        m["name"] = "test-bulk-flag"
+        m["id"] = 0
+        col.models.add(m)
+
+        deck_id = col.decks.id("test-bulk-flag")
+        for i in range(3):
+            note = col.new_note(m)
+            note["Front"] = f"BulkFlag Q{i + 1}"
+            note["Back"] = f"BulkFlag A{i + 1}"
+            col.add_note(note, deck_id)
+
+    def setup_create_fixture():
+        """test-create: Empty model/deck for create note test."""
+        m = col.models.copy(model)
+        m["name"] = "test-create"
+        m["id"] = 0
+        col.models.add(m)
+        col.decks.id("test-create")  # Just create the deck
+
     setup_basic_fixture()
     setup_flag_filter_fixture()
     setup_deck_filter_fixture()
+    setup_card_flag_fixture()
+    setup_bulk_flag_fixture()
+    setup_create_fixture()
 
     col.close()
     print(f"Created: {DATA_PATH}")
