@@ -77,6 +77,7 @@ bulkAddNotes: (input: BulkAddNotesInput) => {
 **Option A: Textarea + Parse Button**
 
 Simple modal with:
+
 1. Select model + deck (reuse existing selectors)
 2. Paste TSV data into textarea
 3. Preview parsed rows in table
@@ -137,12 +138,12 @@ function parseTSV(tsv: string): Record<string, string>[] {
 
 ## File Changes
 
-| File | Change |
-|------|--------|
-| `addon/server.py` | Add `bulkAddNotes` action |
-| `src/api.ts` | Add `bulkAddNotes` API function |
+| File                                    | Change                                  |
+| --------------------------------------- | --------------------------------------- |
+| `addon/server.py`                       | Add `bulkAddNotes` action               |
+| `src/api.ts`                            | Add `bulkAddNotes` API function         |
 | `src/components/bulk-import-dialog.tsx` | New: bulk import modal with TSV parsing |
-| `src/root.tsx` | Add bulk import button to toolbar |
+| `src/root.tsx`                          | Add bulk import button to toolbar       |
 
 ## Open Questions
 

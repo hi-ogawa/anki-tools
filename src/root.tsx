@@ -23,6 +23,7 @@ import { toast } from "sonner";
 import { api, cardsToCSV, type Card, type Item, type ViewMode } from "./api";
 import { BrowseTable } from "./components/browse-table";
 import { BulkActions } from "./components/bulk-actions";
+import { BulkImportDialog } from "./components/bulk-import-dialog";
 import { CreateNoteDialog } from "./components/create-note-dialog";
 import { NoteDetail } from "./components/note-detail";
 import { TableSkeleton } from "./components/table-skeleton";
@@ -247,10 +248,16 @@ function App() {
             </SelectContent>
           </Select>
           {schema && (
-            <CreateNoteDialog
-              schema={schema}
-              defaultModel={validModel ? urlModel : undefined}
-            />
+            <>
+              <CreateNoteDialog
+                schema={schema}
+                defaultModel={validModel ? urlModel : undefined}
+              />
+              <BulkImportDialog
+                schema={schema}
+                defaultModel={validModel ? urlModel : undefined}
+              />
+            </>
           )}
         </div>
       </header>
