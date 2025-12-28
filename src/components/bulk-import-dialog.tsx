@@ -184,7 +184,7 @@ export function BulkImportDialog({
             <Textarea
               value={tsvInput}
               onChange={(e) => setTsvInput(e.target.value)}
-              placeholder={`korean\tenglish\texample_ko\texample_en\n꽃밭\tflower garden\t봄이 되면...\tWhen spring comes...`}
+              placeholder={`Front\tBack\nHello\tWorld\n`}
               rows={6}
               className="font-mono text-sm"
               data-testid="bulk-tsv-input"
