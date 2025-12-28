@@ -264,4 +264,30 @@ def handle_action(col: Collection, action: str, params: dict):
         col.add_note(note, deck["id"])
         return {"noteId": note.id}
 
+    elif action == "bulkAddNotes":
+        deck_name = params["deckName"]
+        model_name = params["modelName"]
+        notes_data = params["notes"]  # list of {fields: {}, tags?: []}
+
+        model = col.models.by_name(model_name)
+        if not model:
+            raise ValueError(f"Model not found: {model_name}")
+        deck = col.decks.by_name(deck_name)
+        if not deck:
+            raise ValueError(f"Deck not found: {deck_name}")
+
+        field_names = [f["name"] for f in model["flds"]]
+        results = []
+
+        for note_data in notes_data:
+            note = col.new_note(model)
+            for name, value in note_data["fields"].items():
+                if name in field_names:
+                    note.fields[field_names.index(name)] = value
+            note.tags = note_data.get("tags", [])
+            col.add_note(note, deck["id"])
+            results.append({"noteId": note.id})
+
+        return {"notes": results, "count": len(results)}
+
     raise ValueError(f"Unknown action: {action}")

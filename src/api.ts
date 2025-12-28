@@ -195,6 +195,20 @@ const implementations = {
   }) => {
     return invoke<{ noteId: number }>("addNote", input);
   },
+
+  bulkAddNotes: (input: {
+    deckName: string;
+    modelName: string;
+    notes: Array<{
+      fields: Record<string, string>;
+      tags?: string[];
+    }>;
+  }) => {
+    return invoke<{ notes: Array<{ noteId: number }>; count: number }>(
+      "bulkAddNotes",
+      input,
+    );
+  },
 };
 
 // Convert cards to CSV format with proper escaping

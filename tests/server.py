@@ -1,6 +1,7 @@
 """Standalone test server for e2e tests."""
 
 import os
+import subprocess
 import sys
 from functools import partial
 from http.server import HTTPServer
@@ -12,14 +13,14 @@ from anki.collection import Collection
 from server import RequestHandler  # noqa: E402
 
 PORT = int(os.environ.get("ANKI_PORT", "6679"))
-DATA_PATH = Path(__file__).parent / "data" / "test.anki2"
+ANKI_DATA = os.environ.get("ANKI_DATA", "dev")
+DATA_PATH = Path(__file__).parent / "data" / f"{ANKI_DATA}.anki2"
 
 
 def main():
-    if not DATA_PATH.exists():
-        print(f"Data not found: {DATA_PATH}")
-        print("Run: pnpm test-e2e-setup")
-        sys.exit(1)
+    # Reset fixture: always for test, only if missing for dev
+    if ANKI_DATA == "test" or not DATA_PATH.exists():
+        subprocess.run(["pnpm", "fixture"], check=True)
 
     col = Collection(str(DATA_PATH))
     handler = partial(RequestHandler, get_col=lambda: col)

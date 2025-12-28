@@ -1,5 +1,8 @@
 import { test, expect } from "@playwright/test";
 
+// Test data is created by tests/prepare.py
+// For isolated tests, create a dedicated model named "test-xxx" with its own deck and cards
+
 test("displays notes from collection", async ({ page }) => {
   await page.goto("/?model=Basic");
 
@@ -45,42 +48,41 @@ test("search filters notes", async ({ page }) => {
 });
 
 test("deck filter filters by deck", async ({ page }) => {
-  await page.goto("/?model=Basic");
+  // Use isolated test-deck-filter model (DeckA: 3, DeckB: 2, DeckC: 1)
+  await page.goto("/?model=test-deck-filter&view=cards");
 
-  // Should show all 20 notes initially
-  await expect(page.getByRole("row")).toHaveCount(21); // 20 data + header
-  await expect(page.getByText("Showing 1-20 of 20")).toBeVisible();
-
-  // Filter by Japanese deck
-  await page.getByTestId("deck-filter").click();
-  await page.getByRole("option", { name: "Japanese" }).click();
-
-  // Should show only 6 Japanese deck notes
-  await expect(page.getByRole("row")).toHaveCount(7); // 6 data + header
+  // Should show all 6 cards initially
   await expect(page.getByText("Showing 1-6 of 6")).toBeVisible();
-  expect(page.url()).toContain("deck=Japanese");
 
-  // Filter by Science deck
+  // Filter by DeckA
   await page.getByTestId("deck-filter").click();
-  await page.getByRole("option", { name: "Science" }).click();
+  await page.getByRole("menuitemcheckbox", { name: /DeckA/ }).click();
 
-  // Should show only 4 Science deck notes
-  await expect(page.getByRole("row")).toHaveCount(5); // 4 data + header
-  await expect(page.getByText("Showing 1-4 of 4")).toBeVisible();
-  expect(page.url()).toContain("deck=Science");
+  // Should show only 3 DeckA cards
+  await expect(page.getByText("Showing 1-3 of 3")).toBeVisible();
 
-  // Reset to all decks
-  await page.getByTestId("deck-filter").click();
-  await page.getByRole("option", { name: "All decks" }).click();
+  // Add DeckB (multi-select)
+  await page.getByRole("menuitemcheckbox", { name: /DeckB/ }).click();
 
-  // Should show all 20 notes again
-  await expect(page.getByRole("row")).toHaveCount(21);
-  await expect(page.getByText("Showing 1-20 of 20")).toBeVisible();
+  // Should show 5 cards (3 DeckA + 2 DeckB)
+  await expect(page.getByText("Showing 1-5 of 5")).toBeVisible();
+
+  // Uncheck DeckA to show only DeckB
+  await page.getByRole("menuitemcheckbox", { name: /DeckA/ }).click();
+
+  // Should show only 2 DeckB cards
+  await expect(page.getByText("Showing 1-2 of 2")).toBeVisible();
+
+  // Uncheck DeckB to reset to all
+  await page.getByRole("menuitemcheckbox", { name: /DeckB/ }).click();
+
+  // Should show all 6 cards again
+  await expect(page.getByText("Showing 1-6 of 6")).toBeVisible();
 });
 
 test("set card flag", async ({ page }) => {
-  // Use cards view to access flag functionality
-  await page.goto("/?model=Basic&view=cards");
+  // Use isolated test-card-flag model (1 card with Red flag)
+  await page.goto("/?model=test-card-flag&view=cards");
 
   // Click first data row to open detail panel
   await page.getByRole("row").nth(1).click();
@@ -290,7 +292,8 @@ test("panel resize - drag to change width", async ({ page }) => {
 });
 
 test("bulk edit - select cards and set flag", async ({ page }) => {
-  await page.goto("/?model=Basic&view=cards");
+  // Use isolated test-bulk-flag model (3 cards)
+  await page.goto("/?model=test-bulk-flag&view=cards");
   page.on("dialog", (dialog) => dialog.accept());
 
   // Click more menu, then "Bulk Edit"
@@ -308,7 +311,7 @@ test("bulk edit - select cards and set flag", async ({ page }) => {
   // Should show "2 selected"
   await expect(page.getByText("2 selected")).toBeVisible();
 
-  // Set flag to Purple (unique color not used by other tests)
+  // Set flag to Purple
   await page.getByRole("button", { name: "Flag" }).click();
   await page.getByRole("menuitem", { name: /Purple/ }).click();
 
@@ -406,7 +409,6 @@ test("bulk edit - select all matching query", async ({ page }) => {
 test("export - copy CSV to clipboard", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/?model=Basic&view=cards");
-  page.on("dialog", (dialog) => dialog.accept());
 
   // Click more menu and select Copy CSV
   await page.getByTestId("more-menu").click();
@@ -459,21 +461,23 @@ test("export - download JSON file", async ({ page }) => {
 });
 
 test("create note", async ({ page }) => {
-  await page.goto("/?model=Basic");
+  // Use isolated test-create model (empty initially)
+  await page.goto("/?model=test-create");
 
-  // Initial count
-  await expect(page.getByText("Showing 1-20 of 20")).toBeVisible();
+  // Initial count - no notes
+  await expect(page.getByText("Showing 0-0 of 0")).toBeVisible();
 
-  // Open create note dialog
+  // Open create note dialog via dropdown
+  await page.getByTestId("add-note-dropdown").click();
   await page.getByTestId("create-note-button").click();
   await expect(page.getByRole("dialog")).toBeVisible();
 
   // Select model and deck
   await page.getByTestId("model-select").click();
-  await page.getByRole("option", { name: "Basic", exact: true }).click();
+  await page.getByRole("option", { name: "test-create" }).click();
 
   await page.getByTestId("deck-select").click();
-  await page.getByRole("option", { name: "Default", exact: true }).click();
+  await page.getByRole("option", { name: "test-create" }).click();
 
   // Fill in fields
   await page.getByTestId("field-Front").fill("Test Question from E2E");
@@ -488,9 +492,8 @@ test("create note", async ({ page }) => {
   // Dialog should close
   await expect(page.getByRole("dialog")).not.toBeVisible();
 
-  // Search for the new note to verify it was created
-  await page.getByPlaceholder("Search").fill("Test Question from E2E");
-  await page.getByPlaceholder("Search").press("Enter");
+  // Refresh to see the new note
+  await page.reload();
 
   await expect(page.getByRole("row")).toHaveCount(2); // 1 data + header
   await expect(page.getByRole("row").nth(1)).toContainText(
@@ -499,4 +502,96 @@ test("create note", async ({ page }) => {
   await expect(page.getByRole("row").nth(1)).toContainText(
     "Test Answer from E2E",
   );
+});
+
+test("bulk import notes from TSV", async ({ page }) => {
+  // Use isolated test-bulk-import model (empty initially)
+  await page.goto("/?model=test-bulk-import");
+
+  // Initial count - no notes
+  await expect(page.getByText("Showing 0-0 of 0")).toBeVisible();
+
+  // Open bulk import dialog via dropdown
+  await page.getByTestId("add-note-dropdown").click();
+  await page.getByTestId("bulk-import-button").click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+
+  // Select model and deck
+  await page.getByTestId("bulk-model-select").click();
+  await page.getByRole("option", { name: "test-bulk-import" }).click();
+
+  await page.getByTestId("bulk-deck-select").click();
+  await page.getByRole("option", { name: "test-bulk-import" }).click();
+
+  // Add tags
+  await page.getByTestId("bulk-tags-input").fill("bulk-test, imported");
+
+  // Paste TSV data (3 notes)
+  const tsvData = `Front\tBack
+Bulk Question 1\tBulk Answer 1
+Bulk Question 2\tBulk Answer 2
+Bulk Question 3\tBulk Answer 3`;
+  await page.getByTestId("bulk-tsv-input").fill(tsvData);
+
+  // Verify preview shows 3 notes
+  await expect(page.getByText("Preview (3 notes)")).toBeVisible();
+  await expect(
+    page.getByRole("cell", { name: "Bulk Question 1" }),
+  ).toBeVisible();
+
+  // Verify field status indicator
+  await expect(page.getByText("Importing:")).toBeVisible();
+
+  // Submit
+  await page.getByTestId("bulk-import-submit").click();
+
+  // Dialog should close
+  await expect(page.getByRole("dialog")).not.toBeVisible();
+
+  // Reload and verify notes were created
+  await page.reload();
+  await expect(page.getByRole("row")).toHaveCount(4); // 3 data + header
+  await expect(page.getByRole("row").nth(1)).toContainText("Bulk Question");
+  await expect(page.getByRole("row").nth(1)).toContainText("Bulk Answer");
+});
+
+test("multiple flag filter - filter by multiple flags", async ({ page }) => {
+  await page.goto("/?model=test-flag-filter&view=cards");
+
+  // Initially show all 5 cards
+  await expect(page.getByText("Showing 1-5 of 5")).toBeVisible();
+
+  // Open flag filter dropdown and select Red flag
+  await page.getByTestId("flag-filter").click();
+  await page.getByRole("menuitemcheckbox", { name: /Red/ }).click();
+
+  // Wait for URL to update and data to reload
+  await expect(page).toHaveURL(/flag=1/);
+  await expect(page.getByText("Showing 1-1 of 1")).toBeVisible();
+
+  // Add Orange flag (dropdown stays open due to preventDefault)
+  await page.getByRole("menuitemcheckbox", { name: /Orange/ }).click();
+
+  // Wait for URL to update - should now show both flags
+  await expect(page).toHaveURL(/flag=1%2C2/);
+  await expect(page.getByText("Showing 1-2 of 2")).toBeVisible();
+
+  // Add Green flag
+  await page.getByRole("menuitemcheckbox", { name: /Green/ }).click();
+
+  // Wait for URL to update - should now show all three flags
+  await expect(page).toHaveURL(/flag=1%2C2%2C3/);
+  await expect(page.getByText("Showing 1-3 of 3")).toBeVisible();
+
+  // Uncheck Red flag
+  await page.getByRole("menuitemcheckbox", { name: /Red/ }).click();
+
+  // Should now show only 2 cards (Orange and Green)
+  await expect(page).toHaveURL(/flag=2%2C3/);
+  await expect(page.getByText("Showing 1-2 of 2")).toBeVisible();
+
+  // Close dropdown and verify the flag filter button shows it's active
+  await page.keyboard.press("Escape");
+  const flagButton = page.getByTestId("flag-filter");
+  await expect(flagButton).toHaveClass(/bg-blue-100/);
 });
