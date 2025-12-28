@@ -114,7 +114,8 @@ export function BulkImportDialog({
     });
   };
 
-  const isValid = model && deck && parsedNotes.length > 0;
+  const isValid =
+    model && deck && parsedNotes.length > 0 && matchedFields.length > 0;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
