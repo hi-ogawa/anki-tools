@@ -524,12 +524,12 @@ function NotesView({
               <DropdownMenuCheckboxItem
                 key={opt.value}
                 checked={flag?.includes(opt.value) ?? false}
-                onCheckedChange={(checked) => {
-                  const newFlags = checked
-                    ? [...(flag ?? []), opt.value]
-                    : (flag ?? []).filter((f) => f !== opt.value);
-                  onStateChange({ flag: newFlags, page: 1 });
-                }}
+                onCheckedChange={(checked) =>
+                  onStateChange({
+                    flag: toggleArrayValue(flag, opt.value, checked),
+                    page: 1,
+                  })
+                }
                 onSelect={(e) => e.preventDefault()}
               >
                 <span className="flex items-center gap-2">
@@ -560,12 +560,12 @@ function NotesView({
             <DropdownMenuCheckboxItem
               key={d}
               checked={deck?.includes(d) ?? false}
-              onCheckedChange={(checked) => {
-                const newDecks = checked
-                  ? [...(deck ?? []), d]
-                  : (deck ?? []).filter((x) => x !== d);
-                onStateChange({ deck: newDecks, page: 1 });
-              }}
+              onCheckedChange={(checked) =>
+                onStateChange({
+                  deck: toggleArrayValue(deck, d, checked),
+                  page: 1,
+                })
+              }
               onSelect={(e) => e.preventDefault()}
             >
               {d}
@@ -593,12 +593,12 @@ function NotesView({
               <DropdownMenuCheckboxItem
                 key={t}
                 checked={tags?.includes(t) ?? false}
-                onCheckedChange={(checked) => {
-                  const newTags = checked
-                    ? [...(tags ?? []), t]
-                    : (tags ?? []).filter((tag) => tag !== t);
-                  onStateChange({ tags: newTags, page: 1 });
-                }}
+                onCheckedChange={(checked) =>
+                  onStateChange({
+                    tags: toggleArrayValue(tags, t, checked),
+                    page: 1,
+                  })
+                }
                 onSelect={(e) => e.preventDefault()}
               >
                 {t}
@@ -778,4 +778,14 @@ function NotesView({
       )}
     </div>
   );
+}
+
+function toggleArrayValue<T>(
+  arr: T[] | undefined,
+  value: T,
+  checked: boolean,
+): T[] {
+  return checked
+    ? [...(arr ?? []), value]
+    : (arr ?? []).filter((v) => v !== value);
 }
