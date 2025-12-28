@@ -503,6 +503,59 @@ test("create note", async ({ page }) => {
   );
 });
 
+test("bulk import notes from TSV", async ({ page }) => {
+  // Use isolated test-bulk-import model (empty initially)
+  await page.goto("/?model=test-bulk-import");
+
+  // Initial count - no notes
+  await expect(page.getByText("Showing 0-0 of 0")).toBeVisible();
+
+  // Open bulk import dialog
+  await page.getByTestId("bulk-import-button").click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+
+  // Select model and deck
+  await page.getByTestId("bulk-model-select").click();
+  await page.getByRole("option", { name: "test-bulk-import" }).click();
+
+  await page.getByTestId("bulk-deck-select").click();
+  await page.getByRole("option", { name: "test-bulk-import" }).click();
+
+  // Add tags
+  await page.getByTestId("bulk-tags-input").fill("bulk-test, imported");
+
+  // Paste TSV data (3 notes)
+  const tsvData = `Front\tBack
+Bulk Question 1\tBulk Answer 1
+Bulk Question 2\tBulk Answer 2
+Bulk Question 3\tBulk Answer 3`;
+  await page.getByTestId("bulk-tsv-input").fill(tsvData);
+
+  // Verify preview shows 3 notes
+  await expect(page.getByText("Preview (3 notes)")).toBeVisible();
+  await expect(
+    page.getByRole("cell", { name: "Bulk Question 1" }),
+  ).toBeVisible();
+
+  // Verify matched fields indicator
+  await expect(page.getByText("Matched fields:")).toBeVisible();
+
+  // Handle the success alert
+  page.on("dialog", (dialog) => dialog.accept());
+
+  // Submit
+  await page.getByTestId("bulk-import-submit").click();
+
+  // Dialog should close
+  await expect(page.getByRole("dialog")).not.toBeVisible();
+
+  // Reload and verify notes were created
+  await page.reload();
+  await expect(page.getByRole("row")).toHaveCount(4); // 3 data + header
+  await expect(page.getByRole("row").nth(1)).toContainText("Bulk Question");
+  await expect(page.getByRole("row").nth(1)).toContainText("Bulk Answer");
+});
+
 test("multiple flag filter - filter by multiple flags", async ({ page }) => {
   await page.goto("/?model=test-flag-filter&view=cards");
 

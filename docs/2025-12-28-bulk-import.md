@@ -154,3 +154,22 @@ function parseTSV(tsv: string): Record<string, string>[] {
 2. **Field mapping**: Require exact TSV header names matching model field names.
 
 3. **Error handling**: If one note fails, skip and continue (report failures at end).
+
+## Feedback
+
+- move this inside one dropdown
+
+```js
+          {schema && (
+            <>
+              <CreateNoteDialog
+                schema={schema}
+                defaultModel={validModel ? urlModel : undefined}
+              />
+              <BulkImportDialog
+                schema={schema}
+                defaultModel={validModel ? urlModel : undefined}
+              />
+            </>
+          )}
+```
