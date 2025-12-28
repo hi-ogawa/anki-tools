@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router";
+import { toast } from "sonner";
 import { api, cardsToCSV, type Card, type Item, type ViewMode } from "./api";
 import { BrowseTable } from "./components/browse-table";
 import { BulkActions } from "./components/bulk-actions";
@@ -52,7 +53,7 @@ import { useResize } from "./lib/use-resize";
 const queryClient = new QueryClient({
   defaultOptions: {
     mutations: {
-      onError: (error) => alert(error.message),
+      onError: (error) => toast.error(error.message),
     },
   },
 });
@@ -444,7 +445,7 @@ function NotesView({
     },
     onSuccess: ({ count, action }) => {
       if (action === "copy") {
-        alert(`Copied ${count} cards to clipboard`);
+        toast.success(`Copied ${count} cards to clipboard`);
       }
     },
   });

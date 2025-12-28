@@ -35,7 +35,6 @@
 - Extract reusable `<FlagIcon>` component (duplicated in `root.tsx`, `browse-table.tsx`, `note-detail.tsx`)
 - Consolidate URL state update patterns (inconsistent across `root.tsx`)
 - Type-safe query keys using factory pattern (`src/api.ts`)
-- Replace `alert()` error handler with toast notifications (`src/root.tsx:40`)
 - align with `PaginationState` type
 
 ## Chore

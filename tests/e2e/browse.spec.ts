@@ -409,7 +409,6 @@ test("bulk edit - select all matching query", async ({ page }) => {
 test("export - copy CSV to clipboard", async ({ page, context }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/?model=Basic&view=cards");
-  page.on("dialog", (dialog) => dialog.accept());
 
   // Click more menu and select Copy CSV
   await page.getByTestId("more-menu").click();
