@@ -595,3 +595,133 @@ test("multiple flag filter - filter by multiple flags", async ({ page }) => {
   const flagButton = page.getByTestId("flag-filter");
   await expect(flagButton).toHaveClass(/bg-blue-100/);
 });
+
+test("search autocomplete - displays suggestions", async ({ page }) => {
+  await page.goto("/?model=Basic&view=cards");
+
+  const searchInput = page.getByTestId("search-input");
+
+  // Type "is:" to trigger autocomplete
+  await searchInput.fill("is:");
+
+  // Should show autocomplete suggestions
+  await expect(page.getByTestId("search-suggestions")).toBeVisible();
+  await expect(page.getByTestId("search-suggestion-item")).toHaveCount(8); // 8 "is:" suggestions
+
+  // Should show "is:new" suggestion
+  await expect(page.getByText("is:new")).toBeVisible();
+  await expect(page.getByText("Cards that are new")).toBeVisible();
+});
+
+test("search autocomplete - keyboard navigation", async ({ page }) => {
+  await page.goto("/?model=Basic&view=cards");
+
+  const searchInput = page.getByTestId("search-input");
+
+  // Type "is:n" to trigger autocomplete
+  await searchInput.fill("is:n");
+
+  // Should show suggestions starting with "is:n"
+  await expect(page.getByTestId("search-suggestions")).toBeVisible();
+  await expect(page.getByText("is:new")).toBeVisible();
+
+  // Press ArrowDown to select next item (should move highlight)
+  await searchInput.press("ArrowDown");
+
+  // Press Enter to apply suggestion
+  await searchInput.press("Enter");
+
+  // Input should now have the full suggestion
+  await expect(searchInput).toHaveValue("is:new");
+
+  // Dropdown should close
+  await expect(page.getByTestId("search-suggestions")).not.toBeVisible();
+});
+
+test("search autocomplete - click to select", async ({ page }) => {
+  await page.goto("/?model=Basic&view=cards");
+
+  const searchInput = page.getByTestId("search-input");
+
+  // Type "prop:" to trigger autocomplete
+  await searchInput.fill("prop:");
+
+  // Should show autocomplete suggestions
+  await expect(page.getByTestId("search-suggestions")).toBeVisible();
+
+  // Click on a specific suggestion
+  await page.getByText("prop:ivl>=30").click();
+
+  // Input should now have the clicked suggestion
+  await expect(searchInput).toHaveValue("prop:ivl>=30");
+
+  // Dropdown should close
+  await expect(page.getByTestId("search-suggestions")).not.toBeVisible();
+});
+
+test("search autocomplete - Tab to complete", async ({ page }) => {
+  await page.goto("/?model=Basic&view=cards");
+
+  const searchInput = page.getByTestId("search-input");
+
+  // Type "flag:" to trigger autocomplete
+  await searchInput.fill("flag:");
+
+  // Should show autocomplete suggestions
+  await expect(page.getByTestId("search-suggestions")).toBeVisible();
+
+  // Press Tab to apply first suggestion
+  await searchInput.press("Tab");
+
+  // Input should now have the suggestion
+  await expect(searchInput).toHaveValue("flag:1");
+
+  // Dropdown should close
+  await expect(page.getByTestId("search-suggestions")).not.toBeVisible();
+});
+
+test("search autocomplete - multiple queries", async ({ page }) => {
+  await page.goto("/?model=Basic&view=cards");
+
+  const searchInput = page.getByTestId("search-input");
+
+  // Type "is:new " (with space)
+  await searchInput.fill("is:new ");
+
+  // Dropdown should not show for space
+  await expect(page.getByTestId("search-suggestions")).not.toBeVisible();
+
+  // Continue typing "prop:"
+  await searchInput.fill("is:new prop:");
+
+  // Should show autocomplete suggestions for "prop:"
+  await expect(page.getByTestId("search-suggestions")).toBeVisible();
+  await expect(page.getByText("prop:ivl>=30")).toBeVisible();
+
+  // Click on a suggestion
+  await page.getByText("prop:due=0").click();
+
+  // Input should now have both queries
+  await expect(searchInput).toHaveValue("is:new prop:due=0");
+});
+
+test("search autocomplete - Escape to close", async ({ page }) => {
+  await page.goto("/?model=Basic&view=cards");
+
+  const searchInput = page.getByTestId("search-input");
+
+  // Type "is:" to trigger autocomplete
+  await searchInput.fill("is:");
+
+  // Should show autocomplete suggestions
+  await expect(page.getByTestId("search-suggestions")).toBeVisible();
+
+  // Press Escape to close dropdown
+  await searchInput.press("Escape");
+
+  // Dropdown should close
+  await expect(page.getByTestId("search-suggestions")).not.toBeVisible();
+
+  // Input value should remain unchanged
+  await expect(searchInput).toHaveValue("is:");
+});
