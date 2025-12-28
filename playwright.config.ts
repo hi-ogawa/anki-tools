@@ -9,6 +9,7 @@ export default defineConfig({
     command: `ANKI_DATA=test ANKI_PORT=${API_PORT} VITE_PORT=${UI_PORT} pnpm dev-fixture`,
     url: `http://localhost:${API_PORT}/api/health`,
     reuseExistingServer: !process.env.CI,
+    timeout: 5000,
   },
   use: {
     baseURL: `http://localhost:${UI_PORT}`,
