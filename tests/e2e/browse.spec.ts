@@ -414,16 +414,19 @@ test("export - copy CSV to clipboard", async ({ page, context }) => {
   await page.getByTestId("more-menu").click();
   await page.getByRole("menuitem", { name: "Copy to Clipboard" }).click();
 
-  // Verify clipboard contains CSV data
+  // Wait for toast notification indicating success
+  await expect(page.getByText(/Copied \d+ cards/)).toBeVisible();
+
+  // Verify clipboard contains CSV data with default visible columns
   const clipboardText = await page.evaluate(() =>
     navigator.clipboard.readText(),
   );
-  expect(clipboardText).toContain("cardId");
-  expect(clipboardText).toContain("noteId");
+  // Default visible columns: first 3 fields (Front, Back), deck, flag, status
+  expect(clipboardText).toContain("Front");
+  expect(clipboardText).toContain("Back");
   expect(clipboardText).toContain("deckName");
-  expect(clipboardText).toContain("ease");
-  expect(clipboardText).toContain("lapses");
-  expect(clipboardText).toContain("reviews");
+  expect(clipboardText).toContain("flag");
+  expect(clipboardText).toContain("queue"); // status column maps to queue
 });
 
 test("export - download CSV file", async ({ page }) => {
@@ -553,6 +556,95 @@ Bulk Question 3\tBulk Answer 3`;
   await expect(page.getByRole("row")).toHaveCount(4); // 3 data + header
   await expect(page.getByRole("row").nth(1)).toContainText("Bulk Question");
   await expect(page.getByRole("row").nth(1)).toContainText("Bulk Answer");
+});
+
+test("export - respects visible columns in CSV", async ({ page, context }) => {
+  await context.grantPermissions(["clipboard-read", "clipboard-write"]);
+
+  // Clear localStorage to ensure clean column visibility state
+  await page.goto("/?model=Basic&view=cards");
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+
+  // Open columns dropdown and hide some columns
+  await page.getByRole("button", { name: "Columns" }).click();
+
+  // Hide "deck" column (uncheck it)
+  await page.getByRole("menuitemcheckbox", { name: "deck" }).click();
+  // Hide "flag" column
+  await page.getByRole("menuitemcheckbox", { name: "flag" }).click();
+  // Hide "status" column
+  await page.getByRole("menuitemcheckbox", { name: "status" }).click();
+
+  // Close dropdown
+  await page.keyboard.press("Escape");
+
+  // Export to clipboard
+  await page.getByTestId("more-menu").click();
+  await page.getByRole("menuitem", { name: "Copy to Clipboard" }).click();
+
+  // Wait for toast notification indicating success
+  await expect(page.getByText(/Copied \d+ cards/)).toBeVisible();
+
+  // Verify clipboard CSV only has visible columns
+  const clipboardText = await page.evaluate(() =>
+    navigator.clipboard.readText(),
+  );
+
+  // Should have visible columns (Front, Back are first 2 fields shown by default)
+  expect(clipboardText).toContain("Front");
+  expect(clipboardText).toContain("Back");
+
+  // Should NOT have hidden columns
+  expect(clipboardText).not.toContain("deckName");
+  expect(clipboardText).not.toContain(",flag,");
+  expect(clipboardText).not.toContain(",queue,");
+});
+
+test("export - respects visible columns in JSON", async ({ page }) => {
+  // Clear localStorage to ensure clean column visibility state
+  await page.goto("/?model=Basic&view=cards");
+  await page.evaluate(() => localStorage.clear());
+  await page.reload();
+
+  // Open columns dropdown and hide some columns
+  await page.getByRole("button", { name: "Columns" }).click();
+
+  // Hide "deck" column
+  await page.getByRole("menuitemcheckbox", { name: "deck" }).click();
+  // Hide "flag" column
+  await page.getByRole("menuitemcheckbox", { name: "flag" }).click();
+
+  // Close dropdown
+  await page.keyboard.press("Escape");
+
+  // Listen for download event
+  const downloadPromise = page.waitForEvent("download");
+
+  // Export JSON
+  await page.getByTestId("more-menu").click();
+  await page.getByRole("menuitem", { name: "Download JSON" }).click();
+
+  // Get download and read content
+  const download = await downloadPromise;
+  const stream = await download.createReadStream();
+  const chunks: Buffer[] = [];
+  for await (const chunk of stream) {
+    chunks.push(chunk);
+  }
+  const content = Buffer.concat(chunks).toString("utf-8");
+  const json = JSON.parse(content);
+
+  // Should be an array of objects
+  expect(Array.isArray(json)).toBe(true);
+  expect(json.length).toBeGreaterThan(0);
+
+  // First object should have visible fields but not hidden ones
+  const firstCard = json[0];
+  expect(firstCard).toHaveProperty("Front");
+  expect(firstCard).toHaveProperty("Back");
+  expect(firstCard).not.toHaveProperty("deckName");
+  expect(firstCard).not.toHaveProperty("flag");
 });
 
 test("multiple flag filter - filter by multiple flags", async ({ page }) => {
