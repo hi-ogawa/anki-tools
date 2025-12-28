@@ -1,12 +1,14 @@
 """Create test data collection."""
 
 import os
+import shutil
 from pathlib import Path
 
 from anki.collection import Collection
 
 DATA_DIR = Path(__file__).parent / "data"
-DATA_PATH = DATA_DIR / "test.anki2"
+ANKI_DATA = os.environ.get("ANKI_DATA", "dev")
+DATA_PATH = DATA_DIR / f"{ANKI_DATA}.anki2"
 
 
 def main():
@@ -14,10 +16,8 @@ def main():
 
     if DATA_PATH.exists():
         os.unlink(DATA_PATH)
-    media_dir = DATA_DIR / "test.media"
+    media_dir = DATA_DIR / f"{ANKI_DATA}.media"
     if media_dir.exists():
-        import shutil
-
         shutil.rmtree(media_dir)
 
     col = Collection(str(DATA_PATH))

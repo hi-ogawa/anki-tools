@@ -2,10 +2,10 @@
 
 ## Quick Reference
 
-| Command                         | When          |
-| ------------------------------- | ------------- |
-| `pnpm tsc && pnpm lint`         | After changes |
-| `pnpm fixture && pnpm test-e2e` | Run e2e tests |
+| Command                 | When          |
+| ----------------------- | ------------- |
+| `pnpm tsc && pnpm lint` | After changes |
+| `pnpm test-e2e`         | Run e2e tests |
 
 ## Anki Python API
 
@@ -35,7 +35,7 @@ Run `pnpm fixture` before `pnpm test-e2e` to reset test data.
 
 - Use `getByRole`, `getByPlaceholder`, `getByTestId` - avoid fragile selectors
 - Add `data-testid` when needed
-- Use shorter timeouts (`--timeout 3000`) during development to iterate faster
+- Adjust CLI options for faster iterations (e.g. `--timeout 5000 --max-failures 1`)
 
 ## Visual UI Development
 
