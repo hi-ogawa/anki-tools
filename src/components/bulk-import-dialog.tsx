@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { toast } from "sonner";
 import { api, type Schema } from "../api";
 import { Button } from "./ui/button";
 import {
@@ -89,7 +90,7 @@ export function BulkImportDialog({
       onOpenChange(false);
       setTsvInput("");
       setTagsInput("");
-      alert(`Successfully imported ${data.count} notes`);
+      toast.info(`Successfully imported ${data.count} notes`);
     },
   });
 
