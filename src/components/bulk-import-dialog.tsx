@@ -24,8 +24,6 @@ import { Textarea } from "./ui/textarea";
 
 interface BulkImportDialogProps {
   schema: Schema;
-  defaultModel?: string;
-  defaultDeck?: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
@@ -52,13 +50,11 @@ function parseTSV(tsv: string): ParsedNote[] {
 
 export function BulkImportDialog({
   schema,
-  defaultModel,
-  defaultDeck,
   open,
   onOpenChange,
 }: BulkImportDialogProps) {
-  const [model, setModel] = useState(defaultModel ?? "");
-  const [deck, setDeck] = useState(defaultDeck ?? schema.decks[0] ?? "");
+  const [model, setModel] = useState("");
+  const [deck, setDeck] = useState(schema.decks[0] ?? "");
   const [tsvInput, setTsvInput] = useState("");
   const [tagsInput, setTagsInput] = useState("");
   const [showFullPreview, setShowFullPreview] = useState(false);

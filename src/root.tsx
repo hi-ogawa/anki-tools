@@ -846,7 +846,6 @@ function AddNoteDropdown({
       />
       <BulkImportDialog
         schema={schema}
-        defaultModel={defaultModel}
         open={bulkImportOpen}
         onOpenChange={setBulkImportOpen}
       />
