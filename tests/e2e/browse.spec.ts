@@ -606,7 +606,7 @@ test("search autocomplete - displays suggestions", async ({ page }) => {
 
   // Should show autocomplete suggestions
   await expect(page.getByTestId("search-suggestions")).toBeVisible();
-  await expect(page.getByTestId("search-suggestion-item")).toHaveCount(8); // 8 "is:" suggestions
+  await expect(page.getByTestId("search-suggestion-item")).toHaveCount(10); // 10 "is:" suggestions
 
   // Should show "is:new" suggestion
   await expect(page.getByText("is:new")).toBeVisible();
