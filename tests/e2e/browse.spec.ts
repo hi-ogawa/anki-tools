@@ -48,37 +48,36 @@ test("search filters notes", async ({ page }) => {
 });
 
 test("deck filter filters by deck", async ({ page }) => {
-  await page.goto("/?model=Basic");
+  // Use isolated test-deck-filter model (DeckA: 3, DeckB: 2, DeckC: 1)
+  await page.goto("/?model=test-deck-filter&view=cards");
 
-  // Should show all 20 notes initially
-  await expect(page.getByRole("row")).toHaveCount(21); // 20 data + header
-  await expect(page.getByText("Showing 1-20 of 20")).toBeVisible();
-
-  // Filter by Japanese deck
-  await page.getByTestId("deck-filter").click();
-  await page.getByRole("option", { name: "Japanese" }).click();
-
-  // Should show only 6 Japanese deck notes
-  await expect(page.getByRole("row")).toHaveCount(7); // 6 data + header
+  // Should show all 6 cards initially
   await expect(page.getByText("Showing 1-6 of 6")).toBeVisible();
-  expect(page.url()).toContain("deck=Japanese");
 
-  // Filter by Science deck
+  // Filter by DeckA
   await page.getByTestId("deck-filter").click();
-  await page.getByRole("option", { name: "Science" }).click();
+  await page.getByRole("menuitemcheckbox", { name: /DeckA/ }).click();
 
-  // Should show only 4 Science deck notes
-  await expect(page.getByRole("row")).toHaveCount(5); // 4 data + header
-  await expect(page.getByText("Showing 1-4 of 4")).toBeVisible();
-  expect(page.url()).toContain("deck=Science");
+  // Should show only 3 DeckA cards
+  await expect(page.getByText("Showing 1-3 of 3")).toBeVisible();
 
-  // Reset to all decks
-  await page.getByTestId("deck-filter").click();
-  await page.getByRole("option", { name: "All decks" }).click();
+  // Add DeckB (multi-select)
+  await page.getByRole("menuitemcheckbox", { name: /DeckB/ }).click();
 
-  // Should show all 20 notes again
-  await expect(page.getByRole("row")).toHaveCount(21);
-  await expect(page.getByText("Showing 1-20 of 20")).toBeVisible();
+  // Should show 5 cards (3 DeckA + 2 DeckB)
+  await expect(page.getByText("Showing 1-5 of 5")).toBeVisible();
+
+  // Uncheck DeckA to show only DeckB
+  await page.getByRole("menuitemcheckbox", { name: /DeckA/ }).click();
+
+  // Should show only 2 DeckB cards
+  await expect(page.getByText("Showing 1-2 of 2")).toBeVisible();
+
+  // Uncheck DeckB to reset to all
+  await page.getByRole("menuitemcheckbox", { name: /DeckB/ }).click();
+
+  // Should show all 6 cards again
+  await expect(page.getByText("Showing 1-6 of 6")).toBeVisible();
 });
 
 test("set card flag", async ({ page }) => {
@@ -515,28 +514,28 @@ test("multiple flag filter - filter by multiple flags", async ({ page }) => {
   await page.getByRole("menuitemcheckbox", { name: /Red/ }).click();
 
   // Wait for URL to update and data to reload
-  await expect(page).toHaveURL(/flags=1/);
+  await expect(page).toHaveURL(/flag=1/);
   await expect(page.getByText("Showing 1-1 of 1")).toBeVisible();
 
   // Add Orange flag (dropdown stays open due to preventDefault)
   await page.getByRole("menuitemcheckbox", { name: /Orange/ }).click();
 
   // Wait for URL to update - should now show both flags
-  await expect(page).toHaveURL(/flags=1%2C2/);
+  await expect(page).toHaveURL(/flag=1%2C2/);
   await expect(page.getByText("Showing 1-2 of 2")).toBeVisible();
 
   // Add Green flag
   await page.getByRole("menuitemcheckbox", { name: /Green/ }).click();
 
   // Wait for URL to update - should now show all three flags
-  await expect(page).toHaveURL(/flags=1%2C2%2C3/);
+  await expect(page).toHaveURL(/flag=1%2C2%2C3/);
   await expect(page.getByText("Showing 1-3 of 3")).toBeVisible();
 
   // Uncheck Red flag
   await page.getByRole("menuitemcheckbox", { name: /Red/ }).click();
 
   // Should now show only 2 cards (Orange and Green)
-  await expect(page).toHaveURL(/flags=2%2C3/);
+  await expect(page).toHaveURL(/flag=2%2C3/);
   await expect(page.getByText("Showing 1-2 of 2")).toBeVisible();
 
   // Close dropdown and verify the flag filter button shows it's active

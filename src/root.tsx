@@ -73,9 +73,10 @@ function App() {
   const pageIndex = Math.max(0, urlPage - 1);
   const pageSize = parseInt(searchParams.get("pageSize") ?? "20", 10);
   const search = searchParams.get("search") ?? undefined;
-  const flagsParam = searchParams.get("flags");
-  const flags = flagsParam ? flagsParam.split(",") : undefined;
-  const deck = searchParams.get("deck") ?? undefined;
+  const flagParam = searchParams.get("flag");
+  const flags = flagParam ? flagParam.split(",") : undefined;
+  const deckParam = searchParams.get("deck");
+  const decks = deckParam ? deckParam.split(",") : undefined;
   const tagsParam = searchParams.get("tags");
   const tags = tagsParam ? tagsParam.split(",") : undefined;
   const viewMode = (searchParams.get("view") ?? "cards") as ViewMode;
@@ -93,7 +94,7 @@ function App() {
   });
 
   const models = schema?.models;
-  const decks = schema?.decks ?? [];
+  const allDecks = schema?.decks ?? [];
   const allTags = schema?.tags ?? [];
   const modelNames = useMemo(() => Object.keys(models ?? {}), [models]);
   const validModel = urlModel && models?.[urlModel];
@@ -183,13 +184,13 @@ function App() {
         key={`${urlModel}-${viewMode}`}
         model={urlModel}
         fields={fields!}
-        decks={decks}
+        allDecks={allDecks}
         allTags={allTags}
         page={pageIndex}
         pageSize={pageSize}
         search={search}
-        flags={flags}
-        deck={deck}
+        flag={flags}
+        deck={decks}
         tags={tags}
         viewMode={viewMode}
         onStateChange={setUrlState}
@@ -261,21 +262,21 @@ interface UrlState {
   page?: number;
   pageSize?: number;
   search?: string;
-  flags?: string[] | undefined;
-  deck?: string;
+  flag?: string[] | undefined;
+  deck?: string[] | undefined;
   tags?: string[] | undefined;
 }
 
 interface NotesViewProps {
   model: string;
   fields: string[];
-  decks: string[];
+  allDecks: string[];
   allTags: string[];
   page: number;
   pageSize: number;
   search?: string;
-  flags?: string[];
-  deck?: string;
+  flag?: string[];
+  deck?: string[];
   tags?: string[];
   viewMode: ViewMode;
   onStateChange: (newState: UrlState) => void;
@@ -284,12 +285,12 @@ interface NotesViewProps {
 function NotesView({
   model,
   fields,
-  decks,
+  allDecks,
   allTags,
   page,
   pageSize,
   search,
-  flags,
+  flag,
   deck,
   tags,
   viewMode,
@@ -319,19 +320,23 @@ function NotesView({
   const query = useMemo(() => {
     const parts: string[] = [`note:"${model}"`];
     if (search) parts.push(search);
-    if (flags?.length) {
+    if (flag?.length) {
       // Use OR logic for multiple flags: (flag:1 OR flag:2)
-      const flagQuery = flags.map((f) => `flag:${f}`).join(" OR ");
+      const flagQuery = flag.map((f) => `flag:${f}`).join(" OR ");
       parts.push(`(${flagQuery})`);
     }
-    if (deck) parts.push(`deck:"${deck}"`);
+    if (deck?.length) {
+      // Use OR logic for multiple decks: (deck:"a" OR deck:"b")
+      const deckQuery = deck.map((d) => `deck:"${d}"`).join(" OR ");
+      parts.push(`(${deckQuery})`);
+    }
     if (tags?.length) {
       // Use OR logic for multiple tags: (tag:a OR tag:b)
       const tagQuery = tags.map((t) => `tag:"${t}"`).join(" OR ");
       parts.push(`(${tagQuery})`);
     }
     return parts.join(" ");
-  }, [model, search, flags, deck, tags]);
+  }, [model, search, flag, deck, tags]);
 
   const { data, isLoading, isFetching, error, refetch } = useQuery({
     ...api.fetchItems.queryOptions({
@@ -507,7 +512,7 @@ function NotesView({
         <DropdownMenuTrigger asChild>
           <Button
             variant="outline"
-            className={`px-2 ${flags?.length ? "bg-blue-100 border-blue-400 dark:bg-blue-950 dark:border-blue-600" : ""}`}
+            className={`px-2 ${flag?.length ? "bg-blue-100 border-blue-400 dark:bg-blue-950 dark:border-blue-600" : ""}`}
             data-testid="flag-filter"
           >
             <Flag className="size-4" />
@@ -518,12 +523,12 @@ function NotesView({
             (opt) => (
               <DropdownMenuCheckboxItem
                 key={opt.value}
-                checked={flags?.includes(opt.value) ?? false}
+                checked={flag?.includes(opt.value) ?? false}
                 onCheckedChange={(checked) => {
                   const newFlags = checked
-                    ? [...(flags ?? []), opt.value]
-                    : (flags ?? []).filter((f) => f !== opt.value);
-                  onStateChange({ flags: newFlags, page: 1 });
+                    ? [...(flag ?? []), opt.value]
+                    : (flag ?? []).filter((f) => f !== opt.value);
+                  onStateChange({ flag: newFlags, page: 1 });
                 }}
                 onSelect={(e) => e.preventDefault()}
               >
@@ -540,27 +545,34 @@ function NotesView({
           )}
         </DropdownMenuContent>
       </DropdownMenu>
-      <Select
-        value={deck ?? "all"}
-        onValueChange={(value) =>
-          onStateChange({ deck: value === "all" ? undefined : value, page: 1 })
-        }
-      >
-        <SelectTrigger
-          className={`w-auto ${deck ? "bg-blue-100 border-blue-400 dark:bg-blue-950 dark:border-blue-600" : ""}`}
-          data-testid="deck-filter"
-        >
-          <Library className="size-4" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All decks</SelectItem>
-          {decks.map((d) => (
-            <SelectItem key={d} value={d}>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            className={`px-2 ${deck?.length ? "bg-blue-100 border-blue-400 dark:bg-blue-950 dark:border-blue-600" : ""}`}
+            data-testid="deck-filter"
+          >
+            <Library className="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="max-h-64 overflow-y-auto">
+          {allDecks.map((d) => (
+            <DropdownMenuCheckboxItem
+              key={d}
+              checked={deck?.includes(d) ?? false}
+              onCheckedChange={(checked) => {
+                const newDecks = checked
+                  ? [...(deck ?? []), d]
+                  : (deck ?? []).filter((x) => x !== d);
+                onStateChange({ deck: newDecks, page: 1 });
+              }}
+              onSelect={(e) => e.preventDefault()}
+            >
               {d}
-            </SelectItem>
+            </DropdownMenuCheckboxItem>
           ))}
-        </SelectContent>
-      </Select>
+        </DropdownMenuContent>
+      </DropdownMenu>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button

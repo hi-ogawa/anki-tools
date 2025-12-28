@@ -80,6 +80,34 @@ def main():
     col.set_user_flag_for_cards(2, [flag_test_cards[1]])  # Orange
     col.set_user_flag_for_cards(3, [flag_test_cards[2]])  # Green
 
+    # Create isolated model for deck filter test
+    deck_test_model = col.models.copy(model)
+    deck_test_model["name"] = "test-deck-filter"
+    deck_test_model["id"] = 0
+    col.models.add(deck_test_model)
+
+    # Create 3 decks: DeckA (3 cards), DeckB (2 cards), DeckC (1 card)
+    deck_a = col.decks.id("test-deck-filter::DeckA")
+    deck_b = col.decks.id("test-deck-filter::DeckB")
+    deck_c = col.decks.id("test-deck-filter::DeckC")
+
+    for i in range(3):
+        note = col.new_note(deck_test_model)
+        note["Front"] = f"DeckA Q{i + 1}"
+        note["Back"] = f"DeckA A{i + 1}"
+        col.add_note(note, deck_a)
+
+    for i in range(2):
+        note = col.new_note(deck_test_model)
+        note["Front"] = f"DeckB Q{i + 1}"
+        note["Back"] = f"DeckB A{i + 1}"
+        col.add_note(note, deck_b)
+
+    note = col.new_note(deck_test_model)
+    note["Front"] = "DeckC Q1"
+    note["Back"] = "DeckC A1"
+    col.add_note(note, deck_c)
+
     col.close()
 
     print(f"Created: {DATA_PATH}")
