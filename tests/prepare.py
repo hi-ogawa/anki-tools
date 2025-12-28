@@ -59,6 +59,27 @@ def main():
         col.set_user_flag_for_cards(2, [cards[1]])  # Orange
         col.set_user_flag_for_cards(3, [cards[2]])  # Green
 
+    # Create isolated model for flag filter test
+    flag_test_model = col.models.copy(model)
+    flag_test_model["name"] = "test-flag-filter"
+    flag_test_model["id"] = 0  # Reset ID so Anki assigns a new one
+    col.models.add(flag_test_model)
+
+    deck_flag_test = col.decks.id("test-flag-filter")
+    flag_test_cards = []
+    for i in range(5):
+        note = col.new_note(flag_test_model)
+        note["Front"] = f"FlagTest Q{i + 1}"
+        note["Back"] = f"FlagTest A{i + 1}"
+        col.add_note(note, deck_flag_test)
+        # Get the card ID for this note
+        flag_test_cards.extend(note.card_ids())
+
+    # Set flags: card 1=Red, card 2=Orange, card 3=Green, cards 4-5=no flag
+    col.set_user_flag_for_cards(1, [flag_test_cards[0]])  # Red
+    col.set_user_flag_for_cards(2, [flag_test_cards[1]])  # Orange
+    col.set_user_flag_for_cards(3, [flag_test_cards[2]])  # Green
+
     col.close()
 
     print(f"Created: {DATA_PATH}")
