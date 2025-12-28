@@ -55,9 +55,8 @@ def main():
 
     def setup_flag_filter_fixture():
         """test-flag-filter: 5 cards with flags (Red, Orange, Green, none, none)."""
-        m = col.models.copy(model)
+        m = col.models.copy(model, add=False)
         m["name"] = "test-flag-filter"
-        m["id"] = 0
         col.models.add(m)
 
         deck_id = col.decks.id("test-flag-filter")
@@ -75,9 +74,8 @@ def main():
 
     def setup_deck_filter_fixture():
         """test-deck-filter: 6 cards across 3 decks (DeckA:3, DeckB:2, DeckC:1)."""
-        m = col.models.copy(model)
+        m = col.models.copy(model, add=False)
         m["name"] = "test-deck-filter"
-        m["id"] = 0
         col.models.add(m)
 
         deck_a = col.decks.id("test-deck-filter::DeckA")
@@ -103,9 +101,8 @@ def main():
 
     def setup_card_flag_fixture():
         """test-card-flag: 1 card with Red flag for set card flag test."""
-        m = col.models.copy(model)
+        m = col.models.copy(model, add=False)
         m["name"] = "test-card-flag"
-        m["id"] = 0
         col.models.add(m)
 
         deck_id = col.decks.id("test-card-flag")
@@ -117,9 +114,8 @@ def main():
 
     def setup_bulk_flag_fixture():
         """test-bulk-flag: 3 cards for bulk edit flag test."""
-        m = col.models.copy(model)
+        m = col.models.copy(model, add=False)
         m["name"] = "test-bulk-flag"
-        m["id"] = 0
         col.models.add(m)
 
         deck_id = col.decks.id("test-bulk-flag")
@@ -131,9 +127,8 @@ def main():
 
     def setup_create_fixture():
         """test-create: Empty model/deck for create note test."""
-        m = col.models.copy(model)
+        m = col.models.copy(model, add=False)
         m["name"] = "test-create"
-        m["id"] = 0
         col.models.add(m)
         col.decks.id("test-create")  # Just create the deck
 
