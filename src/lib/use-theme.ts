@@ -11,7 +11,7 @@ export function useTheme() {
 
   useEffect(() => {
     const root = window.document.documentElement;
-    
+
     const applyTheme = (themeName: "light" | "dark") => {
       root.classList.remove("light", "dark");
       root.classList.add(themeName);
