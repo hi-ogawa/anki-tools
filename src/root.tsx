@@ -7,7 +7,6 @@ import {
 } from "@tanstack/react-query";
 import type { RowSelectionState } from "@tanstack/react-table";
 import {
-  CircleHelp,
   Clipboard,
   Download,
   Flag,
@@ -35,6 +34,7 @@ import { BulkActions } from "./components/bulk-actions";
 import { BulkImportDialog } from "./components/bulk-import-dialog";
 import { CreateNoteDialog } from "./components/create-note-dialog";
 import { NoteDetail } from "./components/note-detail";
+import { SearchInput } from "./components/search-input";
 import { TableSkeleton } from "./components/table-skeleton";
 import { Button } from "./components/ui/button";
 import {
@@ -45,7 +45,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./components/ui/dropdown-menu";
-import { Input } from "./components/ui/input";
 import {
   Select,
   SelectContent,
@@ -501,24 +500,12 @@ function NotesView({
 
   const toolbarLeft = (
     <>
-      <div className="relative">
-        <Input
-          placeholder="Search (supports Anki query syntax)"
-          value={localSearch}
-          onChange={(e) => setLocalSearch(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && submitSearch()}
-          className="w-[400px] pr-8"
-        />
-        <a
-          href="https://docs.ankiweb.net/searching.html"
-          target="_blank"
-          rel="noopener noreferrer"
-          title="Search syntax help"
-          className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-        >
-          <CircleHelp className="size-4" />
-        </a>
-      </div>
+      <SearchInput
+        value={localSearch}
+        onChange={setLocalSearch}
+        onSubmit={submitSearch}
+        className="w-[400px]"
+      />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
