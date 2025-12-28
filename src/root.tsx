@@ -44,11 +44,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./components/ui/select";
-import {
-  FLAG_COLORS,
-  FLAG_FILTER_OPTIONS,
-  FLAG_OPTIONS,
-} from "./lib/constants";
+import { FLAG_FILTER_OPTIONS, FLAG_OPTIONS } from "./lib/constants";
 import { useLocalStorage } from "./lib/use-local-storage";
 import { useResize } from "./lib/use-resize";
 
@@ -77,8 +73,10 @@ function App() {
   const pageIndex = Math.max(0, urlPage - 1);
   const pageSize = parseInt(searchParams.get("pageSize") ?? "20", 10);
   const search = searchParams.get("search") ?? undefined;
-  const flag = searchParams.get("flag") ?? undefined;
-  const deck = searchParams.get("deck") ?? undefined;
+  const flagParam = searchParams.get("flag");
+  const flags = flagParam ? flagParam.split(",") : undefined;
+  const deckParam = searchParams.get("deck");
+  const decks = deckParam ? deckParam.split(",") : undefined;
   const tagsParam = searchParams.get("tags");
   const tags = tagsParam ? tagsParam.split(",") : undefined;
   const viewMode = (searchParams.get("view") ?? "cards") as ViewMode;
@@ -96,7 +94,7 @@ function App() {
   });
 
   const models = schema?.models;
-  const decks = schema?.decks ?? [];
+  const allDecks = schema?.decks ?? [];
   const allTags = schema?.tags ?? [];
   const modelNames = useMemo(() => Object.keys(models ?? {}), [models]);
   const validModel = urlModel && models?.[urlModel];
@@ -186,13 +184,13 @@ function App() {
         key={`${urlModel}-${viewMode}`}
         model={urlModel}
         fields={fields!}
-        decks={decks}
+        allDecks={allDecks}
         allTags={allTags}
         page={pageIndex}
         pageSize={pageSize}
         search={search}
-        flag={flag}
-        deck={deck}
+        flag={flags}
+        deck={decks}
         tags={tags}
         viewMode={viewMode}
         onStateChange={setUrlState}
@@ -264,21 +262,21 @@ interface UrlState {
   page?: number;
   pageSize?: number;
   search?: string;
-  flag?: string;
-  deck?: string;
+  flag?: string[] | undefined;
+  deck?: string[] | undefined;
   tags?: string[] | undefined;
 }
 
 interface NotesViewProps {
   model: string;
   fields: string[];
-  decks: string[];
+  allDecks: string[];
   allTags: string[];
   page: number;
   pageSize: number;
   search?: string;
-  flag?: string;
-  deck?: string;
+  flag?: string[];
+  deck?: string[];
   tags?: string[];
   viewMode: ViewMode;
   onStateChange: (newState: UrlState) => void;
@@ -287,7 +285,7 @@ interface NotesViewProps {
 function NotesView({
   model,
   fields,
-  decks,
+  allDecks,
   allTags,
   page,
   pageSize,
@@ -322,8 +320,16 @@ function NotesView({
   const query = useMemo(() => {
     const parts: string[] = [`note:"${model}"`];
     if (search) parts.push(search);
-    if (flag) parts.push(`flag:${flag}`);
-    if (deck) parts.push(`deck:"${deck}"`);
+    if (flag?.length) {
+      // Use OR logic for multiple flags: (flag:1 OR flag:2)
+      const flagQuery = flag.map((f) => `flag:${f}`).join(" OR ");
+      parts.push(`(${flagQuery})`);
+    }
+    if (deck?.length) {
+      // Use OR logic for multiple decks: (deck:"a" OR deck:"b")
+      const deckQuery = deck.map((d) => `deck:"${d}"`).join(" OR ");
+      parts.push(`(${deckQuery})`);
+    }
     if (tags?.length) {
       // Use OR logic for multiple tags: (tag:a OR tag:b)
       const tagQuery = tags.map((t) => `tag:"${t}"`).join(" OR ");
@@ -502,66 +508,71 @@ function NotesView({
           <CircleHelp className="size-4" />
         </a>
       </div>
-      <Select
-        value={flag ?? "none"}
-        onValueChange={(value) =>
-          onStateChange({ flag: value === "none" ? undefined : value, page: 1 })
-        }
-      >
-        <SelectTrigger
-          className="w-auto"
-          data-testid="flag-filter"
-          style={
-            flag
-              ? {
-                  backgroundColor: `${FLAG_COLORS[Number(flag)]}20`,
-                  borderColor: FLAG_COLORS[Number(flag)],
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            className={`px-2 ${flag?.length ? "bg-blue-100 border-blue-400 dark:bg-blue-950 dark:border-blue-600" : ""}`}
+            data-testid="flag-filter"
+          >
+            <Flag className="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="max-h-64 overflow-y-auto">
+          {FLAG_FILTER_OPTIONS.filter((opt) => opt.value !== "none").map(
+            (opt) => (
+              <DropdownMenuCheckboxItem
+                key={opt.value}
+                checked={flag?.includes(opt.value) ?? false}
+                onCheckedChange={(checked) =>
+                  onStateChange({
+                    flag: toggleArrayValue(flag, opt.value, checked),
+                    page: 1,
+                  })
                 }
-              : undefined
-          }
-        >
-          <Flag
-            className="size-4"
-            style={flag ? { color: FLAG_COLORS[Number(flag)] } : undefined}
-            fill={flag ? FLAG_COLORS[Number(flag)] : "none"}
-          />
-        </SelectTrigger>
-        <SelectContent>
-          {FLAG_FILTER_OPTIONS.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value}>
-              <span className="flex items-center gap-2">
-                <Flag
-                  className="size-4"
-                  style={{ color: opt.color }}
-                  fill={opt.color ?? "none"}
-                />
-                {opt.label}
-              </span>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-      <Select
-        value={deck ?? "all"}
-        onValueChange={(value) =>
-          onStateChange({ deck: value === "all" ? undefined : value, page: 1 })
-        }
-      >
-        <SelectTrigger
-          className={`w-auto ${deck ? "bg-blue-100 border-blue-400 dark:bg-blue-950 dark:border-blue-600" : ""}`}
-          data-testid="deck-filter"
-        >
-          <Library className="size-4" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All decks</SelectItem>
-          {decks.map((d) => (
-            <SelectItem key={d} value={d}>
+                onSelect={(e) => e.preventDefault()}
+              >
+                <span className="flex items-center gap-2">
+                  <Flag
+                    className="size-4"
+                    style={{ color: opt.color }}
+                    fill={opt.color ?? "none"}
+                  />
+                  {opt.label}
+                </span>
+              </DropdownMenuCheckboxItem>
+            ),
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="outline"
+            className={`px-2 ${deck?.length ? "bg-blue-100 border-blue-400 dark:bg-blue-950 dark:border-blue-600" : ""}`}
+            data-testid="deck-filter"
+          >
+            <Library className="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="max-h-64 overflow-y-auto">
+          {allDecks.map((d) => (
+            <DropdownMenuCheckboxItem
+              key={d}
+              checked={deck?.includes(d) ?? false}
+              onCheckedChange={(checked) =>
+                onStateChange({
+                  deck: toggleArrayValue(deck, d, checked),
+                  page: 1,
+                })
+              }
+              onSelect={(e) => e.preventDefault()}
+            >
               {d}
-            </SelectItem>
+            </DropdownMenuCheckboxItem>
           ))}
-        </SelectContent>
-      </Select>
+        </DropdownMenuContent>
+      </DropdownMenu>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button
@@ -582,12 +593,12 @@ function NotesView({
               <DropdownMenuCheckboxItem
                 key={t}
                 checked={tags?.includes(t) ?? false}
-                onCheckedChange={(checked) => {
-                  const newTags = checked
-                    ? [...(tags ?? []), t]
-                    : (tags ?? []).filter((tag) => tag !== t);
-                  onStateChange({ tags: newTags, page: 1 });
-                }}
+                onCheckedChange={(checked) =>
+                  onStateChange({
+                    tags: toggleArrayValue(tags, t, checked),
+                    page: 1,
+                  })
+                }
                 onSelect={(e) => e.preventDefault()}
               >
                 {t}
@@ -767,4 +778,14 @@ function NotesView({
       )}
     </div>
   );
+}
+
+function toggleArrayValue<T>(
+  arr: T[] | undefined,
+  value: T,
+  checked: boolean,
+): T[] {
+  return checked
+    ? [...(arr ?? []), value]
+    : (arr ?? []).filter((v) => v !== value);
 }
