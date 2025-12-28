@@ -52,13 +52,54 @@ import {
   NOTE_COLUMNS,
   QUEUE_LABELS,
 } from "@/lib/constants";
-import { useLocalStorage } from "@/lib/use-local-storage";
+
+// Helper to compute default column visibility
+export function getDefaultVisibility(
+  fields: string[],
+  viewMode: ViewMode,
+): VisibilityState {
+  const v: VisibilityState = {};
+  // Fields: show first 3 by default
+  for (let i = 0; i < fields.length; i++) {
+    v[fields[i]] = i < 3;
+  }
+  // Note columns
+  v["deck"] = true;
+  v["tags"] = false;
+  // Card columns (only in cards view)
+  if (viewMode === "cards") {
+    v["flag"] = true;
+    v["status"] = true;
+    v["interval"] = false;
+    v["ease"] = false;
+    v["lapses"] = false;
+    v["reviews"] = false;
+  }
+  return v;
+}
+
+// Helper to get ordered list of visible columns (preserving definition order)
+export function getVisibleColumns(
+  columnVisibility: VisibilityState,
+  fields: string[],
+  viewMode: ViewMode,
+): { visibleColumns: string[]; visibleFields: string[] } {
+  const allColumns = [
+    ...fields,
+    ...NOTE_COLUMNS,
+    ...(viewMode === "cards" ? CARD_COLUMNS : []),
+  ];
+  const visibleColumns = allColumns.filter(
+    (col) => columnVisibility[col] !== false,
+  );
+  const visibleFields = fields.filter((f) => columnVisibility[f] !== false);
+  return { visibleColumns, visibleFields };
+}
 
 interface BrowseTableProps {
   data: Item[];
   total: number; // Server-side total count for pagination
   viewMode: ViewMode;
-  model: string;
   fields: string[];
   page: number;
   pageSize: number;
@@ -71,13 +112,14 @@ interface BrowseTableProps {
     isAllSelected: boolean;
   };
   onBulkEditRawSelectionChange: (selection: RowSelectionState) => void;
+  columnVisibility: VisibilityState;
+  onColumnVisibilityChange: OnChangeFn<VisibilityState>;
 }
 
 export function BrowseTable({
   data,
   total,
   viewMode,
-  model,
   fields,
   page,
   pageSize,
@@ -87,6 +129,8 @@ export function BrowseTable({
   toolbarLeft,
   bulkEdit,
   onBulkEditRawSelectionChange,
+  columnVisibility,
+  onColumnVisibilityChange,
 }: BrowseTableProps) {
   // Build columns
   const columns = useMemo<ColumnDef<Item>[]>(() => {
@@ -268,27 +312,6 @@ export function BrowseTable({
     return cols;
   }, [fields, viewMode, bulkEdit]);
 
-  // Column visibility defaults
-  const defaultVisibility = useMemo((): VisibilityState => {
-    const v = Object.fromEntries(columns.map((c) => [c.id!, false]));
-    // pick default visible fields
-    fields.forEach((field, i) => (v[field] = i < 3));
-    v["deck"] = true;
-    v["flag"] = true;
-    v["status"] = true;
-    return v;
-  }, [fields]);
-
-  // Column visibility - merge stored state with defaults for new columns
-  const [storedVisibility, setColumnVisibility] = useLocalStorage(
-    `anki-browse-columns:${model}`,
-    () => defaultVisibility,
-  );
-  const columnVisibility = useMemo(
-    () => ({ ...defaultVisibility, ...storedVisibility }),
-    [defaultVisibility, storedVisibility],
-  );
-
   // Table setup
   const pagination: PaginationState = { pageIndex: page, pageSize };
 
@@ -316,7 +339,7 @@ export function BrowseTable({
       rowSelection: bulkEdit?.rowSelection,
     },
     onPaginationChange,
-    onColumnVisibilityChange: setColumnVisibility,
+    onColumnVisibilityChange,
     enableRowSelection: !!bulkEdit,
     onRowSelectionChange: (updater) => {
       if (!bulkEdit) return;

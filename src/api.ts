@@ -211,65 +211,86 @@ const implementations = {
   },
 };
 
-// Convert cards to CSV format with proper escaping
-export function cardsToCSV(cards: Card[]): string {
+// Column ID to header/accessor mapping for export
+type ColumnMapping = {
+  header: string;
+  accessor: (card: Card) => string | number;
+};
+
+const COLUMN_MAPPINGS: Record<string, ColumnMapping> = {
+  deck: { header: "deckName", accessor: (c) => c.deckName },
+  tags: { header: "tags", accessor: (c) => c.tags.join(", ") },
+  flag: { header: "flag", accessor: (c) => c.flag },
+  status: { header: "queue", accessor: (c) => c.queue },
+  interval: { header: "interval", accessor: (c) => c.interval },
+  ease: { header: "ease", accessor: (c) => c.ease },
+  lapses: { header: "lapses", accessor: (c) => c.lapses },
+  reviews: { header: "reviews", accessor: (c) => c.reviews },
+};
+
+// CSV escape helper
+function escapeCSV(value: string | number | undefined): string {
+  if (value === undefined || value === null) return "";
+  const str = String(value);
+  // Escape quotes and wrap in quotes if contains comma, quote, or newline
+  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+// Convert cards to CSV format with only visible columns
+export function cardsToCSV(
+  cards: Card[],
+  visibleColumns: string[],
+  visibleFields: string[],
+): string {
   if (cards.length === 0) return "";
 
-  // Collect all unique field names across all cards
-  const fieldNames = new Set<string>();
-  for (const card of cards) {
-    for (const name of Object.keys(card.fields)) {
-      fieldNames.add(name);
+  // Build headers from visible columns
+  const headers: string[] = [];
+  const accessors: Array<(card: Card) => string | number> = [];
+
+  for (const colId of visibleColumns) {
+    if (visibleFields.includes(colId)) {
+      // Field column
+      headers.push(colId);
+      accessors.push((card) => card.fields[colId] ?? "");
+    } else if (COLUMN_MAPPINGS[colId]) {
+      // Known metadata column
+      const mapping = COLUMN_MAPPINGS[colId];
+      headers.push(mapping.header);
+      accessors.push(mapping.accessor);
     }
   }
-  const sortedFieldNames = [...fieldNames].sort();
-
-  // CSV escape helper
-  const escape = (value: string | number | undefined): string => {
-    if (value === undefined || value === null) return "";
-    const str = String(value);
-    // Escape quotes and wrap in quotes if contains comma, quote, or newline
-    if (str.includes(",") || str.includes('"') || str.includes("\n")) {
-      return `"${str.replace(/"/g, '""')}"`;
-    }
-    return str;
-  };
-
-  // Build header row
-  const headers = [
-    "cardId",
-    "noteId",
-    "deckName",
-    "modelName",
-    "tags",
-    ...sortedFieldNames,
-    "flag",
-    "queue",
-    "due",
-    "interval",
-    "ease",
-    "lapses",
-    "reviews",
-  ];
 
   // Build data rows
-  const rows = cards.map((card) => [
-    escape(card.cardId),
-    escape(card.noteId),
-    escape(card.deckName),
-    escape(card.modelName),
-    escape(card.tags.join(", ")),
-    ...sortedFieldNames.map((name) => escape(card.fields[name] ?? "")),
-    escape(card.flag),
-    escape(card.queue),
-    escape(card.due),
-    escape(card.interval),
-    escape(card.ease),
-    escape(card.lapses),
-    escape(card.reviews),
-  ]);
+  const rows = cards.map((card) =>
+    accessors.map((acc) => escapeCSV(acc(card))),
+  );
 
   return [headers.join(","), ...rows.map((row) => row.join(","))].join("\n");
+}
+
+// Convert cards to JSON with only visible columns
+export function cardsToJSON(
+  cards: Card[],
+  visibleColumns: string[],
+  visibleFields: string[],
+): string {
+  const result = cards.map((card) => {
+    const obj: Record<string, unknown> = {};
+    for (const colId of visibleColumns) {
+      if (visibleFields.includes(colId)) {
+        obj[colId] = card.fields[colId] ?? "";
+      } else if (COLUMN_MAPPINGS[colId]) {
+        const mapping = COLUMN_MAPPINGS[colId];
+        obj[mapping.header] = mapping.accessor(card);
+      }
+    }
+    return obj;
+  });
+  return JSON.stringify(result, null, 2);
 }
 
 export const api = deriveQueryHelpers(implementations);

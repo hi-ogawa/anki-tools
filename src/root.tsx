@@ -5,7 +5,7 @@ import {
   useMutation,
   keepPreviousData,
 } from "@tanstack/react-query";
-import type { RowSelectionState } from "@tanstack/react-table";
+import type { RowSelectionState, VisibilityState } from "@tanstack/react-table";
 import {
   CircleHelp,
   Clipboard,
@@ -25,12 +25,17 @@ import { toast } from "sonner";
 import {
   api,
   cardsToCSV,
+  cardsToJSON,
   type Card,
   type Item,
   type Schema,
   type ViewMode,
 } from "./api";
-import { BrowseTable } from "./components/browse-table";
+import {
+  BrowseTable,
+  getDefaultVisibility,
+  getVisibleColumns,
+} from "./components/browse-table";
 import { BulkActions } from "./components/bulk-actions";
 import { BulkImportDialog } from "./components/bulk-import-dialog";
 import { CreateNoteDialog } from "./components/create-note-dialog";
@@ -316,6 +321,21 @@ function NotesView({
     isAllSelected: boolean;
   }>();
 
+  // Column visibility state (lifted from BrowseTable for export access)
+  const defaultVisibility = useMemo(
+    () => getDefaultVisibility(fields, viewMode),
+    [fields, viewMode],
+  );
+  const [storedVisibility, setStoredVisibility] =
+    useLocalStorage<VisibilityState>(
+      `anki-browse-columns:${model}`,
+      () => defaultVisibility,
+    );
+  const columnVisibility = useMemo(
+    () => ({ ...defaultVisibility, ...storedVisibility }),
+    [defaultVisibility, storedVisibility],
+  );
+
   // Resizable panel
   const [panelWidth, setPanelWidth] = useLocalStorage(
     "anki-browse-panel-width",
@@ -435,8 +455,18 @@ function NotesView({
     }) => {
       const result = await api.fetchItems({ query, viewMode: "cards" });
       const cards = result.items as Card[];
+
+      // Get visible columns for export
+      const { visibleColumns, visibleFields } = getVisibleColumns(
+        columnVisibility,
+        fields,
+        viewMode,
+      );
+
       const data =
-        format === "json" ? JSON.stringify(cards, null, 2) : cardsToCSV(cards);
+        format === "json"
+          ? cardsToJSON(cards, visibleColumns, visibleFields)
+          : cardsToCSV(cards, visibleColumns, visibleFields);
 
       if (action === "copy") {
         await navigator.clipboard.writeText(data);
@@ -731,7 +761,6 @@ function NotesView({
           data={items}
           total={total}
           viewMode={viewMode}
-          model={model}
           fields={fields}
           page={page}
           pageSize={pageSize}
@@ -743,6 +772,8 @@ function NotesView({
           onBulkEditRawSelectionChange={(selection) =>
             bulkEdit && setBulkEdit({ ...bulkEdit, rowSelection: selection })
           }
+          columnVisibility={columnVisibility}
+          onColumnVisibilityChange={setStoredVisibility}
         />
       </div>
       {selected && (
