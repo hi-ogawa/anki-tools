@@ -191,17 +191,20 @@ export function BulkImportDialog({
             />
           </div>
 
-          {model && tsvHeaders.length > 0 && (
+          {model && parsedNotes.length > 0 && matchedFields.length === 0 && (
+            <div className="text-sm text-destructive">
+              No matching fields. TSV headers ({tsvOnlyFields.join(", ")}) don't
+              match model fields ({modelFields.join(", ")}).
+            </div>
+          )}
+
+          {isValid && (
             <div className="text-sm space-y-1">
               <div className="text-muted-foreground">
                 <span className="font-medium">Importing:</span>{" "}
-                {matchedFields.length > 0 ? (
-                  <span className="text-green-600">
-                    {matchedFields.join(", ")}
-                  </span>
-                ) : (
-                  <span className="text-yellow-600">None</span>
-                )}
+                <span className="text-green-600">
+                  {matchedFields.join(", ")}
+                </span>
               </div>
               {tsvOnlyFields.length > 0 && (
                 <div className="text-muted-foreground">
