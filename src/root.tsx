@@ -51,6 +51,7 @@ import {
 } from "./lib/constants";
 import { useLocalStorage } from "./lib/use-local-storage";
 import { useResize } from "./lib/use-resize";
+import { normalizeSearchQuery } from "./lib/utils";
 
 // TODO: separate singleton state and component
 const queryClient = new QueryClient({
@@ -321,7 +322,7 @@ function NotesView({
   // Build full Anki query with model and filters
   const query = useMemo(() => {
     const parts: string[] = [`note:"${model}"`];
-    if (search) parts.push(search);
+    if (search) parts.push(normalizeSearchQuery(search));
     if (flag) parts.push(`flag:${flag}`);
     if (deck) parts.push(`deck:"${deck}"`);
     if (tags?.length) {
