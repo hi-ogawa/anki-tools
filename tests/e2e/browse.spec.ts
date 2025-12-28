@@ -539,8 +539,8 @@ Bulk Question 3\tBulk Answer 3`;
     page.getByRole("cell", { name: "Bulk Question 1" }),
   ).toBeVisible();
 
-  // Verify matched fields indicator
-  await expect(page.getByText("Matched:")).toBeVisible();
+  // Verify field status indicator
+  await expect(page.getByText("Importing:")).toBeVisible();
 
   // Handle the success alert
   page.on("dialog", (dialog) => dialog.accept());

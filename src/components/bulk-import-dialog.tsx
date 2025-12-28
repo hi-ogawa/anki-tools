@@ -193,7 +193,7 @@ export function BulkImportDialog({
           {model && tsvHeaders.length > 0 && (
             <div className="text-sm space-y-1">
               <div className="text-muted-foreground">
-                <span className="font-medium">Matched:</span>{" "}
+                <span className="font-medium">Importing:</span>{" "}
                 {matchedFields.length > 0 ? (
                   <span className="text-green-600">
                     {matchedFields.join(", ")}
@@ -204,7 +204,7 @@ export function BulkImportDialog({
               </div>
               {tsvOnlyFields.length > 0 && (
                 <div className="text-muted-foreground">
-                  <span className="font-medium">TSV only (ignored):</span>{" "}
+                  <span className="font-medium">Skipping:</span>{" "}
                   <span className="text-yellow-600">
                     {tsvOnlyFields.join(", ")}
                   </span>
@@ -212,7 +212,7 @@ export function BulkImportDialog({
               )}
               {modelOnlyFields.length > 0 && (
                 <div className="text-muted-foreground">
-                  <span className="font-medium">Model only (empty):</span>{" "}
+                  <span className="font-medium">Empty:</span>{" "}
                   <span className="text-yellow-600">
                     {modelOnlyFields.join(", ")}
                   </span>
