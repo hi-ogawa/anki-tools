@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Plus } from "lucide-react";
 import { useRef, useState } from "react";
 import { api, type Schema } from "../api";
 import { Button } from "./ui/button";
@@ -10,7 +9,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "./ui/dialog";
 import { Input } from "./ui/input";
 import {
@@ -28,14 +26,17 @@ interface CreateNoteDialogProps {
   schema: Schema;
   defaultModel?: string;
   defaultDeck?: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 export function CreateNoteDialog({
   schema,
   defaultModel,
   defaultDeck,
+  open,
+  onOpenChange,
 }: CreateNoteDialogProps) {
-  const [open, setOpen] = useState(false);
   const [model, setModel] = useState(defaultModel ?? "");
   const [deck, setDeck] = useState(defaultDeck ?? schema.decks[0] ?? "");
   const formRef = useRef<HTMLFormElement>(null);
@@ -49,7 +50,7 @@ export function CreateNoteDialog({
     ...api.addNote.mutationOptions(),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["fetchItems"] });
-      setOpen(false);
+      onOpenChange(false);
       formRef.current?.reset();
     },
   });
@@ -88,13 +89,7 @@ export function CreateNoteDialog({
   const isValid = model && deck;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" data-testid="create-note-button">
-          <Plus className="size-4" />
-          Create Note
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Create Note</DialogTitle>
@@ -192,7 +187,7 @@ export function CreateNoteDialog({
             <Button
               type="button"
               variant="outline"
-              onClick={() => setOpen(false)}
+              onClick={() => onOpenChange(false)}
             >
               Cancel
             </Button>

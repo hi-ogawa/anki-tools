@@ -132,12 +132,20 @@ def main():
         col.models.add(m)
         col.decks.id("test-create")  # Just create the deck
 
+    def setup_bulk_import_fixture():
+        """test-bulk-import: Empty model/deck for bulk import test."""
+        m = col.models.copy(model, add=False)
+        m["name"] = "test-bulk-import"
+        col.models.add(m)
+        col.decks.id("test-bulk-import")  # Just create the deck
+
     setup_basic_fixture()
     setup_flag_filter_fixture()
     setup_deck_filter_fixture()
     setup_card_flag_fixture()
     setup_bulk_flag_fixture()
     setup_create_fixture()
+    setup_bulk_import_fixture()
 
     col.close()
     print(f"Created: {DATA_PATH}")
