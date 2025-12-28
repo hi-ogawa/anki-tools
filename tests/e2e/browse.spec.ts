@@ -542,9 +542,6 @@ Bulk Question 3\tBulk Answer 3`;
   // Verify field status indicator
   await expect(page.getByText("Importing:")).toBeVisible();
 
-  // Handle the success alert
-  page.on("dialog", (dialog) => dialog.accept());
-
   // Submit
   await page.getByTestId("bulk-import-submit").click();
 
