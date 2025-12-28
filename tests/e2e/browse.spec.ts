@@ -467,7 +467,8 @@ test("create note", async ({ page }) => {
   // Initial count - no notes
   await expect(page.getByText("Showing 0-0 of 0")).toBeVisible();
 
-  // Open create note dialog
+  // Open create note dialog via dropdown
+  await page.getByTestId("add-note-dropdown").click();
   await page.getByTestId("create-note-button").click();
   await expect(page.getByRole("dialog")).toBeVisible();
 
@@ -510,7 +511,8 @@ test("bulk import notes from TSV", async ({ page }) => {
   // Initial count - no notes
   await expect(page.getByText("Showing 0-0 of 0")).toBeVisible();
 
-  // Open bulk import dialog
+  // Open bulk import dialog via dropdown
+  await page.getByTestId("add-note-dropdown").click();
   await page.getByTestId("bulk-import-button").click();
   await expect(page.getByRole("dialog")).toBeVisible();
 
@@ -538,7 +540,7 @@ Bulk Question 3\tBulk Answer 3`;
   ).toBeVisible();
 
   // Verify matched fields indicator
-  await expect(page.getByText("Matched fields:")).toBeVisible();
+  await expect(page.getByText("Matched:")).toBeVisible();
 
   // Handle the success alert
   page.on("dialog", (dialog) => dialog.accept());

@@ -173,3 +173,10 @@ function parseTSV(tsv: string): Record<string, string>[] {
             </>
           )}
 ```
+
+- show both matched fields and non-matched fields
+
+```
+Matched fields: korean, english, example_ko, example_en, etymology, notes, number
+UnMatched fields: ...
+```

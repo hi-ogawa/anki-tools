@@ -14,13 +14,22 @@ import {
   Library,
   MoreVertical,
   Pencil,
+  Plus,
   RefreshCw,
   Tag,
+  Upload,
 } from "lucide-react";
 import { useMemo, useState, useEffect, useRef } from "react";
 import { Link, useSearchParams } from "react-router";
 import { toast } from "sonner";
-import { api, cardsToCSV, type Card, type Item, type ViewMode } from "./api";
+import {
+  api,
+  cardsToCSV,
+  type Card,
+  type Item,
+  type Schema,
+  type ViewMode,
+} from "./api";
 import { BrowseTable } from "./components/browse-table";
 import { BulkActions } from "./components/bulk-actions";
 import { BulkImportDialog } from "./components/bulk-import-dialog";
@@ -248,16 +257,10 @@ function App() {
             </SelectContent>
           </Select>
           {schema && (
-            <>
-              <CreateNoteDialog
-                schema={schema}
-                defaultModel={validModel ? urlModel : undefined}
-              />
-              <BulkImportDialog
-                schema={schema}
-                defaultModel={validModel ? urlModel : undefined}
-              />
-            </>
+            <AddNoteDropdown
+              schema={schema}
+              defaultModel={validModel ? urlModel : undefined}
+            />
           )}
         </div>
       </header>
@@ -796,4 +799,57 @@ function toggleArrayValue<T>(
   return checked
     ? [...(arr ?? []), value]
     : (arr ?? []).filter((v) => v !== value);
+}
+
+function AddNoteDropdown({
+  schema,
+  defaultModel,
+}: {
+  schema: Schema;
+  defaultModel?: string;
+}) {
+  const [createNoteOpen, setCreateNoteOpen] = useState(false);
+  const [bulkImportOpen, setBulkImportOpen] = useState(false);
+
+  return (
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" data-testid="add-note-dropdown">
+            <Plus className="size-4" />
+            Add
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuItem
+            onClick={() => setCreateNoteOpen(true)}
+            data-testid="create-note-button"
+          >
+            <Plus className="size-4" />
+            Create Note
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => setBulkImportOpen(true)}
+            data-testid="bulk-import-button"
+          >
+            <Upload className="size-4" />
+            Bulk Import
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <CreateNoteDialog
+        schema={schema}
+        defaultModel={defaultModel}
+        open={createNoteOpen}
+        onOpenChange={setCreateNoteOpen}
+      />
+      <BulkImportDialog
+        schema={schema}
+        defaultModel={defaultModel}
+        open={bulkImportOpen}
+        onOpenChange={setBulkImportOpen}
+      />
+    </>
+  );
 }

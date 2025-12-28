@@ -1,5 +1,4 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Upload } from "lucide-react";
 import { useState } from "react";
 import { api, type Schema } from "../api";
 import { Button } from "./ui/button";
@@ -10,7 +9,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "./ui/dialog";
 import { Input } from "./ui/input";
 import {
@@ -28,6 +26,8 @@ interface BulkImportDialogProps {
   schema: Schema;
   defaultModel?: string;
   defaultDeck?: string;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }
 
 type ParsedNote = {
@@ -54,8 +54,9 @@ export function BulkImportDialog({
   schema,
   defaultModel,
   defaultDeck,
+  open,
+  onOpenChange,
 }: BulkImportDialogProps) {
-  const [open, setOpen] = useState(false);
   const [model, setModel] = useState(defaultModel ?? "");
   const [deck, setDeck] = useState(defaultDeck ?? schema.decks[0] ?? "");
   const [tsvInput, setTsvInput] = useState("");
@@ -76,15 +77,19 @@ export function BulkImportDialog({
       ?.split("\t")
       .map((h) => h.trim()) ?? [];
 
-  // Check which TSV headers match model fields
+  // Categorize fields:
+  // 1. Matched: in both TSV and model (will be imported)
+  // 2. TSV only: in TSV but not model (will be ignored)
+  // 3. Model only: in model but not TSV (will be empty)
   const matchedFields = tsvHeaders.filter((h) => modelFields.includes(h));
-  const unmatchedFields = tsvHeaders.filter((h) => !modelFields.includes(h));
+  const tsvOnlyFields = tsvHeaders.filter((h) => !modelFields.includes(h));
+  const modelOnlyFields = modelFields.filter((f) => !tsvHeaders.includes(f));
 
   const bulkAddMutation = useMutation({
     ...api.bulkAddNotes.mutationOptions(),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["fetchItems"] });
-      setOpen(false);
+      onOpenChange(false);
       setTsvInput("");
       setTagsInput("");
       alert(`Successfully imported ${data.count} notes`);
@@ -112,13 +117,7 @@ export function BulkImportDialog({
   const isValid = model && deck && parsedNotes.length > 0;
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" data-testid="bulk-import-button">
-          <Upload className="size-4" />
-          Bulk Import
-        </Button>
-      </DialogTrigger>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Bulk Import Notes</DialogTitle>
@@ -194,7 +193,7 @@ export function BulkImportDialog({
           {model && tsvHeaders.length > 0 && (
             <div className="text-sm space-y-1">
               <div className="text-muted-foreground">
-                <span className="font-medium">Matched fields:</span>{" "}
+                <span className="font-medium">Matched:</span>{" "}
                 {matchedFields.length > 0 ? (
                   <span className="text-green-600">
                     {matchedFields.join(", ")}
@@ -203,11 +202,19 @@ export function BulkImportDialog({
                   <span className="text-yellow-600">None</span>
                 )}
               </div>
-              {unmatchedFields.length > 0 && (
+              {tsvOnlyFields.length > 0 && (
                 <div className="text-muted-foreground">
-                  <span className="font-medium">Ignored columns:</span>{" "}
+                  <span className="font-medium">TSV only (ignored):</span>{" "}
                   <span className="text-yellow-600">
-                    {unmatchedFields.join(", ")}
+                    {tsvOnlyFields.join(", ")}
+                  </span>
+                </div>
+              )}
+              {modelOnlyFields.length > 0 && (
+                <div className="text-muted-foreground">
+                  <span className="font-medium">Model only (empty):</span>{" "}
+                  <span className="text-yellow-600">
+                    {modelOnlyFields.join(", ")}
                   </span>
                 </div>
               )}
@@ -279,7 +286,7 @@ export function BulkImportDialog({
           <Button
             type="button"
             variant="outline"
-            onClick={() => setOpen(false)}
+            onClick={() => onOpenChange(false)}
           >
             Cancel
           </Button>
