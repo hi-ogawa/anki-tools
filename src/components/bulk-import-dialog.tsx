@@ -117,7 +117,7 @@ export function BulkImportDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle>Bulk Import Notes</DialogTitle>
           <DialogDescription>
@@ -125,7 +125,7 @@ export function BulkImportDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-4 flex-1 flex flex-col min-h-0">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <label className="text-sm font-medium">Note Type</label>
@@ -224,7 +224,7 @@ export function BulkImportDialog({
           )}
 
           {parsedNotes.length > 0 && (
-            <div className="space-y-2">
+            <div className="space-y-2 flex-1 flex flex-col min-h-0">
               <div className="flex items-center justify-between">
                 <label className="text-sm font-medium">
                   Preview ({parsedNotes.length} notes)
@@ -238,7 +238,7 @@ export function BulkImportDialog({
                 </button>
               </div>
               <div
-                className={`border rounded-md overflow-auto ${showFullPreview ? "max-h-96" : "max-h-48"}`}
+                className={`border rounded-md overflow-auto ${showFullPreview ? "flex-1 min-h-0" : "max-h-48"}`}
               >
                 <table className="w-full text-sm">
                   <thead className="bg-muted sticky top-0">
