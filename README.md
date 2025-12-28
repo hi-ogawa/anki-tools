@@ -32,11 +32,9 @@ Alternatively, you can develop and test with a standalone Anki API server (no An
 Requires [uv](https://docs.astral.sh/uv/) for Python dependency management.
 
 ```bash
-uv sync         # Install Python dependencies
-pnpm fixture    # Create test data
-
+uv sync           # Install Python dependencies
 pnpm dev-fixture  # Develop UI with standalone API server
-pnpm test-e2e     # Run E2E tests
+pnpm test-e2e     # Run E2E tests (auto-resets data)
 ```
 
 ## Build

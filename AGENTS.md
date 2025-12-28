@@ -2,10 +2,10 @@
 
 ## Quick Reference
 
-| Command                         | When          |
-| ------------------------------- | ------------- |
-| `pnpm tsc && pnpm lint`         | After changes |
-| `pnpm fixture && pnpm test-e2e` | Run e2e tests |
+| Command                 | When          |
+| ----------------------- | ------------- |
+| `pnpm tsc && pnpm lint` | After changes |
+| `pnpm test-e2e`         | Run e2e tests |
 
 ## Anki Python API
 
@@ -31,11 +31,11 @@ find .venv -name "*.py" | xargs grep -l "class DBProxy"
 
 ## E2E Testing
 
-Run `pnpm fixture` before `pnpm test-e2e` to reset test data.
+`pnpm test-e2e` auto-resets test data on each run.
 
 - Use `getByRole`, `getByPlaceholder`, `getByTestId` - avoid fragile selectors
 - Add `data-testid` when needed
-- Use shorter timeouts (`--timeout 3000`) during development to iterate faster
+- Adjust CLI options for faster iterations (e.g. `--timeout 5000 --max-failures 1`)
 
 ## Visual UI Development
 
