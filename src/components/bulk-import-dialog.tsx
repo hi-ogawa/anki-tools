@@ -54,7 +54,7 @@ export function BulkImportDialog({
   onOpenChange,
 }: BulkImportDialogProps) {
   const [model, setModel] = useState("");
-  const [deck, setDeck] = useState(schema.decks[0] ?? "");
+  const [deck, setDeck] = useState("");
   const [tsvInput, setTsvInput] = useState("");
   const [tagsInput, setTagsInput] = useState("");
   const [showFullPreview, setShowFullPreview] = useState(false);
