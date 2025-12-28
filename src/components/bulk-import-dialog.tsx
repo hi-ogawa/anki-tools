@@ -61,6 +61,7 @@ export function BulkImportDialog({
   const [deck, setDeck] = useState(defaultDeck ?? schema.decks[0] ?? "");
   const [tsvInput, setTsvInput] = useState("");
   const [tagsInput, setTagsInput] = useState("");
+  const [showFullPreview, setShowFullPreview] = useState(false);
 
   const queryClient = useQueryClient();
 
@@ -227,15 +228,29 @@ export function BulkImportDialog({
 
           {parsedNotes.length > 0 && (
             <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Preview ({parsedNotes.length} notes)
-              </label>
-              <div className="border rounded-md overflow-auto max-h-48">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">
+                  Preview ({parsedNotes.length} notes)
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setShowFullPreview(!showFullPreview)}
+                  className="text-sm text-muted-foreground hover:text-foreground"
+                >
+                  {showFullPreview ? "Compact" : "Full"}
+                </button>
+              </div>
+              <div
+                className={`border rounded-md overflow-auto ${showFullPreview ? "max-h-96" : "max-h-48"}`}
+              >
                 <table className="w-full text-sm">
                   <thead className="bg-muted sticky top-0">
                     <tr>
                       <th className="px-2 py-1 text-left font-medium">#</th>
-                      {matchedFields.slice(0, 4).map((field) => (
+                      {(showFullPreview
+                        ? matchedFields
+                        : matchedFields.slice(0, 4)
+                      ).map((field) => (
                         <th
                           key={field}
                           className="px-2 py-1 text-left font-medium"
@@ -243,33 +258,39 @@ export function BulkImportDialog({
                           {field}
                         </th>
                       ))}
-                      {matchedFields.length > 4 && (
+                      {!showFullPreview && matchedFields.length > 4 && (
                         <th className="px-2 py-1 text-left font-medium">...</th>
                       )}
                     </tr>
                   </thead>
                   <tbody>
-                    {parsedNotes.slice(0, 5).map((note, i) => (
+                    {(showFullPreview
+                      ? parsedNotes
+                      : parsedNotes.slice(0, 5)
+                    ).map((note, i) => (
                       <tr key={i} className="border-t">
                         <td className="px-2 py-1 text-muted-foreground">
                           {i + 1}
                         </td>
-                        {matchedFields.slice(0, 4).map((field) => (
+                        {(showFullPreview
+                          ? matchedFields
+                          : matchedFields.slice(0, 4)
+                        ).map((field) => (
                           <td
                             key={field}
-                            className="px-2 py-1 max-w-[200px] truncate"
+                            className={`px-2 py-1 ${showFullPreview ? "" : "max-w-[200px] truncate"}`}
                           >
                             {note.fields[field] || ""}
                           </td>
                         ))}
-                        {matchedFields.length > 4 && (
+                        {!showFullPreview && matchedFields.length > 4 && (
                           <td className="px-2 py-1 text-muted-foreground">
                             ...
                           </td>
                         )}
                       </tr>
                     ))}
-                    {parsedNotes.length > 5 && (
+                    {!showFullPreview && parsedNotes.length > 5 && (
                       <tr className="border-t">
                         <td
                           colSpan={Math.min(matchedFields.length, 4) + 2}
