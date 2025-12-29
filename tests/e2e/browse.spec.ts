@@ -555,6 +555,63 @@ Bulk Question 3\tBulk Answer 3`;
   await expect(page.getByRole("row").nth(1)).toContainText("Bulk Answer");
 });
 
+test("audio generation button - shows when source has content and audio empty", async ({
+  page,
+}) => {
+  // Use test-audio model with source and source_audio fields
+  await page.goto("/?model=test-audio&view=cards");
+
+  // Click first row (Note 1: source="Hello World", source_audio="")
+  await page.getByRole("row").nth(1).click();
+
+  // Should show the source_audio field with generate button
+  const audioField = page.getByTestId("field-source_audio");
+  await expect(audioField).toBeVisible();
+
+  // Generate button should be visible (source has content, audio is empty)
+  const generateButton = page.getByTestId("generate-audio-source_audio");
+  await expect(generateButton).toBeVisible();
+  await expect(generateButton).toHaveAttribute(
+    "title",
+    'Generate audio from "source" field',
+  );
+});
+
+test("audio generation button - hidden when audio field has value", async ({
+  page,
+}) => {
+  await page.goto("/?model=test-audio&view=cards");
+
+  // Click second row (Note 2: source="Test Content", source_audio="[sound:existing.mp3]")
+  await page.getByRole("row").nth(2).click();
+
+  // Should show the source_audio field
+  const audioField = page.getByTestId("field-source_audio");
+  await expect(audioField).toBeVisible();
+  await expect(audioField).toContainText("[sound:existing.mp3]");
+
+  // Generate button should NOT be visible (audio field already has value)
+  const generateButton = page.getByTestId("generate-audio-source_audio");
+  await expect(generateButton).not.toBeVisible();
+});
+
+test("audio generation button - hidden when source field is empty", async ({
+  page,
+}) => {
+  await page.goto("/?model=test-audio&view=cards");
+
+  // Click third row (Note 3: source="", source_audio="")
+  await page.getByRole("row").nth(3).click();
+
+  // Should show the source_audio field
+  const audioField = page.getByTestId("field-source_audio");
+  await expect(audioField).toBeVisible();
+
+  // Generate button should NOT be visible (source field is empty)
+  const generateButton = page.getByTestId("generate-audio-source_audio");
+  await expect(generateButton).not.toBeVisible();
+});
+
 test("multiple flag filter - filter by multiple flags", async ({ page }) => {
   await page.goto("/?model=test-flag-filter&view=cards");
 

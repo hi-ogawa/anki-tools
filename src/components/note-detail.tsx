@@ -41,6 +41,7 @@ export function NoteDetail({
   const [audioSettings] = useAudioSettings();
   const [generatingField, setGeneratingField] = useState<string | null>(null);
 
+  // TODO: move handleGenerateAudio logic itself as mutationFn
   const generateAudioMutation = useMutation({
     ...api.generateAudio.mutationOptions(),
     onError: (error) => {
@@ -76,6 +77,7 @@ export function NoteDetail({
     }
   };
 
+  // TODO: move outside as pure util
   // Check if a field is an audio field that can be generated
   const getAudioFieldInfo = (field: string) => {
     if (!field.endsWith("_audio")) return null;

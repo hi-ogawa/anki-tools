@@ -139,6 +139,37 @@ def main():
         col.models.add(m)
         col.decks.id("test-bulk-import")  # Just create the deck
 
+    def setup_audio_generation_fixture():
+        """test-audio: Model with source and source_audio fields for audio generation test."""
+        m = col.models.new("test-audio")
+        col.models.add_field(m, col.models.new_field("source"))
+        col.models.add_field(m, col.models.new_field("source_audio"))
+        t = col.models.new_template("Card 1")
+        t["qfmt"] = "{{source}}"
+        t["afmt"] = "{{source_audio}}"
+        col.models.add_template(m, t)
+        col.models.add(m)
+
+        deck_id = col.decks.id("test-audio")
+
+        # Note 1: source has content, source_audio empty (should show generate button)
+        note1 = col.new_note(m)
+        note1["source"] = "Hello World"
+        note1["source_audio"] = ""
+        col.add_note(note1, deck_id)
+
+        # Note 2: source has content, source_audio has value (should NOT show button)
+        note2 = col.new_note(m)
+        note2["source"] = "Test Content"
+        note2["source_audio"] = "[sound:existing.mp3]"
+        col.add_note(note2, deck_id)
+
+        # Note 3: source empty, source_audio empty (should NOT show button)
+        note3 = col.new_note(m)
+        note3["source"] = ""
+        note3["source_audio"] = ""
+        col.add_note(note3, deck_id)
+
     setup_basic_fixture()
     setup_flag_filter_fixture()
     setup_deck_filter_fixture()
@@ -146,6 +177,7 @@ def main():
     setup_bulk_flag_fixture()
     setup_create_fixture()
     setup_bulk_import_fixture()
+    setup_audio_generation_fixture()
 
     col.close()
     print(f"Created: {DATA_PATH}")
