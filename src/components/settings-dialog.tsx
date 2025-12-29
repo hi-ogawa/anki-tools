@@ -107,7 +107,15 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Common flags: voice, rate (+0%, -10%), pitch (+0Hz, -50Hz)
+            Common flags: voice, rate (+0%, -10%), pitch (+0Hz, -50Hz).{" "}
+            <a
+              href="https://github.com/rany2/edge-tts"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline hover:text-foreground"
+            >
+              edge-tts docs
+            </a>
           </p>
         </div>
 
