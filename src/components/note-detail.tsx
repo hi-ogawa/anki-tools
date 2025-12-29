@@ -40,43 +40,34 @@ export function NoteDetail({
 
   // TODO: new global settings menu in header
   const [audioSettings] = useAudioSettings();
-  const [generatingField, setGeneratingField] = useState<string | null>(null);
 
-  // TODO: move handleGenerateAudio logic itself as mutationFn
   const generateAudioMutation = useMutation({
-    ...api.generateAudio.mutationOptions(),
-    onError: (error) => {
-      toast.error(`Failed to generate audio: ${error.message}`);
-    },
-    onSettled: () => {
-      setGeneratingField(null);
-    },
-  });
-
-  const handleGenerateAudio = async (audioInfo: {
-    sourceField: string;
-    targetField: string;
-    sourceValue: string;
-  }) => {
-    setGeneratingField(audioInfo.targetField);
-    try {
+    mutationFn: async (audioInfo: {
+      sourceField: string;
+      targetField: string;
+      sourceValue: string;
+    }) => {
       // Format: deckName_YYYY_MM_DD_HH_MM_SS
       const timestamp = new Date()
         .toISOString()
         .slice(0, 19)
         .replace(/[-T:]/g, "_");
       const deckPart = item.deckName.replace(/[^a-zA-Z0-9]/g, "_");
-      const result = await generateAudioMutation.mutateAsync({
+      const result = await api.generateAudio({
         text: audioInfo.sourceValue,
         voice: audioSettings.voice,
         filenameHint: `${deckPart}_${timestamp}`,
       });
-      onFieldsChange?.({ [audioInfo.targetField]: result.soundRef });
-      toast.success(`Generated audio for "${audioInfo.sourceField}"`);
-    } catch {
-      // Error handled by onError
-    }
-  };
+      return { ...audioInfo, result };
+    },
+    onSuccess: ({ sourceField, targetField, result }) => {
+      onFieldsChange?.({ [targetField]: result.soundRef });
+      toast.success(`Generated audio for "${sourceField}"`);
+    },
+    onError: (error) => {
+      toast.error(`Failed to generate audio: ${error.message}`);
+    },
+  });
 
   // TODO: move outside as pure util
   // Check if a field is an audio field that can be generated
@@ -152,7 +143,9 @@ export function NoteDetail({
           )}
           {fields.map((field) => {
             const audioInfo = getAudioFieldInfo(field);
-            const isGenerating = generatingField === field;
+            const isGenerating =
+              generateAudioMutation.isPending &&
+              generateAudioMutation.variables?.targetField === field;
 
             return (
               <div key={field} data-testid={`field-${field}`}>
@@ -169,7 +162,7 @@ export function NoteDetail({
                         data-testid={`generate-audio-${field}`}
                         title={`Generate audio from "${audioInfo.sourceField}" field`}
                         disabled={isGenerating}
-                        onClick={() => handleGenerateAudio(audioInfo)}
+                        onClick={() => generateAudioMutation.mutate(audioInfo)}
                       >
                         {isGenerating ? (
                           <Loader2 className="size-3 animate-spin" />
