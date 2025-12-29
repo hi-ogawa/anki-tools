@@ -11,22 +11,6 @@ import { useAudioSettings } from "@/lib/audio-settings";
 import { FLAG_OPTIONS, formatInterval, QUEUE_LABELS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
-/** Check if a field is an audio field that can be generated */
-function getAudioFieldInfo(
-  field: string,
-  allFields: string[],
-  fieldValues: Record<string, string>,
-) {
-  if (!field.endsWith("_audio")) return null;
-  const sourceField = field.slice(0, -6); // Remove "_audio" suffix
-  if (!allFields.includes(sourceField)) return null;
-  const sourceValue = fieldValues[sourceField];
-  const targetValue = fieldValues[field];
-  // Only show generate button if source has content and target is empty
-  if (!sourceValue?.trim() || targetValue?.trim()) return null;
-  return { sourceField, targetField: field, sourceValue };
-}
-
 interface NoteDetailProps {
   item: Item;
   fields: string[];
@@ -57,6 +41,7 @@ export function NoteDetail({
   // TODO: new global settings menu in header
   const [audioSettings] = useAudioSettings();
 
+  // TODO(refactor): move to parent like onFieldsChange mutation?
   const generateAudioMutation = useMutation({
     mutationFn: async (audioInfo: {
       sourceField: string;
@@ -68,7 +53,9 @@ export function NoteDetail({
         .toISOString()
         .slice(0, 19)
         .replace(/[-T:]/g, "_");
-      const deckPart = item.deckName.replace(/[^a-zA-Z0-9]/g, "_");
+      const deckPart = item.deckName
+        .replace(/[^a-zA-Z0-9]/g, "_")
+        .toLocaleLowerCase();
       const result = await api.generateAudio({
         text: audioInfo.sourceValue,
         voice: audioSettings.voice,
@@ -358,4 +345,20 @@ export function NoteDetail({
       </div>
     </div>
   );
+}
+
+/** Check if a field is an audio field that can be generated */
+function getAudioFieldInfo(
+  field: string,
+  allFields: string[],
+  fieldValues: Record<string, string>,
+) {
+  if (!field.endsWith("_audio")) return null;
+  const sourceField = field.slice(0, -6); // Remove "_audio" suffix
+  if (!allFields.includes(sourceField)) return null;
+  const sourceValue = fieldValues[sourceField];
+  const targetValue = fieldValues[field];
+  // Only show generate button if source has content and target is empty
+  if (!sourceValue?.trim() || targetValue?.trim()) return null;
+  return { sourceField, targetField: field, sourceValue };
 }
