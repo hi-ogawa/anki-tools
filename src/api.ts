@@ -209,6 +209,17 @@ const implementations = {
       input,
     );
   },
+
+  generateAudio: (input: {
+    text: string;
+    voice: string;
+    filenameHint: string;
+  }) => {
+    return invoke<{ filename: string; soundRef: string }>(
+      "generateAudio",
+      input,
+    );
+  },
 };
 
 // Convert cards to CSV format with proper escaping

@@ -1,10 +1,13 @@
-import { Flag, Pause, Pencil, Play, X } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
+import { Flag, Loader2, Pause, Pencil, Play, Volume2, X } from "lucide-react";
 import { useState } from "react";
-import type { Item } from "@/api";
+import { toast } from "sonner";
+import { api, type Item } from "@/api";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { useAudioSettings } from "@/lib/audio-settings";
 import { FLAG_OPTIONS, formatInterval, QUEUE_LABELS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
@@ -34,6 +37,50 @@ export function NoteDetail({
 
   const [editingTags, setEditingTags] = useState(false);
   const [tagInput, setTagInput] = useState("");
+
+  const [audioSettings] = useAudioSettings();
+  const [generatingField, setGeneratingField] = useState<string | null>(null);
+
+  const generateAudioMutation = useMutation({
+    ...api.generateAudio.mutationOptions(),
+    onError: (error) => {
+      toast.error(`Failed to generate audio: ${error.message}`);
+    },
+    onSettled: () => {
+      setGeneratingField(null);
+    },
+  });
+
+  const handleGenerateAudio = async (audioInfo: {
+    sourceField: string;
+    targetField: string;
+    sourceValue: string;
+  }) => {
+    setGeneratingField(audioInfo.targetField);
+    try {
+      const result = await generateAudioMutation.mutateAsync({
+        text: audioInfo.sourceValue,
+        voice: audioSettings.voice,
+        filenameHint: `${audioInfo.sourceField}_${item.noteId}`,
+      });
+      onFieldsChange?.({ [audioInfo.targetField]: result.soundRef });
+      toast.success(`Generated audio for "${audioInfo.sourceField}"`);
+    } catch {
+      // Error handled by onError
+    }
+  };
+
+  // Check if a field is an audio field that can be generated
+  const getAudioFieldInfo = (field: string) => {
+    if (!field.endsWith("_audio")) return null;
+    const sourceField = field.slice(0, -6); // Remove "_audio" suffix
+    if (!fields.includes(sourceField)) return null;
+    const sourceValue = item.fields[sourceField];
+    const targetValue = item.fields[field];
+    // Only show generate button if source has content and target is empty
+    if (!sourceValue?.trim() || targetValue?.trim()) return null;
+    return { sourceField, targetField: field, sourceValue };
+  };
 
   return (
     <div className="flex h-full flex-col border-l">
@@ -94,67 +141,93 @@ export function NoteDetail({
               ))}
             </div>
           )}
-          {fields.map((field) => (
-            <div key={field} data-testid={`field-${field}`}>
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium text-muted-foreground">
-                  {field}
-                </label>
-                {editingField !== field && onFieldsChange && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="size-6"
-                    data-testid={`edit-${field}`}
-                    onClick={() => {
-                      setEditingField(field);
-                      setEditValue(item.fields[field] ?? "");
-                    }}
-                  >
-                    <Pencil className="size-3" />
-                  </Button>
-                )}
-              </div>
-              {editingField === field ? (
-                <div className="mt-1 space-y-2">
-                  <Textarea
-                    rows={4}
-                    value={editValue}
-                    onChange={(e) => setEditValue(e.target.value)}
-                    autoFocus
-                  />
-                  <div className="flex gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        onFieldsChange?.({ [field]: editValue });
-                        setEditingField(null);
-                      }}
-                    >
-                      Save
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => setEditingField(null)}
-                    >
-                      Cancel
-                    </Button>
+          {fields.map((field) => {
+            const audioInfo = getAudioFieldInfo(field);
+            const isGenerating = generatingField === field;
+
+            return (
+              <div key={field} data-testid={`field-${field}`}>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium text-muted-foreground">
+                    {field}
+                  </label>
+                  <div className="flex gap-1">
+                    {audioInfo && onFieldsChange && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-6"
+                        data-testid={`generate-audio-${field}`}
+                        title={`Generate audio from "${audioInfo.sourceField}" field`}
+                        disabled={isGenerating}
+                        onClick={() => handleGenerateAudio(audioInfo)}
+                      >
+                        {isGenerating ? (
+                          <Loader2 className="size-3 animate-spin" />
+                        ) : (
+                          <Volume2 className="size-3" />
+                        )}
+                      </Button>
+                    )}
+                    {editingField !== field && onFieldsChange && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="size-6"
+                        data-testid={`edit-${field}`}
+                        onClick={() => {
+                          setEditingField(field);
+                          setEditValue(item.fields[field] ?? "");
+                        }}
+                      >
+                        <Pencil className="size-3" />
+                      </Button>
+                    )}
                   </div>
                 </div>
-              ) : (
-                <div className="mt-1 rounded border bg-muted/50 p-2 text-sm">
-                  {item.fields[field] ? (
-                    <div
-                      dangerouslySetInnerHTML={{ __html: item.fields[field] }}
+                {editingField === field ? (
+                  <div className="mt-1 space-y-2">
+                    <Textarea
+                      rows={4}
+                      value={editValue}
+                      onChange={(e) => setEditValue(e.target.value)}
+                      autoFocus
                     />
-                  ) : (
-                    <span className="text-muted-foreground italic">empty</span>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        onClick={() => {
+                          onFieldsChange?.({ [field]: editValue });
+                          setEditingField(null);
+                        }}
+                      >
+                        Save
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setEditingField(null)}
+                      >
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="mt-1 rounded border bg-muted/50 p-2 text-sm">
+                    {item.fields[field] ? (
+                      <div
+                        dangerouslySetInnerHTML={{ __html: item.fields[field] }}
+                      />
+                    ) : (
+                      <span className="text-muted-foreground italic">
+                        empty
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
 
           {/* Tags */}
           <div data-testid="tags-section">

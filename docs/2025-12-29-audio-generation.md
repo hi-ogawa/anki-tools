@@ -45,6 +45,7 @@ Field: korean_audio (has value)
 ```
 
 **Button visibility conditions:**
+
 - Field name matches `{base}_audio` pattern
 - Source field `{base}` exists in the note
 - Source field `{base}` is non-empty
@@ -62,9 +63,9 @@ interface AudioSettings {
 
 Settings UI accessible from the main interface (gear icon or similar).
 
-| Setting | Type | Default | Options |
-|---------|------|---------|---------|
-| Voice | select | `ko-KR-SunHiNeural` | `ko-KR-SunHiNeural` (female), `ko-KR-InJoonNeural` (male) |
+| Setting | Type   | Default             | Options                                                   |
+| ------- | ------ | ------------------- | --------------------------------------------------------- |
+| Voice   | select | `ko-KR-SunHiNeural` | `ko-KR-SunHiNeural` (female), `ko-KR-InJoonNeural` (male) |
 
 ## Architecture
 
@@ -94,6 +95,7 @@ Settings UI accessible from the main interface (gear icon or similar).
 ### `generateAudio` Action
 
 **Request:**
+
 ```json
 {
   "action": "generateAudio",
@@ -106,6 +108,7 @@ Settings UI accessible from the main interface (gear icon or similar).
 ```
 
 **Response:**
+
 ```json
 {
   "result": {
@@ -116,6 +119,7 @@ Settings UI accessible from the main interface (gear icon or similar).
 ```
 
 **Errors:**
+
 - `edge-tts not found` - edge-tts CLI not installed
 - `empty text` - source text is empty
 - `generation failed` - edge-tts process failed
@@ -159,6 +163,7 @@ elif action == "generateAudio":
 ### Frontend
 
 **Audio settings (`src/lib/audio-settings.ts`):**
+
 ```typescript
 const STORAGE_KEY = "anki-tools:audio-settings";
 
@@ -182,6 +187,7 @@ export function setAudioSettings(settings: Partial<AudioSettings>): void {
 ```
 
 **Generate button in note-detail.tsx:**
+
 - Detect `*_audio` fields
 - Show button when conditions met
 - On click: call API → update field → trigger mutation
@@ -210,3 +216,7 @@ export function setAudioSettings(settings: Partial<AudioSettings>): void {
 - Additional voice settings (speed, pitch)
 - Audio preview/playback in detail panel
 - Regenerate button (when field already has value)
+
+## Feedback
+
+- filename hint `(deck)_(YYYY_MM_DD_HH_MM_SS)`
