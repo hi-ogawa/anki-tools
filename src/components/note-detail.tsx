@@ -58,10 +58,16 @@ export function NoteDetail({
   }) => {
     setGeneratingField(audioInfo.targetField);
     try {
+      // Format: deckName_YYYY_MM_DD_HH_MM_SS
+      const timestamp = new Date()
+        .toISOString()
+        .slice(0, 19)
+        .replace(/[-T:]/g, "_");
+      const deckPart = item.deckName.replace(/[^a-zA-Z0-9]/g, "_");
       const result = await generateAudioMutation.mutateAsync({
         text: audioInfo.sourceValue,
         voice: audioSettings.voice,
-        filenameHint: `${audioInfo.sourceField}_${item.noteId}`,
+        filenameHint: `${deckPart}_${timestamp}`,
       });
       onFieldsChange?.({ [audioInfo.targetField]: result.soundRef });
       toast.success(`Generated audio for "${audioInfo.sourceField}"`);

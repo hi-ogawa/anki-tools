@@ -102,7 +102,7 @@ Settings UI accessible from the main interface (gear icon or similar).
   "params": {
     "text": "안녕하세요",
     "voice": "ko-KR-SunHiNeural",
-    "filenameHint": "korean_12345"
+    "filenameHint": "MyDeck_2025_12_29_10_30_45"
   }
 }
 ```
@@ -112,8 +112,8 @@ Settings UI accessible from the main interface (gear icon or similar).
 ```json
 {
   "result": {
-    "filename": "korean_12345.mp3",
-    "soundRef": "[sound:korean_12345.mp3]"
+    "filename": "MyDeck_2025_12_29_10_30_45.mp3",
+    "soundRef": "[sound:MyDeck_2025_12_29_10_30_45.mp3]"
   }
 }
 ```
@@ -216,7 +216,4 @@ export function setAudioSettings(settings: Partial<AudioSettings>): void {
 - Additional voice settings (speed, pitch)
 - Audio preview/playback in detail panel
 - Regenerate button (when field already has value)
-
-## Feedback
-
-- filename hint `(deck)_(YYYY_MM_DD_HH_MM_SS)`
+- Audio settings UI
