@@ -38,6 +38,7 @@ export function NoteDetail({
   const [editingTags, setEditingTags] = useState(false);
   const [tagInput, setTagInput] = useState("");
 
+  // TODO: new global settings menu in header
   const [audioSettings] = useAudioSettings();
   const [generatingField, setGeneratingField] = useState<string | null>(null);
 
