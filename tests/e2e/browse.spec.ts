@@ -555,9 +555,7 @@ Bulk Question 3\tBulk Answer 3`;
   await expect(page.getByRole("row").nth(1)).toContainText("Bulk Answer");
 });
 
-test("audio generation button - shows when source has content and audio empty", async ({
-  page,
-}) => {
+test("audio generation - generate audio for field", async ({ page }) => {
   // Use test-audio model with source and source_audio fields
   await page.goto("/?model=test-audio&view=cards");
 
@@ -575,6 +573,20 @@ test("audio generation button - shows when source has content and audio empty", 
     "title",
     'Generate audio from "source" field',
   );
+
+  // Click generate button
+  await generateButton.click();
+
+  // Wait for generation to complete - field should now contain [sound:...]
+  await expect(audioField).toContainText("[sound:", { timeout: 30000 });
+
+  // Generate button should disappear (field now has content)
+  await expect(generateButton).not.toBeVisible();
+
+  // Reload and verify the audio field persisted
+  await page.reload();
+  await page.getByRole("row").nth(1).click();
+  await expect(page.getByTestId("field-source_audio")).toContainText("[sound:");
 });
 
 test("audio generation button - hidden when audio field has value", async ({
