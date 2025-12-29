@@ -200,6 +200,46 @@ test("update note tags", async ({ page }) => {
   await expect(page.getByTestId("tags-section")).not.toContainText("tag1");
 });
 
+test("remove tag with single click", async ({ page }) => {
+  await page.goto("/?model=Basic");
+
+  // Click first data row to open detail panel
+  await page.getByRole("row").nth(1).click();
+  await expect(page.getByTestId("tags-section")).toBeVisible();
+
+  // Add tags first
+  await page.getByTestId("edit-tags").click();
+  await page.getByTestId("tags-input").fill("remove1 remove2 remove3");
+  await page.getByRole("button", { name: "Save" }).click();
+
+  // Verify all tags are present
+  await expect(page.getByTestId("tags-section")).toContainText("remove1");
+  await expect(page.getByTestId("tags-section")).toContainText("remove2");
+  await expect(page.getByTestId("tags-section")).toContainText("remove3");
+
+  // Remove the second tag by clicking the X button
+  await page.getByTestId("remove-tag-remove2").click();
+
+  // Verify the tag was removed immediately
+  await expect(page.getByTestId("tags-section")).toContainText("remove1");
+  await expect(page.getByTestId("tags-section")).not.toContainText("remove2");
+  await expect(page.getByTestId("tags-section")).toContainText("remove3");
+
+  // Reload and verify the change persisted
+  await page.reload();
+  await page.getByRole("row").nth(1).click();
+  await expect(page.getByTestId("tags-section")).toContainText("remove1");
+  await expect(page.getByTestId("tags-section")).not.toContainText("remove2");
+  await expect(page.getByTestId("tags-section")).toContainText("remove3");
+
+  // Remove another tag by clicking the X button
+  await page.getByTestId("remove-tag-remove1").click();
+
+  // Verify only one tag remains
+  await expect(page.getByTestId("tags-section")).not.toContainText("remove1");
+  await expect(page.getByTestId("tags-section")).toContainText("remove3");
+});
+
 test("stale indicator and refresh button", async ({ page }) => {
   await page.goto("/?model=Basic");
 

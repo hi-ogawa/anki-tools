@@ -213,8 +213,25 @@ export function NoteDetail({
               <div className="mt-1 flex flex-wrap gap-1">
                 {item.tags.length > 0 ? (
                   item.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary">
+                    <Badge
+                      key={tag}
+                      variant="secondary"
+                      className={onTagsChange ? "pr-1" : undefined}
+                    >
                       {tag}
+                      {onTagsChange && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onTagsChange(item.tags.filter((t) => t !== tag));
+                          }}
+                          className="ml-1 rounded-sm hover:bg-secondary-foreground/20"
+                          aria-label={`Remove tag ${tag}`}
+                          data-testid={`remove-tag-${tag}`}
+                        >
+                          <X className="size-3" />
+                        </button>
+                      )}
                     </Badge>
                   ))
                 ) : (
