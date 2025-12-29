@@ -1,10 +1,11 @@
 import { useLocalStorage } from "./use-local-storage";
 
-export interface AudioSettings {
+interface AudioSettings {
   /** Key-value pairs passed as --key value to edge-tts CLI */
   flags: Record<string, string>;
 }
 
+// https://github.com/rany2/edge-tts
 const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
   flags: {
     voice: "ko-KR-SunHiNeural",
