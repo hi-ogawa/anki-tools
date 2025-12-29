@@ -58,7 +58,7 @@ export function NoteDetail({
         .toLocaleLowerCase();
       const result = await api.generateAudio({
         text: audioInfo.sourceValue,
-        voice: audioSettings.voice,
+        flags: audioSettings.flags,
         filenameHint: `${deckPart}_${timestamp}`,
       });
       return { ...audioInfo, result };

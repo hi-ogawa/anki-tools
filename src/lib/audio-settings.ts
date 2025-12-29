@@ -1,19 +1,17 @@
 import { useLocalStorage } from "./use-local-storage";
 
 export interface AudioSettings {
-  voice: string;
+  /** Key-value pairs passed as --key value to edge-tts CLI */
+  flags: Record<string, string>;
 }
 
-export const KOREAN_VOICES = [
-  { value: "ko-KR-SunHiNeural", label: "Sun-Hi (Female)" },
-  { value: "ko-KR-InJoonNeural", label: "InJoon (Male)" },
-] as const;
-
 const DEFAULT_AUDIO_SETTINGS: AudioSettings = {
-  voice: "ko-KR-SunHiNeural",
+  flags: {
+    voice: "ko-KR-SunHiNeural",
+  },
 };
 
-const STORAGE_KEY = "anki-tools:audio-settings";
+const STORAGE_KEY = "anki-tools:audio-settings-v2";
 
 export function useAudioSettings() {
   return useLocalStorage<AudioSettings>(STORAGE_KEY, DEFAULT_AUDIO_SETTINGS);

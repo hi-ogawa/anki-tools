@@ -16,6 +16,7 @@ import {
   Pencil,
   Plus,
   RefreshCw,
+  Settings,
   Tag,
   Upload,
 } from "lucide-react";
@@ -35,6 +36,7 @@ import { BulkActions } from "./components/bulk-actions";
 import { BulkImportDialog } from "./components/bulk-import-dialog";
 import { CreateNoteDialog } from "./components/create-note-dialog";
 import { NoteDetail } from "./components/note-detail";
+import { SettingsDialog } from "./components/settings-dialog";
 import { TableSkeleton } from "./components/table-skeleton";
 import { Button } from "./components/ui/button";
 import {
@@ -77,6 +79,7 @@ export function Root() {
 }
 
 function App() {
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [searchParams, setSearchParams] = useSearchParams();
   const urlModel = searchParams.get("model");
   // URL uses 1-based page, convert to 0-based for table
@@ -262,8 +265,19 @@ function App() {
               defaultModel={validModel ? urlModel : undefined}
             />
           )}
+          <div className="ml-auto">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSettingsOpen(true)}
+              data-testid="settings-button"
+            >
+              <Settings className="size-4" />
+            </Button>
+          </div>
         </div>
       </header>
+      <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
       <main className="flex-1 overflow-hidden p-4">{mainContent}</main>
     </div>
   );

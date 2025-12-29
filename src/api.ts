@@ -212,7 +212,7 @@ const implementations = {
 
   generateAudio: (input: {
     text: string;
-    voice: string;
+    flags: Record<string, string>;
     filenameHint: string;
   }) => {
     return invoke<{ filename: string; soundRef: string }>(

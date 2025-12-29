@@ -295,7 +295,7 @@ def handle_action(col: Collection, action: str, params: dict):
 
     elif action == "generateAudio":
         text = params["text"]
-        voice = params.get("voice", "ko-KR-SunHiNeural")
+        flags = params.get("flags", {"voice": "ko-KR-SunHiNeural"})
         filename_hint = params["filenameHint"]
 
         if not text.strip():
@@ -306,16 +306,14 @@ def handle_action(col: Collection, action: str, params: dict):
             temp_path = f.name
 
         try:
+            # Build CLI args from flags
+            cli_args = ["edge-tts"]
+            for key, value in flags.items():
+                cli_args.extend([f"--{key}", value])
+            cli_args.extend(["--text", text, "--write-media", temp_path])
+
             result = subprocess.run(
-                [
-                    "edge-tts",
-                    "--voice",
-                    voice,
-                    "--text",
-                    text,
-                    "--write-media",
-                    temp_path,
-                ],
+                cli_args,
                 capture_output=True,
                 text=True,
             )
