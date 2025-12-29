@@ -13,6 +13,9 @@ Why an Anki addon instead of AnkiConnect?
 """
 
 import json
+import os
+import subprocess
+import tempfile
 import time
 from http.server import SimpleHTTPRequestHandler
 from typing import Callable
@@ -289,5 +292,54 @@ def handle_action(col: Collection, action: str, params: dict):
             results.append({"noteId": note.id})
 
         return {"notes": results, "count": len(results)}
+
+    elif action == "generateAudio":
+        text = params["text"]
+        flags = params.get("flags", {"voice": "ko-KR-SunHiNeural"})
+        filename_hint = params["filenameHint"]
+
+        if not text.strip():
+            raise ValueError("Text is empty")
+
+        # Mock mode for CI/testing - skip edge-tts and use test audio file
+        mock_audio_path = os.environ.get("ANKI_TOOLS_MOCK_AUDIO")
+        if mock_audio_path:
+            with open(mock_audio_path, "rb") as f:
+                audio_bytes = f.read()
+        else:
+            # Generate to temp file
+            with tempfile.NamedTemporaryFile(suffix=".mp3", delete=False) as f:
+                temp_path = f.name
+
+            try:
+                # Build CLI args from flags
+                cli_args = ["edge-tts"]
+                for key, value in flags.items():
+                    cli_args.extend([f"--{key}", value])
+                cli_args.extend(["--text", text, "--write-media", temp_path])
+
+                result = subprocess.run(
+                    cli_args,
+                    capture_output=True,
+                    text=True,
+                )
+                if result.returncode != 0:
+                    raise ValueError(f"edge-tts failed: {result.stderr}")
+
+                # Read audio from temp file
+                with open(temp_path, "rb") as f:
+                    audio_bytes = f.read()
+            finally:
+                if os.path.exists(temp_path):
+                    os.unlink(temp_path)
+
+        # Store in Anki media
+        filename = f"{filename_hint}.mp3"
+        actual_filename = col.media.write_data(filename, audio_bytes)
+
+        return {
+            "filename": actual_filename,
+            "soundRef": f"[sound:{actual_filename}]",
+        }
 
     raise ValueError(f"Unknown action: {action}")

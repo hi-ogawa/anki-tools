@@ -6,7 +6,7 @@ const UI_PORT = 6173;
 export default defineConfig({
   testDir: "./tests/e2e",
   webServer: {
-    command: `ANKI_DATA=test ANKI_PORT=${API_PORT} VITE_PORT=${UI_PORT} pnpm dev-fixture`,
+    command: `ANKI_DATA=test ANKI_PORT=${API_PORT} VITE_PORT=${UI_PORT} ANKI_TOOLS_MOCK_AUDIO=tests/test.mp3 pnpm dev-fixture`,
     url: `http://localhost:${API_PORT}/api/health`,
     reuseExistingServer: !process.env.CI,
     timeout: 5000,
