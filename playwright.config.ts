@@ -15,8 +15,8 @@ export default defineConfig({
       ANKI_PORT: String(API_PORT),
       VITE_PORT: String(UI_PORT),
     },
-    // stderr: "pipe",
-    // stdout: "pipe",
+    stderr: "pipe",
+    stdout: "pipe",
   },
   use: {
     baseURL: `http://localhost:${UI_PORT}`,
