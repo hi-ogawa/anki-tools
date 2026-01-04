@@ -6,10 +6,15 @@ const UI_PORT = 6173;
 export default defineConfig({
   testDir: "./tests/e2e",
   webServer: {
-    command: `cross-env ANKI_DATA=test ANKI_PORT=${API_PORT} VITE_PORT=${UI_PORT} pnpm dev-fixture`,
+    command: `pnpm dev-fixture`,
     url: `http://localhost:${API_PORT}/api/health`,
     reuseExistingServer: !process.env.CI,
     timeout: 5000,
+    env: {
+      ANKI_DATA: "test",
+      ANKI_PORT: String(API_PORT),
+      VITE_PORT: String(UI_PORT),
+    },
     // stderr: "pipe",
     // stdout: "pipe",
   },
