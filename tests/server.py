@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "addon"))
 from anki.collection import Collection
 from server import RequestHandler  # noqa: E402
 
-PORT = int(os.environ.get("ANKI_PORT", "6679"))
+PORT = int(os.environ.get("ANKI_PORT", "5679"))
 ANKI_DATA = os.environ.get("ANKI_DATA", "dev")
 DATA_PATH = Path(__file__).parent / "data" / f"{ANKI_DATA}.anki2"
 
@@ -20,7 +20,7 @@ DATA_PATH = Path(__file__).parent / "data" / f"{ANKI_DATA}.anki2"
 def main():
     # Reset fixture: always for test, only if missing for dev
     if ANKI_DATA == "test" or not DATA_PATH.exists():
-        subprocess.run(["pnpm", "fixture"], check=True)
+        subprocess.run(["pnpm", "fixture"], check=True, shell=True)
 
     col = Collection(str(DATA_PATH))
     handler = partial(RequestHandler, get_col=lambda: col)

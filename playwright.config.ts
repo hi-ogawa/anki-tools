@@ -10,6 +10,8 @@ export default defineConfig({
     url: `http://localhost:${API_PORT}/api/health`,
     reuseExistingServer: !process.env.CI,
     timeout: 5000,
+    // stderr: "pipe",
+    // stdout: "pipe",
   },
   use: {
     baseURL: `http://localhost:${UI_PORT}`,
