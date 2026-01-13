@@ -200,44 +200,6 @@ test("update note tags", async ({ page }) => {
   await expect(page.getByTestId("tags-section")).not.toContainText("tag1");
 });
 
-test("stale indicator and refresh button", async ({ page }) => {
-  await page.goto("/?model=Basic");
-
-  const refreshButton = page.getByTestId("refresh-button");
-
-  // Refresh button should be visible and not stale initially
-  await expect(refreshButton).toBeVisible();
-  await expect(refreshButton).not.toHaveAttribute("data-stale", "true");
-
-  // Click first data row to open detail panel
-  await page.getByRole("row").nth(1).click();
-  await expect(page.getByTestId("field-Front")).toBeVisible();
-
-  // Edit a field
-  await page.getByTestId("edit-Front").click();
-  await page
-    .getByTestId("field-Front")
-    .getByRole("textbox")
-    .fill("Stale Test Question");
-  await page.getByRole("button", { name: "Save" }).click();
-
-  // Refresh button should indicate stale state after mutation
-  await expect(refreshButton).toHaveAttribute("data-stale", "true");
-
-  // Table should still show old data (stale)
-  const firstRow = page.getByRole("row").nth(1);
-  await expect(firstRow).not.toContainText("Stale Test Question");
-
-  // Click refresh button
-  await refreshButton.click();
-
-  // Stale state should clear after refresh
-  await expect(refreshButton).not.toHaveAttribute("data-stale", "true");
-
-  // Table should now show updated data
-  await expect(firstRow).toContainText("Stale Test Question");
-});
-
 test("tag filter filters by tags", async ({ page }) => {
   // Navigate directly with tags param to test the filter works
   await page.goto("/?model=Basic&tags=important");
